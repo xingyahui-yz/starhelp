@@ -1,0 +1,17 @@
+{
+  "default_mode": "observe",
+  "require_plan_review_before_execution": true,
+  "approval_single_use": true,
+  "approval_expires_minutes": 10,
+  "pause_on_user_input": true,
+  "pause_on_focus_loss": true,
+  "max_battle_minutes": 15,
+  "max_actions_per_battle": 150,
+  "max_stage_attempts": 2,
+  "allow_currency_spend": false,
+  "allow_consumables": false,
+  "allow_game_file_changes": false,
+  "allow_process_injection": false,
+  "allow_network_interception": false
+}
+
