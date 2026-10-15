@@ -5,6 +5,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from .validation import refresh_fixture_members
+
 
 def synthetic_request() -> dict[str, Any]:
     """Return a complete but fictional request; it is not game or approved content."""
@@ -12,6 +14,7 @@ def synthetic_request() -> dict[str, Any]:
         {"id": entity_id, "revision": 1, "entity_type": "character", "name": entity_id}
         for entity_id in ("fixture:char:a", "fixture:char:b", "fixture:char:c")
     ]
+    entities.extend({"id": identifier, "revision": 1, "entity_type": kind} for identifier, kind in (("fixture:relic:type", "relic"), ("fixture:material:1", "material")))
     stage = {
         "stage_id": "fixture:stage:1",
         "revision": 1,
@@ -34,6 +37,7 @@ def synthetic_request() -> dict[str, Any]:
         "id": "fixture:template:1", "revision": 1, "title": "Synthetic complete template",
         "approval_status": "approved", "publication_status": "published",
         "stage_ids": [stage["stage_id"]], "scope": dict(stage["scope"]),
+        "public_goals": [{"kind": "fixture:goal:clear"}],
     }
     condition = {
         "condition_id": "fixture:condition:speed", "subject": {"kind": "team_slot", "slot_id": "fixture:upper:1"},
@@ -55,11 +59,25 @@ def synthetic_request() -> dict[str, Any]:
             "fixture:lower": [{"slot_id": "fixture:lower:1", "character_id": "fixture:char:b"}],
         },
         "conditions": [condition],
+        "steps": [
+            {"order": 1, "text": "Synthetic opening step", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}]},
+            {"order": 2, "text": "Synthetic follow-up step", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}]},
+        ],
+        "mechanics": [{"text": "Synthetic mechanic only", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}]}],
+        "failure_conditions": [{"text": "Synthetic failure condition only", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}]}],
+        "risks": [{"text": "Synthetic risk only", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}]}],
         "cultivation_requirements": [{
-            "requirement_id": "fixture:cultivation:speed", "subject": {"character_id": "fixture:char:a"},
-            "current_field": "fixture:stat:speed", "category": "fixture:trace", "target_value": 110,
+            "requirement_id": "fixture:cultivation:level", "subject": {"kind": "character", "character_id": "fixture:char:a"},
+            "current_field": "fixture:level", "category": "character", "target_value": 15,
+            "unit": "level", "measurement_context": {"phase": "progression", "assumptions": []},
             "priority": 1, "reason": "synthetic target only", "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
-            "cost_rule": {"revision": 1, "applicable": True, "materials": [{"material_id": "fixture:material:1", "amount": 2}]},
+            "cost_rule": {
+                "id": "fixture:cost:character-level", "revision": 1, "category": "character",
+                "scope": {"game_version": "fixture:game:v1", "environment": "fixture:environment"},
+                "subject_entity_id": "fixture:char:a", "attribute": "fixture:level", "unit": "level",
+                "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
+                "transitions": [{"from": level, "to": level + 1, "materials": [{"material_id": "fixture:material:1", "amount": 2}]} for level in range(10, 15)],
+            },
         }],
     }
     alternative = {
@@ -83,34 +101,40 @@ def synthetic_request() -> dict[str, Any]:
         "trigger_conditions": [{
             "condition_id": "fixture:failure-kind", "subject": {"kind": "feedback"}, "attribute": "fixture:failure_kind",
             "operator": "eq", "value": "fixture:survival", "unit": "fixture:label",
-            "measurement_context": {"phase": "fixture:reported"}, "requirement": "hard", "evidence_status": "confirmed",
+            "measurement_context": {"phase": "fixture:reported", "assumptions": []}, "requirement": "hard", "evidence_status": "confirmed",
             "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
         }],
         "suggested_variant_id": alternative["id"], "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
     }
-    objects = [
-        *(('entity', x) for x in entities), ("stage", stage), ("template", template),
-        ("variant", main), ("variant", alternative), ("evidence", evidence),
-        ("troubleshooting", troubleshooting),
-    ]
     bundle = {
+        "adapter_profile": "starhelp.local.v0.2",
         "contract_version": "0.1-draft", "schema_id": "PublicBundle", "schema_version": "0.1-draft",
         "manifest": {
-            "index_release_id": "fixture:release:1", "required_capabilities": ["fixture:complete-variant:v1", "fixture:conditions:v1"],
+            "index_release_id": "fixture:release:1", "required_capabilities": ["starhelp.local-profile.v0.2"],
             "object_schemas": {k: "0.1-draft" for k in ("stage", "entity", "template", "variant", "evidence", "troubleshooting")},
             "coverage": {"status": "synthetic", "reason": "fixture-only"},
-            "members": [{"kind": kind, "id": obj.get("stage_id", obj.get("id")), "revision": obj["revision"], "content_hash": "fixture:hash-not-real"} for kind, obj in objects],
+            "attribute_definitions": {
+                "fixture:stat:speed": {"value_type": "number", "unit": "fixture:flat", "phases": ["fixture:pre_battle"], "loadout_dependent": True},
+                "fixture:level": {"value_type": "integer", "unit": "level", "phases": ["progression"], "loadout_dependent": False},
+                "fixture:failure_kind": {"value_type": "string", "unit": "fixture:label", "phases": ["fixture:reported"], "loadout_dependent": False},
+                "fixture:item:stat": {"value_type": "number", "unit": "fixture:flat", "phases": ["item"], "loadout_dependent": False},
+            },
+            "members": [],
         },
         "entities": entities, "stages": [stage], "templates": [template], "variants": [main, alternative],
         "evidence": [evidence], "troubleshooting": [troubleshooting],
     }
+    refresh_fixture_members(bundle, rebuild=True)
     snapshot = {
         "schema_id": "AccountSnapshot", "schema_version": "0.1-draft",
         "profile_id": "fixture:local-profile:1", "snapshot_id": "fixture:local-snapshot:1", "snapshot_revision": 1,
         "authorization_generation": 7, "authorization_state": "active",
         "coverage": {"roster": "complete", "inventory": "complete", "materials": "complete"},
         "characters": [
-            {"entity_id": "fixture:char:a", "ownership": "owned", "fields": {"fixture:stat:speed": {"value": 105, "state": "confirmed", "observed_at": "2026-10-15T00:00:00Z"}}},
+            {"entity_id": "fixture:char:a", "ownership": "owned", "fields": {
+                "fixture:stat:speed": {"value": 105, "state": "confirmed", "unit": "fixture:flat", "measurement_context": {"phase": "fixture:pre_battle", "assumptions": []}, "observed_at": "2026-10-15T00:00:00Z"},
+                "fixture:level": {"value": 10, "state": "confirmed", "unit": "level", "measurement_context": {"phase": "progression", "assumptions": []}},
+            }},
             {"entity_id": "fixture:char:b", "ownership": "owned", "fields": {}},
             {"entity_id": "fixture:char:c", "ownership": "owned", "fields": {}},
         ],
@@ -118,11 +142,13 @@ def synthetic_request() -> dict[str, Any]:
             "local_instance_id": "fixture:gear:1", "public_type_id": "fixture:relic:type", "kind": "relic", "slot": "body",
             "identity_state": "player_confirmed", "equipped_by": "fixture:char:a",
         }],
-        "materials": [{"material_id": "fixture:material:1", "count": 5, "state": "confirmed"}],
+        "materials": [{"material_id": "fixture:material:1", "count": 5, "state": "confirmed", "unit": "item_count", "measurement_context": {"phase": "inventory", "assumptions": []}}],
     }
     request = {
+        "adapter_profile": "starhelp.local.v0.2",
         "contract_version": "0.1-draft", "schema_id": "AnalysisRequest", "schema_version": "0.1-draft",
         "request_id": "fixture:request:1", "authorization_generation": 7, "public_bundle": bundle,
+        "evaluation_time": "2026-10-15T01:00:00Z",
         "account_snapshot": snapshot,
         "task": {
             "scope": dict(stage["scope"]), "public_goal": {"kind": "fixture:goal:clear"},

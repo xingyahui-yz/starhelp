@@ -1,56 +1,72 @@
 # Local planner handoff
 
-Status: first implementation of the `mvp-v0.1` engineering draft. It is a synthetic-fixture-verified local component, not a real-game data integration or a complete MVP. Contract names below describe the package's current draft adapter and still need M0 confirmation.
+Status: component 0.2.0 under the **proposed** `starhelp.local.v0.2` adapter profile. The shared `mvp-v0.1` contract is still `0.1-draft`. Local behavior has been checked with synthetic data; this is not real-game integration, human approval of guides, or MVP completion.
 
-## Package and entry point
+## Entry point and current artifact
 
-- Package: `packages/starhelp-planner/`, import name `starhelp_planner`.
-- Built component artifact: `packages/starhelp-planner/artifacts/starhelp_planner-0.1.0-py3-none-any.whl`; SHA-256 `922497f72f83bc3c6aad0e39ee729e35451079df6134579f1a3938e993e97201`.
-- Public API: `from starhelp_planner import analyze`; call `analyze(request: Mapping[str, Any]) -> dict[str, Any]`.
-- Runtime: Python 3.12+, standard library only. The package performs no network, GUI, filesystem, database, model, telemetry, or game-input operation. It does not mutate the request or persist account information.
-- Synthetic sample: `starhelp_planner.demo_data.synthetic_request()`; run `python -m starhelp_planner.demo` from this package directory after setting `PYTHONPATH=src`.
-- Caller owns reading/authorization/encryption, public-package authenticity/hash verification, current revocation state, and report persistence. The planner checks embedded member closure and references but does not claim to authenticate a package from `verified: true` or implement the not-yet-frozen hash canonicalization.
+- Package: `packages/starhelp-planner/`; import: `starhelp_planner`.
+- API: `from starhelp_planner import analyze`; `analyze(request) -> dict`.
+- Version constants: `PLANNER_VERSION == "0.2.0"`, `ADAPTER_PROFILE == "starhelp.local.v0.2"`.
+- Current wheel: `packages/starhelp-planner/artifacts/starhelp_planner-0.2.0-py3-none-any.whl`.
+- SHA-256: `b4071619fd3e74e6008e004769583dad3df61f460e07e0c162eba7ef380783ca`.
+- Python 3.12+, no runtime dependencies. Install the exact wheel with `python -m pip install --no-index --no-deps <wheel-path>` or add this component's `src` to the caller's import path during development.
+- The retained 0.1.0 wheel is historical. Its profile lacks the semantic/integrity corrections below; use the explicitly versioned 0.2.0 artifact for this handoff.
+- Detailed JSON semantics, compatibility changes, examples and proposed error enums: [local-profile-v0.2.md](../../packages/starhelp-planner/docs/local-profile-v0.2.md).
 
-## Current draft input profile
+`analyze` accepts only fully materialized built-in JSON values, validates before copying, and does not mutate inputs. It performs no network, GUI, filesystem/database access, model calls, telemetry, account persistence or game input. B owns reading, authorization, encryption, result-generation checks, display and explicit report save. The demo CLI prints synthetic JSON as a separate caller of this pure API.
 
-The demo data is the executable profile. Every identifier prefixed `fixture:` and every associated value is synthetic, not a Star Rail ID, source record, or human-approved guide.
+## Corrections in 0.2.0
 
-- `AnalysisRequest` contains `request_id`, matching integer `authorization_generation`, an active `account_snapshot`, one `public_bundle`, `task.scope`, constraints and optional `feedback`.
-- `task.scope` must specify `game_version`, `environment`, `mode_id`, `cycle_id`, `stage_id`, and `stage_revision`; the selected stage and template must match all known scope fields exactly.
-- Bundle manifest members use `{kind, id, revision, content_hash}`. Current code requires declared member identity and a nonempty hash field, checks that all embedded objects are listed, and checks internal references. M0 still needs to select canonicalization, hashing, signature/authenticity and download/verification ownership.
-- Templates and variants are executable only when both `approval_status: "approved"` and `publication_status: "published"`. Each variant is a complete partition/slot roster. The planner never composes slots from different variants.
-- Stage partition data uses `partitions: [{partition_id, slots: [{slot_id}]}]`; `resource_reuse` can declare `characters` and `equipment` as `exclusive` or another explicit mode. Current default is exclusive across the stage.
-- Snapshot character ownership is `owned`, `not_owned`, or `unknown`; a missing character is treated as unknown unless roster coverage is complete. A hard unknown condition or unknown ownership is returned only under `pending_confirmation_candidates`. A confirmed not-owned character is rejected.
-- Public variant condition subjects currently support `team_slot` and `character`; troubleshooting rules may also inspect the current `feedback` and `task`. Operators currently allow `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, and `contains`. Field values count as known only with an explicit confirmed state. Hard unsatisfied conditions reject a variant; hard unknown conditions remain pending; soft issues are warnings and affect ordering. Evidence status is retained separately from local match status.
-- Current equipment stays with its current character even if instance identity is ambiguous. Cross-character rearrangement requires a `player_confirmed` or `source_verified` local instance identity, unique assignment, user permission, and no lock conflict. This component proposes changes only; it never applies them.
-- Rearrangement enumerates up to 50,000 search nodes / 256 complete assignments per variant and selects the lowest action-count assignment found. If the bound is reached, the result carries `allocation_search_truncated`; it does not claim global optimality.
-- Cultivation cost is calculated only with a numeric current/target gap, an applicable revisioned cost rule, complete material coverage, and confirmed material counts. Otherwise it reports `not_calculated`; it does not synthesize a net shortage.
-- Troubleshooting reads only reviewed/published declarative rules. A matching rule may point to another complete published variant, request rechecking conditions, or request reviewing cultivation gaps. Unsupported or untriggered cases return `unable_to_determine`; no learning occurs.
+1. **Explicit compatibility.** Request and bundle must select `starhelp.local.v0.2`; the supported mandatory capability is `starhelp.local-profile.v0.2`. Old local 0.1.0 bundles are incompatible. Optional exact `local_rule_version` pins are checked, and results identify the actual implementation version. Shared schemas remain the unmodified `0.1-draft`.
+2. **Integrity and dependencies.** Every member's canonical digest is recomputed; manifest membership must exactly match embedded objects. Typed references, explicit and inferred dependencies, nested required capabilities/schema/release declarations, duplicate identities and private identity fields are checked. `sha256-json-v1` is an explicit local proposal, not agreed cross-language canonicalization. B still owns authenticity and whole-package/manifest verification; matching a member hash does not establish trust or approval.
+3. **Availability.** Latest-known withdrawals and disabled object statuses propagate through nested evidence and dependency links. Losing an alternative does not disable independent sibling variants merely through a template's alternatives list. A disabled selected stage cannot execute. No online validity check occurs.
+4. **Scope and goal.** Object scopes and declared entity game-version/environment must fit the task; derived availability retains object kinds. Stage identity/revision must agree with its scope; request/template scope matches all six fields. `task.public_goal` must exactly match a declared template goal. Approval/publication and full partition/seat rosters remain mandatory. Independent substitutions are not composed into new rosters.
+5. **Condition semantics.** Registered typed attributes, explicit units, phase and assumptions are checked. Missing/conflicting/stale/unconfirmed/wrong-unit/wrong-context data remains unknown. Public evidence state stays separate from local match state. Booleans cannot satisfy numeric predicates. Unsupported conditions cannot execute.
+6. **Allocation-specific evaluation.** Every examined equipment mapping gets its own condition checks, including equipment-slot predicates. Original loadout-dependent character panels are invalid after moves/removals. A final-loadout fingerprint plus confirmed `loadout_views` fields can provide a new basis; no combat-stat simulator is implied. Otherwise the candidate remains pending. Search is bounded to 50,000 nodes / 256 assignments; truncated failure to find a passing mapping remains unknown rather than proving infeasibility.
+7. **Cultivation.** Character/light-cone/trace/relic gaps use confirmed integer progression fields and final item identity. Revisioned scope/entity/attribute-bound transition tables cover the entire requested range. Static `applicable: true` costs are insufficient. Zero gap costs zero; stale/missing progression is never filled with zero. Per-step costs are gross; `plan.cultivation_cost` sums all steps and deducts each material inventory once. Incomplete/conflicting/stale material counts permit valid gross cost but no net shortage. Incomplete step costs produce no aggregate claim.
+8. **Troubleshooting.** Reviewed, scope-bound declarative triggers retain their own results. Target complete variants are rechecked against this task's ownership, fixed/excluded roles, locks, equipment, goal and conditions. Infeasible targets are not suggested; unknown targets are explicitly pending. Optional source-variant applicability and supplied feedback scope are checked. No unsupported advice or learning is generated.
 
-The exact condition vocabulary, units and measurement contexts, completeness semantics, production object schema, stage resource rules, error enums, and all real IDs are unconfirmed M0 items. Unknown schemas/capabilities fail closed. The current result's ranking counts known/unknown conditions, evidence status and equipment changes; it is only an adaptation order and never a win probability.
+## Result and error semantics
 
-## Result and error envelope
+Success results include request/profile/snapshot/generation references, actual planner/rule/profile versions, one release, public scope/goal/constraints, stage/template/variant revisions, current plans, rearrangement plans, pending candidates, rejected variants, condition bases, cultivation costs/gaps, tactics/mechanics/risks, troubleshooting, coverage/validity and a same-release citation catalog. Ranking is an adaptation order and never a win probability. Unsupported resource reuse semantics fail closed; this profile supports stage-wide exclusive character/item use only.
 
-Success results include planner and local-rule versions, request/profile/snapshot generation references, one public release and stage/template/variant revisions, current plans, separate rearrangement plans, pending candidates, rejected variants, bounded troubleshooting output, coverage, latest-known validity, and a citation catalog bound to the same release. Each plan includes the full approved team, condition evidence and match statuses, equipment assignments/actions, cultivation gaps/cost state, references and warnings.
+Expected errors return `status: "error"`, `{code, message, retryable: false, details}` and empty plan/citation arrays. Proposed codes include `invalid_payload`, `snapshot_conflict`, `invalid_public_bundle`, `unsupported_schema`, `unsupported_profile`, `unsupported_rule_version`, `unsupported_capability`, `authorization_inactive`, `superseded_generation`, `scope_mismatch`, and `withdrawn_public_object`. Inspect `invalid_public_bundle.error.details.issues` for integrity/dependency/reference/schema problems. These are not frozen A/B enums.
 
-Expected failures return `status: "error"` with `{code, message, retryable, details}` and empty plan arrays. Current codes include `invalid_payload`, `invalid_public_bundle`, `unsupported_schema`, `unsupported_capability`, `authorization_inactive`, `superseded_generation`, and `scope_mismatch`. No production error enum has been frozen.
+## Verification evidence
 
-## Validation evidence
+Verified locally on Python 3.12.14:
 
-Scenario assertions in `packages/starhelp-planner/tests/test_planner.py` cover a full synthetic template, condition satisfied/unsatisfied/unknown, typed comparisons, evidence-vs-match status, owned/not-owned/unknown and partially observed rosters, fixed characters, lock conflicts, ambiguous equipment identity, minimum-move multi-slot allocation, complete-vs-partial material coverage, reviewed and scope-bound troubleshooting, scope mismatch, missing manifest members, revision-bound withdrawals, absent citations, disallowing rearrangement, and a source-level guard against network/GUI/storage/game-input dependencies. `tests/test_stdlib.py` exposes the 24 scenarios to Python's standard `unittest` runner without installing test dependencies. Verified on Python 3.12.14: `compileall` succeeded and `python -m unittest discover -s tests -p test_stdlib.py -v` passed all 24 scenarios. The built wheel was installed into a temporary local target without network access and its `analyze` API returned the expected synthetic plan result.
+- `python -m compileall -q src tests` succeeded.
+- `python -m unittest discover -s tests -p 'test_*.py' -v` passed **45 tests**. This is one suite, not a claim of 45 real game scenarios; several tests contain related subcases.
+- The suite includes the original 24 synthetic scenarios plus measurement/loadout/allocation truncation, transition/range/version/quantity checks, all four cultivation categories and shared inventory deduction, tamper/missing/orphan/dependency/type checks, nested withdrawal, target eligibility, malformed/non-JSON input, deterministic results and input/result isolation.
+- Built the wheel with local setuptools/wheel and `PIP_NO_INDEX=1`; installed it into a separate temporary target with `--no-index --no-deps`.
+- Under Python isolated mode (`-I`), explicitly imported from that installed target, asserted the module path/version, and ran the same 45 tests successfully against the installed implementation.
+- Ran the installed `starhelp_planner.demo` entry point, parsed its JSON and checked version `0.2.0`, status `plans_available`, and two current synthetic plans. This does not validate real sources, actual item IDs, human-approved content, B loading, or live accounts.
 
-The sample remains synthetic. No real source adapter, real public bundle, real IDs, user-approved variant, live account, cross-thread binary, or complete MVP behavior has been validated. M5/M6 and B black-box integration remain outstanding.
+`tests/test_stdlib.py` wraps the original plain scenario functions. The other three unittest modules cover the new behavior. Semantic tests explicitly republish modified **synthetic** objects; integrity tests call the raw API without refreshing damaged hashes/dependencies. `refresh_fixture_members` refuses non-fixture releases and never changes approval flags. No pytest/Ruff installation or claimed lint run was needed for the standard-library suite.
 
-## Build and desktop consumption
+## Local execution
 
-No runtime dependencies are required. During development, add `packages/starhelp-planner/src` to the desktop process's import path or install the checked-in wheel. Package metadata is in `packages/starhelp-planner/pyproject.toml`; rebuild command from the package directory: `python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist`. The desktop caller should pin a version, validate its own snapshot authorization generation, pass full materialized objects, and retain the result only after explicit user save.
+From `packages/starhelp-planner/`:
 
-## M0 items to resolve
+```powershell
+$env:PYTHONPATH = 'src;tests'
+python -m unittest discover -s tests -p 'test_*.py' -v
+python -m starhelp_planner.demo
+```
 
-1. Confirm source permissions, actual fields, coverage/freshness statuses, and stable public identity mapping for characters, modes, cycles and stages.
-2. Freeze template approval/publication representation, complete team/partition rules, reference identities, and status behavior for revocation/withdrawal.
-3. Freeze the finite condition predicate list, units, subject paths, measurement phase/buff assumptions, hard/soft requirements, field freshness/conflict semantics and evidence statuses.
-4. Freeze local item identity states, locked-item semantics, stage-wide character/equipment reuse rules, and when incomplete inventory can support a current plan.
-5. Freeze applicable cost-rule schemas and whether/materials coverage is sufficient to compute gross cost or net shortage.
-6. Freeze manifest member canonicalization/hash/signature verification owner, required schemas/capabilities, and error/result enums with B and A.
-7. Validate this adapter against the agreed shared fixture and a versioned package from A/B before claiming black-box integration.
+Sample constructor: `starhelp_planner.demo_data.synthetic_request()`. All `fixture:` IDs/values and approval statuses are fictional. The source-level dependency guard checks for prohibited network/GUI/storage/game-input imports; the actual API remains in-memory. Build with `python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist` and transfer/pin the resulting version and digest through the agreed handoff process.
+
+## M0 and external dependencies
+
+On 2026-10-16 the user confirmed that no versioned local artifacts exist for the common contract, A's public package or B's snapshot specification. This component therefore records a concrete proposal and cannot claim M0, M5/M6 or B black-box integration has passed.
+
+Required inputs/evidence:
+
+1. An agreed M0 contract/version and shared fixture, including accepted predicate/attribute registry, units/context, field-state/freshness/completeness and error semantics.
+2. A versioned published A bundle with verified source permissions, real mode/cycle/stage/entity mappings, complete reviewed/published variants, evidence, dependencies, cost tables and revocation metadata.
+3. A versioned B snapshot specification/artifact for ownership, field provenance/context/time, instance identity, locks/material coverage, and any confirmed final-loadout views.
+4. Agreed manifest canonicalization/authenticity/verification ownership and supported capability negotiation.
+5. Three-mode real fixed samples, release-current coverage, actual B component loading, and black-box acceptance evidence.
+
+No other feature branch was merged, rebased or cherry-picked; no shared contract, root configuration, other component or main change is part of this handoff. The Goal remains incomplete while these integration requirements are unmet.

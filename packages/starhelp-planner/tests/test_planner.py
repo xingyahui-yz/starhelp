@@ -3,7 +3,14 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from starhelp_planner import analyze
+from starhelp_planner import analyze as analyze_raw
+from starhelp_planner.validation import refresh_fixture_members
+
+
+def analyze(request):
+    # Semantic cases explicitly republish their synthetic objects. Integrity cases use analyze_raw.
+    refresh_fixture_members(request["public_bundle"])
+    return analyze_raw(request)
 from starhelp_planner.demo_data import fresh_synthetic_request
 
 
@@ -17,10 +24,13 @@ def test_complete_reviewed_variant_returns_current_plan_and_citations() -> None:
     assert main["evidence_refs"] == [{"id": "fixture:evidence:1", "revision": 1}]
     assert result["citations"][0]["id"] == "fixture:evidence:1"
     assert main["ranking"]["meaning"] == "仅用于适配顺序，不是通关概率"
+    assert [step["order"] for step in main["strategy"]["steps"]] == [1, 2]
+    assert all(main["strategy"][key] for key in ("mechanics", "failure_conditions", "risks"))
 
 
 def test_rearrangement_plan_reports_actual_moves_and_respects_allow_flag() -> None:
     request = fresh_synthetic_request()
+    use_level_condition(request)
     request["account_snapshot"]["equipment_instances"][0]["equipped_by"] = "fixture:char:b"
     result = analyze(request)
 
@@ -37,6 +47,7 @@ def test_rearrangement_plan_reports_actual_moves_and_respects_allow_flag() -> No
 
 def test_allocator_uses_a_consistent_minimum_move_mapping_for_multiple_slots() -> None:
     request = fresh_synthetic_request()
+    use_level_condition(request)
     request["public_bundle"]["stages"][0]["partitions"][1]["slots"].append({"slot_id": "fixture:lower:2"})
     request["public_bundle"]["variants"][0]["teams"]["fixture:lower"].append({
         "slot_id": "fixture:lower:2", "character_id": "fixture:char:c",
@@ -96,7 +107,7 @@ def test_condition_comparison_does_not_treat_boolean_as_numeric() -> None:
     result = analyze(request)
 
     rejected = {entry["variant_id"]: entry for entry in result["rejected_variants"]}
-    assert rejected["fixture:variant:main"]["code"] == "hard_condition_failed"
+    assert rejected["fixture:variant:main"]["code"] == "invalid_variant"
 
 
 def test_unknown_ownership_only_enters_pending_candidate() -> None:
@@ -190,6 +201,10 @@ def test_variant_without_evidence_is_not_executable() -> None:
     request["public_bundle"]["variants"][0]["teams"]["fixture:upper"][0]["evidence_refs"] = []
     request["public_bundle"]["variants"][0]["conditions"][0]["evidence_refs"] = []
     request["public_bundle"]["variants"][0]["cultivation_requirements"][0]["evidence_refs"] = []
+    request["public_bundle"]["variants"][0]["cultivation_requirements"][0]["cost_rule"]["evidence_refs"] = []
+    for key in ("steps", "mechanics", "failure_conditions", "risks"):
+        for item in request["public_bundle"]["variants"][0][key]:
+            item["evidence_refs"] = []
 
     result = analyze(request)
 
@@ -200,20 +215,24 @@ def test_variant_without_evidence_is_not_executable() -> None:
 def test_material_cost_requires_complete_material_coverage() -> None:
     request = fresh_synthetic_request()
     result = analyze(request)
-    step = result["current_equipment_plans"][0]["cultivation"][0]
+    plan = next(p for p in result["current_equipment_plans"] if p["variant"]["id"] == "fixture:variant:main")
+    step = plan["cultivation"][0]
     assert step["gap"] == 5
     assert step["cost"]["status"] == "calculated"
-    assert step["cost"]["materials"][0]["net_shortage"] == 0
+    assert plan["cultivation_cost"]["materials"][0]["net_shortage"] == 5
 
     request["account_snapshot"]["coverage"]["materials"] = "partial"
     result = analyze(request)
-    step = result["current_equipment_plans"][0]["cultivation"][0]
-    assert step["cost"]["status"] == "not_calculated"
+    plan = next(p for p in result["current_equipment_plans"] if p["variant"]["id"] == "fixture:variant:main")
+    step = plan["cultivation"][0]
+    assert step["cost"]["status"] == "calculated"
+    assert plan["cultivation_cost"]["net_status"] == "not_calculated"
+    assert plan["cultivation_cost"]["materials"][0]["net_shortage"] is None
 
 
 def test_supported_reviewed_feedback_rule_only_suggests_complete_published_variant() -> None:
     request = fresh_synthetic_request()
-    request["feedback"] = {"fields": {"fixture:failure_kind": {"value": "fixture:survival", "state": "user_reported"}}}
+    request["feedback"] = {"fields": {"fixture:failure_kind": {"value": "fixture:survival", "state": "user_reported", "unit": "fixture:label", "measurement_context": {"phase": "fixture:reported", "assumptions": []}}}}
 
     result = analyze(request)
 
@@ -223,7 +242,7 @@ def test_supported_reviewed_feedback_rule_only_suggests_complete_published_varia
 
 def test_troubleshooting_rule_cannot_cross_cycle_or_stage() -> None:
     request = fresh_synthetic_request()
-    request["feedback"] = {"fields": {"fixture:failure_kind": {"value": "fixture:survival", "state": "user_reported"}}}
+    request["feedback"] = {"fields": {"fixture:failure_kind": {"value": "fixture:survival", "state": "user_reported", "unit": "fixture:label", "measurement_context": {"phase": "fixture:reported", "assumptions": []}}}}
     request["public_bundle"]["troubleshooting"][0]["scope"]["cycle_id"] = "fixture:cycle:other"
 
     result = analyze(request)
@@ -248,6 +267,8 @@ def test_no_reviewed_template_returns_public_material_and_stage_citation() -> No
     request = fresh_synthetic_request()
     request["public_bundle"]["templates"] = []
     request["public_bundle"]["variants"] = []
+    request["public_bundle"]["troubleshooting"] = []
+    refresh_fixture_members(request["public_bundle"], rebuild=True)
 
     result = analyze(request)
 
@@ -273,7 +294,7 @@ def test_withdrawn_evidence_disables_variant() -> None:
 
     result = analyze(request)
 
-    assert result["status"] == "no_feasible_variant"
+    assert result["error"]["code"] == "withdrawn_public_object"
     assert all(not plans for plans in (result["current_equipment_plans"], result["rearrangement_plans"]))
 
 
@@ -314,3 +335,8 @@ def test_planner_package_has_no_network_gui_storage_or_game_input_dependencies()
                 violations.append(node.func.id)
 
     assert not violations, f"planner source includes forbidden I/O dependencies: {violations}"
+
+
+def use_level_condition(request):
+    condition=request["public_bundle"]["variants"][0]["conditions"][0]
+    condition.update(attribute="fixture:level", unit="level", value=10, measurement_context={"phase":"progression", "assumptions":[]})

@@ -4,15 +4,15 @@
 
 ## Contract status
 
-The shared `mvp-v0.1` document is an engineering draft. This package currently implements a documented adapter profile for that draft, not a frozen cross-thread API. Stable JSON keys used by this profile are described in `docs/handoffs/local-planner.md`; source identifiers, actual game IDs, condition vocabularies/units, package hash canonicalization, and transport/error enums remain M0 decisions. Fixtures are synthetic and are not approved game data.
+The shared `mvp-v0.1` document remains an engineering draft. Package 0.2.0 implements the explicit `starhelp.local.v0.2` adapter proposal, described in [docs/local-profile-v0.2.md](docs/local-profile-v0.2.md). It is incompatible with the old local 0.1.0 profile and is not a frozen cross-thread API. Fixtures are synthetic and are not approved game data. M0 and real A/B integration remain outstanding.
 
-The caller (desktop/package loader) is responsible for package authenticity and content-hash verification. The planner independently checks bundle release consistency, object references, required capabilities it understands, stage applicability, and that embedded objects are internally complete. A truthy `verified` flag is never treated as proof of integrity.
+The caller owns package authenticity and whole-package verification. The planner checks member digests under its explicit local canonicalization proposal, typed references/dependencies, releases, capabilities, scope/goal, and complete variants. Conditions check units/context and final equipment mappings. Version-bound progression tables supply gross costs; complete confirmed material counts additionally permit one aggregate inventory deduction. A truthy `verified` flag is never proof of integrity.
 
 ## Local development
 
 ```powershell
 $env:PYTHONPATH = 'src;tests'
-python -m unittest discover -s tests -p 'test_stdlib.py' -v
+python -m unittest discover -s tests -p 'test_*.py' -v
 python -m starhelp_planner.demo
 ```
 

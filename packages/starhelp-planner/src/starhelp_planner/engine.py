@@ -2,32 +2,30 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-PLANNER_VERSION = "0.1.0"
+from .conditions import UnsupportedSemantics, evaluate_conditions, validate_condition
+from .cultivation import cultivation
+from .validation import disabled_objects, objects, validate_bundle, validate_json_request
+
+PLANNER_VERSION = "0.2.0"
+ADAPTER_PROFILE = "starhelp.local.v0.2"
 _CONTRACT = "0.1-draft"
-_SUPPORTED_CAPABILITIES = {
-    "starhelp.complete-variant.v1",
-    "starhelp.conditions.v1",
-    "starhelp.cultivation.v1",
-    "starhelp.troubleshooting.v1",
-    "fixture:complete-variant:v1",
-    "fixture:conditions:v1",
-    "fixture:cultivation:v1",
-    "fixture:troubleshooting:v1",
-}
+_SUPPORTED_CAPABILITIES = {"starhelp.local-profile.v0.2"}
 _OPERATORS = {"eq", "neq", "gt", "gte", "lt", "lte", "in", "contains"}
 
 
 def analyze_request(request: Mapping[str, Any]) -> dict[str, Any]:
     """Return a JSON-compatible result for one already-materialized request."""
     try:
-        return _analyze(request)
+        validate_json_request(request)
+        return _analyze(deepcopy(request))
     except _InputError as exc:
         return _error_result(request, exc.code, str(exc), exc.details)
-    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+    except (KeyError, TypeError, ValueError, OverflowError, AttributeError) as exc:
         return _error_result(request, "invalid_payload", f"Invalid planner input: {exc}")
 
 
@@ -66,6 +64,13 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
     if "allow_rearrangement" in task and not isinstance(task.get("allow_rearrangement"), bool):
         raise _InputError("invalid_payload", "task.allow_rearrangement must be boolean")
 
+    if request.get("adapter_profile") != ADAPTER_PROFILE or bundle.get("adapter_profile") != ADAPTER_PROFILE:
+        raise _InputError("unsupported_profile", "request and bundle must select the supported local adapter profile")
+    if request.get("local_rule_version") not in {None, PLANNER_VERSION}:
+        raise _InputError("unsupported_rule_version", "requested local rule version is unavailable")
+    capabilities = request.get("required_capabilities", [])
+    if not isinstance(capabilities, list) or any(type(capability) is not str or capability not in _SUPPORTED_CAPABILITIES for capability in capabilities):
+        raise _InputError("unsupported_capability", "request needs unsupported planner capabilities")
     issues = _validate_bundle(bundle)
     if issues:
         raise _InputError("invalid_public_bundle", "public bundle is incomplete or incompatible", {"issues": issues})
@@ -79,12 +84,20 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
     stage_scope = _stage_scope(stage)
     scope_mismatch = _scope_mismatch(task_scope, stage_scope)
     scope_mismatch.extend(
-        key for key in ("game_version", "environment", "mode_id", "cycle_id", "stage_id")
+        key for key in ("game_version", "environment", "mode_id", "cycle_id", "stage_id", "stage_revision")
         if task_scope.get(key) is None or stage_scope.get(key) is None
     )
     if scope_mismatch:
         raise _InputError("scope_mismatch", "selected task does not match the bundled stage", {"fields": scope_mismatch})
-    withdrawn = _withdrawn_refs(request)
+    reported_withdrawn = _withdrawn_refs(request)
+    incompatible = {
+        key for key, obj in objects(bundle).items()
+        if _scope_mismatch(task_scope, _mapping(obj.get("scope")))
+        or any(obj.get(field) is not None and obj[field] != task_scope.get(field) for field in ("game_version", "environment"))
+    }
+    disabled = disabled_objects(bundle, reported_withdrawn, incompatible)
+    if ("stage", stage["stage_id"], stage["revision"]) in disabled:
+        raise _InputError("withdrawn_public_object", "selected stage or its dependencies are unavailable")
 
     evidence = _objects_by_id(bundle.get("evidence"), "id")
     entities = _objects_by_id(bundle.get("entities"), "id")
@@ -101,7 +114,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
     evaluated: list[dict[str, Any]] = []
     pending: list[dict[str, Any]] = []
     rejection_reasons: list[dict[str, Any]] = []
-    matching_templates = [t for t in templates if _template_applies(t, stage, task_scope) and not _is_withdrawn(t, withdrawn, "template")]
+    matching_templates = [t for t in templates if _template_applies(t, stage, task_scope) and task["public_goal"] in t.get("public_goals", []) and not _is_unavailable(t, disabled, "template")]
     matching_ids = {str(t.get("id")) for t in matching_templates}
 
     for variant in variants:
@@ -109,11 +122,11 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         if template_id not in matching_ids or not _reviewed_and_published(variant):
             continue
         variant_id = str(variant.get("id", ""))
-        if _is_withdrawn(variant, withdrawn, "variant"):
-            rejection_reasons.append(_rejection(variant_id, "withdrawn_evidence", "variant or its evidence is withdrawn"))
+        if _is_unavailable(variant, disabled, "variant"):
+            rejection_reasons.append(_rejection(variant_id, "unavailable_public_dependency", "variant or its dependency is unavailable or outside the selected scope"))
             continue
         template = next(t for t in matching_templates if str(t.get("id")) == template_id)
-        variant_issues = _validate_variant(variant, stage, entities, evidence)
+        variant_issues = _validate_variant(variant, stage, entities, evidence, manifest.get("attribute_definitions", {}))
         declared_variants = _string_list(template.get("variant_ids"))
         if declared_variants and variant_id not in declared_variants:
             variant_issues.append("template does not declare this complete variant")
@@ -126,70 +139,21 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         if role_state["rejected"]:
             rejection_reasons.append(_rejection(variant_id, "hard_constraint_conflict", "roster or fixed/excluded character constraints conflict", role_state["reasons"]))
             continue
-        condition_results = _evaluate_conditions(
-            _conditions_for(variant), slots, snapshot_characters, task, request.get("feedback")
+        accepted_items, pending_items, rejected_items = _variant_candidates(
+            template, variant, slots, snapshot, task, stage, evidence,
+            manifest.get("attribute_definitions", {}), role_state["pending"], locked_instances,
+            request.get("evaluation_time"),
         )
-        hard_failed = [c for c in condition_results if c["requirement"] == "hard" and c["match_status"] == "not_satisfied"]
-        if hard_failed:
-            rejection_reasons.append(_rejection(variant_id, "hard_condition_failed", "a hard template condition is not satisfied", hard_failed))
-            continue
-        hard_unknown = [c for c in condition_results if c["requirement"] == "hard" and c["match_status"] == "unknown"]
-        role_unknown = role_state["pending"]
-        equip_sets = _equipment_options(slots, equipment, locked_instances, stage, bool(task.get("allow_rearrangement", False)))
-        if not equip_sets["current"] and not equip_sets["rearranged"]:
-            inventory_incomplete = _mapping(snapshot.get("coverage")).get("inventory") != "complete"
-            if inventory_incomplete or equip_sets.get("search_limited"):
-                pending.append(_public_candidate({
-                    "template": _template_summary(template),
-                    "variant": _variant_summary(variant), "team": slots,
-                    "condition_results": condition_results, "hard_unknown": hard_unknown,
-                    "role_unknown": role_unknown,
-                    "current_equipment": None, "rearranged_equipment": None,
-                    "cultivation": _cultivation(variant, snapshot, slots),
-                    "strategy": {
-                        "steps": _mapping_list(variant.get("steps")),
-                        "mechanics": _mapping_list(variant.get("mechanics")),
-                        "failure_conditions": _mapping_list(variant.get("failure_conditions")),
-                        "risks": _mapping_list(variant.get("risks")),
-                    },
-                    "evidence_refs": _collect_evidence_refs(template, variant, condition_results, evidence),
-                    "sort": _rank_key(condition_results, equip_sets),
-                    "equipment_unknown": True,
-                    "equipment_unknown_reason": "allocation_search_incomplete" if equip_sets.get("search_limited") else "inventory_coverage_incomplete",
-                }))
-                continue
-            rejection_reasons.append(_rejection(variant_id, "equipment_conflict", "no legal equipment assignment satisfies the complete variant", equip_sets["reasons"]))
-            continue
-        item = {
-            "template": _template_summary(template),
-            "variant": _variant_summary(variant),
-            "team": slots,
-            "condition_results": condition_results,
-            "hard_unknown": hard_unknown,
-            "role_unknown": role_unknown,
-            "current_equipment": equip_sets["current"],
-            "rearranged_equipment": equip_sets["rearranged"],
-            "cultivation": _cultivation(variant, snapshot, slots),
-            "strategy": {
-                "steps": _mapping_list(variant.get("steps")),
-                "mechanics": _mapping_list(variant.get("mechanics")),
-                "failure_conditions": _mapping_list(variant.get("failure_conditions")),
-                "risks": _mapping_list(variant.get("risks")),
-            },
-            "evidence_refs": _collect_evidence_refs(template, variant, condition_results, evidence),
-            "sort": _rank_key(condition_results, equip_sets),
-        }
-        if hard_unknown or role_unknown:
-            pending.append(_public_candidate(item))
-        else:
-            evaluated.append(item)
+        evaluated.extend(accepted_items)
+        pending.extend(pending_items)
+        rejection_reasons.extend(rejected_items)
 
     evaluated.sort(key=lambda x: x["sort"])
     pending.sort(key=lambda x: x["sort"])
-    current_plans = [_as_plan(item, "current", release_id) for item in evaluated if item["current_equipment"]]
-    rearrangement_plans = [_as_plan(item, "rearrangement", release_id) for item in evaluated if item["rearranged_equipment"] and item["rearranged_equipment"]["actions"]]
+    current_plans = [_as_plan(item, "current", release_id) for item in evaluated if item["candidate_plan_kind"] == "current"]
+    rearrangement_plans = [_as_plan(item, "rearrangement", release_id) for item in evaluated if item["candidate_plan_kind"] == "rearrangement"]
     pending_candidates = [_as_plan(item, "pending_confirmation", release_id) for item in pending]
-    troubleshooting = _troubleshooting(request.get("feedback"), bundle, variants, snapshot_characters, task, task_scope, withdrawn)
+    troubleshooting = _troubleshooting(request.get("feedback"), bundle, variants, snapshot, task, task_scope, disabled, manifest.get("attribute_definitions", {}), request.get("evaluation_time"), [*current_plans, *rearrangement_plans, *pending_candidates])
     if current_plans or rearrangement_plans:
         status = "plans_available"
     elif pending_candidates:
@@ -206,6 +170,8 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         "schema_id": "AnalysisResult",
         "schema_version": _CONTRACT,
         "planner_version": PLANNER_VERSION,
+        "adapter_profile": ADAPTER_PROFILE,
+        "supported_capabilities": sorted(_SUPPORTED_CAPABILITIES),
         "request_id": request.get("request_id"),
         "profile_id": snapshot.get("profile_id"),
         "snapshot_id": snapshot.get("snapshot_id"),
@@ -222,7 +188,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         "public_material": {
             key: stage.get(key) for key in ("title", "enemy_refs", "mechanics", "objectives", "evidence_refs") if stage.get(key) is not None
         },
-        "local_rule_version": request.get("local_rule_version", PLANNER_VERSION),
+        "local_rule_version": PLANNER_VERSION,
         "status": status,
         "current_equipment_plans": current_plans,
         "rearrangement_plans": rearrangement_plans,
@@ -233,96 +199,135 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         "validity": {
             "checked_at": _mapping(request.get("latest_known_validity")).get("checked_at"),
             "online_confirmation_available": _mapping(request.get("latest_known_validity")).get("online_confirmation_available"),
-            "withdrawn_public_refs": sorted(withdrawn),
+            "withdrawn_public_refs": sorted(reported_withdrawn),
+            "unavailable_public_objects": [{"kind": kind, "id": identifier, "revision": revision} for kind, identifier, revision in sorted(disabled)],
         },
         "degradation": {
             "reasons": _degradation_reasons(status, matching_templates, rejection_reasons, pending_candidates),
             "coverage_gaps": _mapping_list(stage.get("coverage_gaps")),
         },
-        "citations": _citation_catalog(bundle, _dedupe_refs([*_all_result_refs(current_plans, rearrangement_plans, pending_candidates, [troubleshooting]), *_mapping_list(stage.get("evidence_refs"))])),
-        "limitations": ["匹配和排序不代表通关概率。", "此实现使用 mvp-v0.1 工程初稿的适配配置，等待 M0 冻结。"],
+        "citations": _citation_catalog(bundle, _dedupe_refs([*_all_result_refs(current_plans, rearrangement_plans, pending_candidates, rejection_reasons, [troubleshooting]), *_mapping_list(stage.get("evidence_refs"))])),
+        "limitations": ["匹配和排序不代表通关概率。", "此实现使用本地 v0.2 适配提案，M0 共同契约尚未冻结。"],
     }
+
+
+def _variant_candidates(template: Mapping[str, Any], variant: Mapping[str, Any], slots: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any], task: Mapping[str, Any], stage: Mapping[str, Any], evidence: Mapping[str, Any], definitions: Mapping[str, Any], role_unknown: list[Any], locked: set[str], evaluation_time: str | None) -> tuple[list[Any], list[Any], list[Any]]:
+    options = _equipment_options(slots, snapshot.get("equipment_instances", []), locked, stage, task.get("allow_rearrangement", False))
+    candidates: list[tuple[str, Any]] = []
+    if options["current"]:
+        candidates.append(("current", options["current"]))
+    candidates.extend(("rearrangement", option) for option in options.get("rearrangement_candidates", []) if option.get("actions"))
+    equipment_unknown_reason = None
+    if not candidates:
+        if snapshot.get("coverage", {}).get("inventory") != "complete" or options.get("search_limited"):
+            equipment_unknown_reason = "allocation_search_incomplete" if options.get("search_limited") else "inventory_coverage_incomplete"
+            candidates.append(("current", None))
+        else:
+            return [], [], [_rejection(str(variant["id"]), "equipment_conflict", "no legal equipment assignment", options["reasons"])]
+    accepted: dict[str, list[Any]] = defaultdict(list)
+    pending: dict[str, list[Any]] = defaultdict(list)
+    failed: dict[str, list[Any]] = defaultdict(list)
+    for category, allocation in candidates:
+        conditions = evaluate_conditions(
+            variant.get("conditions", []), slots, snapshot, task, definitions,
+            allocation=allocation, evaluation_time=evaluation_time,
+        )
+        hard_failed = [c for c in conditions if c["requirement"] == "hard" and c["match_status"] == "not_satisfied"]
+        hard_unknown = [c for c in conditions if c["requirement"] == "hard" and c["match_status"] == "unknown"]
+        steps, total_cost = cultivation(variant, snapshot, slots, task, definitions, allocation, evaluation_time)
+        item = {
+            "template": _template_summary(template), "variant": _variant_summary(variant), "team": slots,
+            "candidate_plan_kind": category, "candidate_equipment": allocation,
+            "current_equipment": allocation if category == "current" else None,
+            "rearranged_equipment": allocation if category == "rearrangement" else None,
+            "condition_results": conditions, "hard_unknown": hard_unknown, "role_unknown": role_unknown,
+            "cultivation": steps, "cultivation_cost": total_cost,
+            "strategy": {key: _mapping_list(variant.get(key)) for key in ("steps", "mechanics", "failure_conditions", "risks")},
+            "evidence_refs": _collect_evidence_refs(template, variant, conditions, evidence),
+            "sort": (*_rank_key(conditions, {"rearranged": allocation}), str(variant["id"]), tuple(str(a["local_instance_id"]) for a in (allocation or {}).get("assignments", []))),
+            "equipment_unknown": equipment_unknown_reason is not None,
+            "equipment_unknown_reason": equipment_unknown_reason,
+        }
+        if hard_failed and not equipment_unknown_reason:
+            failed[category].append(item)
+        elif role_unknown or hard_unknown or equipment_unknown_reason:
+            pending[category].append(_public_candidate(item))
+        else:
+            accepted[category].append(item)
+    selected: list[Any] = []
+    waiting: list[Any] = []
+    rejections: list[Any] = []
+    for category in ("current", "rearrangement"):
+        if accepted[category]:
+            selected.append(min(accepted[category], key=lambda item: item["sort"]))
+        elif pending[category]:
+            waiting.append(min(pending[category], key=lambda item: item["sort"]))
+        elif failed[category]:
+            item = min(failed[category], key=lambda item: item["sort"])
+            if category == "rearrangement" and item["candidate_equipment"].get("search_truncated"):
+                unknown_conditions = [{**condition, "match_status": "unknown", "reason_code": "allocation_search_incomplete", "observed": None, "local_field_refs": [], "field_basis": {}} for condition in item["condition_results"]]
+                waiting.append(_public_candidate({
+                    **item, "candidate_equipment": None, "condition_results": unknown_conditions,
+                    "hard_unknown": [], "equipment_unknown": True, "equipment_unknown_reason": "allocation_search_incomplete",
+                    "cultivation": [], "cultivation_cost": {"status": "not_calculated", "net_status": "not_calculated", "reason": "allocation_search_incomplete", "materials": []},
+                }))
+                continue
+            rejections.append({
+                **_rejection(str(variant["id"]), "hard_condition_failed", "hard condition is not satisfied", item["condition_results"]),
+                "plan_kind": category, "cultivation": item["cultivation"], "cultivation_cost": item["cultivation_cost"], "evidence_refs": item["evidence_refs"],
+            })
+    return selected, waiting, rejections
 
 
 def _validate_bundle(bundle: Mapping[str, Any]) -> list[dict[str, str]]:
-    problems: list[dict[str, str]] = []
-    if bundle.get("schema_id") != "PublicBundle" or bundle.get("contract_version") != _CONTRACT:
-        problems.append({"code": "unsupported_schema", "message": "schema_id must be PublicBundle"})
-    manifest = _mapping(bundle.get("manifest"))
-    if not manifest.get("index_release_id"):
+    problems = validate_bundle(bundle, _SUPPORTED_CAPABILITIES, _CONTRACT)
+    if bundle.get("schema_id") != "PublicBundle" or bundle.get("contract_version") != _CONTRACT or bundle.get("schema_version") != _CONTRACT:
+        problems.append({"code": "unsupported_schema", "message": "unsupported public bundle schema"})
+    manifest = bundle["manifest"]
+    if not isinstance(manifest.get("index_release_id"), str) or not manifest["index_release_id"]:
         problems.append({"code": "missing_release", "message": "manifest.index_release_id is required"})
-    required = _string_list(manifest.get("required_capabilities"))
-    unknown = sorted(set(required) - _SUPPORTED_CAPABILITIES)
-    if unknown:
-        problems.append({"code": "unsupported_capability", "message": ", ".join(unknown)})
-    schemas = _mapping(manifest.get("object_schemas"))
-    for kind in ("stage", "entity", "template", "variant", "evidence", "troubleshooting"):
-        if kind not in schemas:
-            problems.append({"code": "unsupported_schema", "message": f"missing schema declaration for {kind}"})
-        elif schemas[kind] != _CONTRACT:
-            problems.append({"code": "unsupported_schema", "message": f"unsupported {kind} schema {schemas[kind]}"})
-    members = _mapping_list(manifest.get("members"))
-    member_keys = {
-        (str(m.get("kind", "")), str(m.get("id", "")), str(m.get("revision", "")))
-        for m in members
-    }
-    if len(member_keys) != len(members):
-        problems.append({"code": "invalid_payload", "message": "manifest has duplicate member identity"})
-    for plural, kind, id_key in (
-        ("entities", "entity", "id"), ("stages", "stage", "stage_id"),
-        ("templates", "template", "id"), ("variants", "variant", "id"),
-        ("evidence", "evidence", "id"), ("troubleshooting", "troubleshooting", "id"),
-    ):
-        objects = _mapping_list(bundle.get(plural))
-        identities = [(str(obj.get(id_key, "")), str(obj.get("revision", ""))) for obj in objects]
-        if len(identities) != len(set(identities)):
-            problems.append({"code": "invalid_payload", "message": f"{plural} has duplicate stable identity"})
-        for obj in objects:
-            revision = obj.get("revision")
-            key = (kind, str(obj.get(id_key, "")), str(revision if revision is not None else ""))
-            if not key[1] or not key[2]:
-                problems.append({"code": "invalid_payload", "message": f"{plural} object lacks stable id or revision"})
-            elif key not in member_keys:
-                problems.append({"code": "missing_member", "message": f"manifest does not list {kind} {key[1]}@{key[2]}"})
-    available_refs = {
-        (str(obj.get("id", obj.get("stage_id", ""))), str(obj.get("revision", "")))
-        for plural in ("entities", "stages", "templates", "variants", "evidence", "troubleshooting")
-        for obj in _mapping_list(bundle.get(plural))
-    }
-    for plural in ("stages", "templates", "variants", "evidence", "troubleshooting"):
-        for obj in _mapping_list(bundle.get(plural)):
-            problems.extend(_reference_issues(obj, available_refs, str(obj.get("id", obj.get("stage_id", "")))))
-    for member in members:
-        if not member.get("content_hash"):
-            problems.append({"code": "integrity_failed", "message": f"manifest member {member.get('id')} lacks content_hash"})
-    for item in _mapping_list(bundle.get("evidence")):
-        state = item.get("status", item.get("state", "unknown"))
-        if state in {"withdrawn", "disabled", "rejected", "expired"} or item.get("enabled") is False:
-            problems.append({"code": "withdrawn_evidence", "message": f"evidence {item.get('id')} is not currently usable"})
-    if bundle.get("schema_version") != _CONTRACT:
-        problems.append({"code": "unsupported_schema", "message": "unsupported PublicBundle schema_version"})
+    schemas = manifest.get("object_schemas", {})
+    if not isinstance(schemas, dict) or any(schemas.get(kind) != _CONTRACT for kind in ("stage", "entity", "template", "variant", "evidence", "troubleshooting")):
+        problems.append({"code": "unsupported_schema", "message": "unsupported object schema declarations"})
+    for stage in bundle["stages"]:
+        scope = _mapping(stage.get("scope"))
+        if scope.get("stage_id") != stage.get("stage_id") or scope.get("stage_revision") != stage.get("revision"):
+            problems.append({"code": "scope_mismatch", "message": "stage scope contradicts its object identity"})
+        partitions = stage["partitions"]
+        ids = [part.get("partition_id") for part in partitions]
+        seats = [slot.get("slot_id") for part in partitions for slot in part["slots"]]
+        if not partitions or any(type(value) is not str or not value for value in ids + seats) or len(ids) != len(set(ids)) or len(seats) != len(set(seats)) or any(not part["slots"] for part in partitions):
+            problems.append({"code": "invalid_payload", "message": "stage requires unique nonempty partitions and seats"})
     return problems
 
 
 def _validate_snapshot(snapshot: Mapping[str, Any]) -> list[str]:
     problems: list[str] = []
     characters = _mapping_list(snapshot.get("characters"))
-    character_ids = [str(item.get("entity_id", "")) for item in characters]
-    if any(not value for value in character_ids) or len(character_ids) != len(set(character_ids)):
+    character_ids = [item.get("entity_id") for item in characters]
+    if any(type(value) is not str or not value for value in character_ids) or len(character_ids) != len(set(character_ids)):
         problems.append("character entity identities are missing or duplicated")
     if any(item.get("ownership", "unknown") not in {"owned", "not_owned", "unknown"} for item in characters):
         problems.append("character ownership uses an unsupported state")
     equipment = _mapping_list(snapshot.get("equipment_instances"))
-    equipment_ids = [str(item.get("local_instance_id", "")) for item in equipment]
-    if any(not value for value in equipment_ids) or len(equipment_ids) != len(set(equipment_ids)):
+    equipment_ids = [item.get("local_instance_id") for item in equipment]
+    if any(type(value) is not str or not value for value in equipment_ids) or len(equipment_ids) != len(set(equipment_ids)):
         problems.append("local equipment instance identities are missing or duplicated")
     allowed_identity = {"player_confirmed", "source_verified", "ambiguous", "unconfirmed", "unknown"}
     if any(item.get("identity_state", "unknown") not in allowed_identity for item in equipment):
         problems.append("equipment identity state is unsupported")
+    materials = snapshot.get("materials", [])
+    ids = [item.get("material_id") for item in materials]
+    if any(type(value) is not str or not value for value in ids) or len(ids) != len(set(ids)):
+        problems.append("material identities are missing or duplicated")
+    for item in [*characters, *equipment, *snapshot.get("loadout_views", [])]:
+        fields = item.get("fields", {})
+        if not isinstance(fields, dict) or any(not isinstance(field, dict) for field in fields.values()):
+            problems.append("snapshot fields must be materialized field objects")
     return problems
 
 
-def _validate_variant(variant: Mapping[str, Any], stage: Mapping[str, Any], entities: Mapping[str, Mapping[str, Any]], evidence: Mapping[str, Mapping[str, Any]]) -> list[str]:
+def _validate_variant(variant: Mapping[str, Any], stage: Mapping[str, Any], entities: Mapping[str, Mapping[str, Any]], evidence: Mapping[str, Mapping[str, Any]], definitions: Mapping[str, Any]) -> list[str]:
     problems: list[str] = []
     slots = _flatten_slots(variant)
     required_partitions = _partition_ids(stage)
@@ -359,11 +364,11 @@ def _validate_variant(variant: Mapping[str, Any], stage: Mapping[str, Any], enti
                 problems.append("variant or condition has an unresolved evidence reference")
     for condition in _mapping_list(variant.get("conditions")):
         subject = _mapping(condition.get("subject"))
-        if subject.get("kind") == "team_slot" and str(subject.get("slot_id", "")) not in seen_global_slot_ids:
+        if subject.get("kind") in {"team_slot", "equipment_slot"} and str(subject.get("slot_id", "")) not in seen_global_slot_ids:
             problems.append(f"condition {condition.get('condition_id')} references a missing team slot")
         if subject.get("kind") == "character" and str(subject.get("character_id", "")) not in {str(s.get("character_id", "")) for s in slots}:
             problems.append(f"condition {condition.get('condition_id')} references a character outside this variant")
-        if subject.get("kind") not in {"team_slot", "character"}:
+        if subject.get("kind") not in {"team_slot", "character", "equipment_slot"}:
             problems.append(f"public variant condition has unsupported subject {subject.get('kind')}")
         if condition.get("operator") not in _OPERATORS:
             problems.append(f"condition {condition.get('condition_id')} uses an unsupported operator")
@@ -373,6 +378,7 @@ def _validate_variant(variant: Mapping[str, Any], stage: Mapping[str, Any], enti
             problems.append(f"condition {condition.get('condition_id')} has an unsupported requirement level")
         if condition.get("evidence_status", "unknown") not in {"confirmed", "suggested", "unknown"}:
             problems.append(f"condition {condition.get('condition_id')} has an unsupported evidence status")
+        problems.extend(validate_condition(condition, definitions))
     if not _collect_declared_refs(variant):
         problems.append("complete variant has no cited evidence")
     resources = _mapping(stage.get("resource_reuse"))
@@ -410,8 +416,8 @@ def _scope_mismatch(expected: Mapping[str, Any], actual: Mapping[str, Any]) -> l
 
 def _stage_scope(stage: Mapping[str, Any]) -> dict[str, Any]:
     scope = dict(_mapping(stage.get("scope")))
-    scope.setdefault("stage_id", stage.get("stage_id"))
-    scope.setdefault("stage_revision", stage.get("revision"))
+    scope["stage_id"] = stage.get("stage_id")
+    scope["stage_revision"] = stage.get("revision")
     return scope
 
 
@@ -467,131 +473,13 @@ def _check_roster(slots: Sequence[Mapping[str, Any]], characters: Mapping[str, M
     return {"rejected": bool(reasons), "reasons": reasons, "pending": pending}
 
 
-def _conditions_for(variant: Mapping[str, Any]) -> list[dict[str, Any]]:
-    return [dict(c) for c in _mapping_list(variant.get("conditions"))]
-
-
-def _evaluate_conditions(conditions: Sequence[Mapping[str, Any]], slots: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], task: Mapping[str, Any], feedback: Any) -> list[dict[str, Any]]:
-    by_slot = {str(s.get("slot_id")): s for s in slots}
-    result: list[dict[str, Any]] = []
-    for condition in conditions:
-        operator = str(condition.get("operator", ""))
-        if operator not in _OPERATORS:
-            raise _InputError("unsupported_capability", f"unsupported condition operator: {operator}")
-        subject = _mapping(condition.get("subject"))
-        kind = subject.get("kind")
-        owner: Mapping[str, Any] | None = None
-        if kind == "team_slot":
-            slot = by_slot.get(str(subject.get("slot_id", "")))
-            owner = characters.get(str(slot.get("character_id", ""))) if slot else None
-        elif kind == "character":
-            owner = characters.get(str(subject.get("character_id", "")))
-        elif kind == "feedback":
-            owner = _mapping(feedback)
-        elif kind == "task":
-            owner = task
-        else:
-            raise _InputError("unsupported_capability", f"unsupported condition subject: {kind}")
-        field_state, actual, local_ref = _read_condition_value(owner, str(condition.get("attribute", "")))
-        status = "unknown"
-        reason = field_state
-        if field_state == "confirmed":
-            try:
-                matched = _compare(actual, condition.get("value"), operator)
-                status = "satisfied" if matched else "not_satisfied"
-                reason = "condition_met" if matched else "condition_not_met"
-            except (TypeError, ValueError):
-                reason = "incomparable_values"
-        requirement = "hard" if condition.get("requirement", "hard") == "hard" else "soft"
-        result.append({
-            "condition_id": condition.get("condition_id", condition.get("id")),
-            "requirement": requirement,
-            "evidence_status": condition.get("evidence_status", "unknown"),
-            "match_status": status,
-            "reason_code": reason,
-            "expected": {"operator": operator, "value": condition.get("value"), "unit": condition.get("unit"), "measurement_context": condition.get("measurement_context")},
-            "observed": actual if status != "unknown" else None,
-            "local_field_refs": [local_ref] if local_ref else [],
-            "evidence_refs": _mapping_list(condition.get("evidence_refs")),
-        })
-    return result
-
-
-def _read_condition_value(owner: Mapping[str, Any] | None, attribute: str) -> tuple[str, Any, str | None]:
-    if owner is None:
-        return "missing_field", None, None
-    fields = _mapping(owner.get("fields"))
-    raw = fields.get(attribute)
-    if raw is None:
-        raw = owner.get("attributes", {}).get(attribute) if isinstance(owner.get("attributes"), Mapping) else None
-        if raw is None:
-            return "missing_field", None, None
-        if isinstance(raw, Mapping) and raw.get("state") in {"confirmed", "player_confirmed", "source_verified"}:
-            if "value" not in raw or raw.get("value") is None:
-                return "missing_field", None, None
-            return "confirmed", raw.get("value"), f"snapshot.attributes.{attribute}"
-        return "unconfirmed_field", None, None
-    if not isinstance(raw, Mapping):
-        return "unconfirmed_field", None, None
-    state = raw.get("state", "unknown")
-    if state not in {"confirmed", "player_confirmed", "source_verified", "user_reported"}:
-        return ("stale_field" if state == "stale" else "conflicting_field" if state == "conflict" else "unconfirmed_field"), None, None
-    if "value" not in raw or raw.get("value") is None:
-        return "missing_field", None, None
-    local_id = raw.get("local_source_id")
-    return "confirmed", raw.get("value"), f"snapshot.fields.{attribute}" if not local_id else f"snapshot.fields.{attribute}@{local_id}"
-
-
-def _compare(actual: Any, expected: Any, operator: str) -> bool:
-    if operator == "eq":
-        return _values_equal(actual, expected)
-    if operator == "neq":
-        return not _values_equal(actual, expected)
-    if operator == "gt":
-        _require_numeric(actual, expected)
-        return actual > expected
-    if operator == "gte":
-        _require_numeric(actual, expected)
-        return actual >= expected
-    if operator == "lt":
-        _require_numeric(actual, expected)
-        return actual < expected
-    if operator == "lte":
-        _require_numeric(actual, expected)
-        return actual <= expected
-    if operator == "in":
-        if not isinstance(expected, Sequence) or isinstance(expected, (str, bytes)):
-            raise TypeError("in operator expects an array value")
-        return any(_values_equal(actual, option) for option in expected)
-    if operator == "contains":
-        if isinstance(actual, str) and isinstance(expected, str):
-            return expected in actual
-        if isinstance(actual, Sequence) and not isinstance(actual, (str, bytes)):
-            return any(_values_equal(expected, option) for option in actual)
-        raise TypeError("contains operator requires a string or array")
-    raise ValueError("unsupported operator")
-
-
-def _values_equal(actual: Any, expected: Any) -> bool:
-    if isinstance(actual, bool) or isinstance(expected, bool):
-        return isinstance(actual, bool) and isinstance(expected, bool) and actual is expected
-    if isinstance(actual, (int, float)) and isinstance(expected, (int, float)):
-        return actual == expected
-    return type(actual) is type(expected) and actual == expected
-
-
-def _require_numeric(actual: Any, expected: Any) -> None:
-    if isinstance(actual, bool) or isinstance(expected, bool) or not isinstance(actual, (int, float)) or not isinstance(expected, (int, float)):
-        raise TypeError("ordered comparison requires numeric values")
-
-
 def _equipment_options(slots: Sequence[Mapping[str, Any]], equipment: Sequence[Mapping[str, Any]], locked: set[str], stage: Mapping[str, Any], allow_rearrangement: bool) -> dict[str, Any]:
     requirements: list[tuple[Mapping[str, Any], Mapping[str, Any]]] = []
     for slot in slots:
         for requirement in _mapping_list(slot.get("equipment_requirements")):
             requirements.append((slot, requirement))
     if not requirements:
-        return {"current": {"assignments": [], "actions": []}, "rearranged": {"assignments": [], "actions": []}, "reasons": []}
+        return {"current": {"assignments": [], "actions": []}, "rearranged": None, "rearrangement_candidates": [], "reasons": []}
     current_by_owner: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
     for item in equipment:
         owner = item.get("equipped_by")
@@ -627,6 +515,7 @@ def _equipment_options(slots: Sequence[Mapping[str, Any]], equipment: Sequence[M
     return {
         "current": _assignment_result(current, requirements, equipment) if current else None,
         "rearranged": _assignment_result(rearranged, requirements, equipment) if rearranged else None,
+        "rearrangement_candidates": rearranged or [],
         "search_limited": search_limited,
         "reasons": reasons,
     }
@@ -737,60 +626,16 @@ def _first_assignment(requirements: Sequence[tuple[Mapping[str, Any], Mapping[st
         sum(action.get("from_character_id") != action.get("to_character_id") for action in item["actions"] if action.get("action") != "unequip"),
         tuple(str(entry["local_instance_id"]) for entry in item["assignments"]),
     ))
-    best = candidates[0]
-    best["search_truncated"] = truncated
-    return [best]
+    for candidate in candidates:
+        candidate["search_truncated"] = truncated
+    return candidates
 
 
 def _assignment_result(result: list[dict[str, Any]], requirements: Sequence[Any], equipment: Sequence[Any]) -> dict[str, Any]:
     return result[0]
 
 
-def _cultivation(variant: Mapping[str, Any], snapshot: Mapping[str, Any], slots: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    steps: list[dict[str, Any]] = []
-    characters = _objects_by_id(snapshot.get("characters"), "entity_id")
-    inventory = _objects_by_id(snapshot.get("materials"), "material_id")
-    materials_complete = _mapping(snapshot.get("coverage")).get("materials") == "complete"
-    for req in _mapping_list(variant.get("cultivation_requirements")):
-        subject = _mapping(req.get("subject"))
-        character_id = str(subject.get("character_id", ""))
-        current_state, current, _ = _read_condition_value(characters.get(character_id), str(req.get("current_field", "")))
-        target = req.get("target_value")
-        gap = None
-        if current_state == "confirmed" and isinstance(current, (int, float)) and isinstance(target, (int, float)):
-            gap = max(0, target - current)
-        cost_result: dict[str, Any] = {"status": "not_calculated", "reason": "incomplete_or_unverified_cost_inputs"}
-        rule = _mapping(req.get("cost_rule"))
-        materials = _mapping_list(rule.get("materials"))
-        if rule.get("applicable") is True and rule.get("revision") and materials and materials_complete and gap is not None:
-            costs: list[dict[str, Any]] = []
-            complete = True
-            for cost in materials:
-                material_id = str(cost.get("material_id", ""))
-                amount = cost.get("amount")
-                material = inventory.get(material_id)
-                if material is None or material.get("state") != "confirmed" or not isinstance(amount, (int, float)) or not isinstance(material.get("count"), (int, float)):
-                    complete = False
-                    break
-                costs.append({"material_id": material_id, "amount": amount, "available": material.get("count"), "net_shortage": max(0, amount - material["count"]) if isinstance(material.get("count"), (int, float)) else None})
-            if complete:
-                cost_result = {"status": "calculated", "rule_revision": rule["revision"], "materials": costs}
-        steps.append({
-            "requirement_id": req.get("requirement_id", req.get("id")),
-            "character_id": character_id,
-            "category": req.get("category"),
-            "current": current if current_state == "confirmed" else None,
-            "target": target,
-            "gap": gap,
-            "priority": req.get("priority"),
-            "reason": req.get("reason"),
-            "cost": cost_result,
-            "evidence_refs": _mapping_list(req.get("evidence_refs")),
-        })
-    return steps
-
-
-def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], task: Mapping[str, Any], task_scope: Mapping[str, Any], withdrawn: set[str]) -> dict[str, Any]:
+def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequence[Mapping[str, Any]], snapshot: Mapping[str, Any], task: Mapping[str, Any], task_scope: Mapping[str, Any], disabled: set[tuple[str, str, int]], definitions: Mapping[str, Any], evaluation_time: str | None, eligible_plans: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     if not isinstance(feedback, Mapping):
         return {"status": "not_requested", "suggestions": []}
     published = {str(v.get("id")): v for v in variants if _reviewed_and_published(v)}
@@ -800,7 +645,7 @@ def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequenc
     matches: list[dict[str, Any]] = []
     unsupported: list[str] = []
     for rule in _mapping_list(bundle.get("troubleshooting")):
-        if not _reviewed_and_published(rule) or _is_withdrawn(rule, withdrawn, "troubleshooting"):
+        if not _reviewed_and_published(rule) or _is_unavailable(rule, disabled, "troubleshooting") or not rule.get("evidence_refs"):
             continue
         rule_scope = _mapping(rule.get("scope"))
         required_scope = ("game_version", "environment", "mode_id", "cycle_id", "stage_id", "stage_revision")
@@ -808,14 +653,20 @@ def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequenc
             continue
         if _scope_mismatch(task_scope, rule_scope):
             continue
+        if feedback.get("scope") is not None and feedback["scope"] != task_scope:
+            continue
+        if rule.get("applies_to_variant_ids"):
+            source = next((variant for variant in variants if variant["id"] == feedback.get("variant_id") and variant["revision"] == feedback.get("variant_revision")), None)
+            if not source or source["id"] not in rule["applies_to_variant_ids"]:
+                continue
         if str(task_scope.get("stage_id")) not in _string_list(rule.get("stage_ids")):
             continue
         if not _mapping_list(rule.get("trigger_conditions")):
             unsupported.append(str(rule.get("id")))
             continue
         try:
-            trigger = _evaluate_conditions(_mapping_list(rule.get("trigger_conditions")), [], characters, task, feedback)
-        except _InputError:
+            trigger = evaluate_conditions(rule.get("trigger_conditions", []), [], snapshot, task, definitions, feedback=feedback, evaluation_time=evaluation_time, troubleshooting=True)
+        except UnsupportedSemantics:
             unsupported.append(str(rule.get("id")))
             continue
         if any(c["match_status"] == "unknown" for c in trigger):
@@ -823,17 +674,24 @@ def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequenc
             continue
         if all(c["match_status"] == "satisfied" for c in trigger):
             target_id = rule.get("suggested_variant_id")
-            suggestion: dict[str, Any] = {"rule_id": rule.get("id"), "evidence_refs": _mapping_list(rule.get("evidence_refs")), "condition_results": trigger}
+            suggestion: dict[str, Any] = {"rule_id": rule.get("id"), "rule_revision": rule.get("revision"), "evidence_refs": _mapping_list(rule.get("evidence_refs")), "trigger_results": trigger}
             target_variant = published.get(str(target_id)) if target_id else None
             target_template = templates.get(str(target_variant.get("template_id"))) if target_variant else None
             target_is_applicable = bool(target_template and _template_applies(target_template, selected_stage, task_scope))
-            if target_variant and target_is_applicable and not _is_withdrawn(target_variant, withdrawn, "variant"):
+            eligible_targets = [plan for plan in eligible_plans if plan["variant"]["id"] == target_id]
+            if target_variant and target_is_applicable and eligible_targets and not _is_unavailable(target_variant, disabled, "variant"):
                 suggestion["suggested_variant_id"] = str(target_id)
                 suggestion["suggested_variant_revision"] = target_variant.get("revision")
+                target_plan = next((plan for plan in eligible_targets if plan["plan_kind"] != "pending_confirmation"), eligible_targets[0])
+                suggestion["eligibility"] = "confirmation_required" if target_plan["plan_kind"] == "pending_confirmation" else "available"
+                suggestion["condition_results"] = target_plan["condition_results"]
+                suggestion["pending_reasons"] = target_plan.get("pending_reasons", [])
             elif rule.get("action") == "recheck_conditions":
                 suggestion["action"] = "recheck_conditions"
+                suggestion["rechecked_variants"] = [{"variant": plan["variant"], "condition_results": plan["condition_results"]} for plan in eligible_plans]
             elif rule.get("action") == "review_cultivation_gaps":
                 suggestion["action"] = "review_cultivation_gaps"
+                suggestion["cultivation_gaps"] = [{"variant": plan["variant"], "cultivation": plan["cultivation"]} for plan in eligible_plans]
             else:
                 continue
             matches.append(suggestion)
@@ -853,10 +711,17 @@ def _citation_catalog(bundle: Mapping[str, Any], refs: Sequence[Mapping[str, Any
 
 def _collect_evidence_refs(template: Mapping[str, Any], variant: Mapping[str, Any], conditions: Sequence[Mapping[str, Any]], evidence: Mapping[str, Mapping[str, Any]]) -> list[dict[str, Any]]:
     refs: list[dict[str, Any]] = []
-    for source in (template, variant, *conditions, *_mapping_list(variant.get("steps")), *_mapping_list(variant.get("mechanics")), *_mapping_list(variant.get("cultivation_requirements")), *_mapping_list(variant.get("failure_conditions"))):
-        refs.extend(dict(r) for r in _mapping_list(source.get("evidence_refs")) if _valid_ref(r, evidence))
-    for slot in _flatten_slots(variant):
-        refs.extend(dict(r) for r in _mapping_list(slot.get("evidence_refs")) if _valid_ref(r, evidence))
+    def walk(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in {"evidence_refs", "citations"}:
+                    refs.extend(dict(ref) for ref in child if _valid_ref(ref, evidence))
+                else:
+                    walk(child)
+        elif isinstance(value, list):
+            for child in value:
+                walk(child)
+    walk([template, variant, *conditions])
     return _dedupe_refs(refs)
 
 
@@ -865,14 +730,8 @@ def _valid_ref(ref: Mapping[str, Any], index: Mapping[str, Mapping[str, Any]]) -
     return bool(item and item.get("revision") == ref.get("revision"))
 
 
-def _is_withdrawn(obj: Mapping[str, Any], withdrawn: set[str], kind: str) -> bool:
-    refs = [*(_mapping_list(obj.get("evidence_refs"))), *(_mapping_list(obj.get("citations")))]
-    for condition in _mapping_list(obj.get("conditions")) + _mapping_list(obj.get("trigger_conditions")):
-        refs.extend(_mapping_list(condition.get("evidence_refs")))
-    object_key = f"{obj.get('id')}@{obj.get('revision')}"
-    return str(obj.get("id")) in withdrawn or object_key in withdrawn or any(
-        str(r.get("id")) in withdrawn or f"{r.get('id')}@{r.get('revision')}" in withdrawn for r in refs
-    )
+def _is_unavailable(obj: Mapping[str, Any], disabled: set[tuple[str, str, int]], kind: str) -> bool:
+    return (kind, obj.get("id"), obj.get("revision")) in disabled
 
 
 def _withdrawn_refs(request: Mapping[str, Any]) -> set[str]:
@@ -899,7 +758,7 @@ def _variant_summary(variant: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _as_plan(item: Mapping[str, Any], plan_kind: str, release_id: Any) -> dict[str, Any]:
-    equipment = item["current_equipment"] if plan_kind == "current" else item["rearranged_equipment"] if plan_kind == "rearrangement" else None
+    equipment = item.get("candidate_equipment")
     allocation_truncated = bool(equipment and equipment.get("search_truncated"))
     result = {
         "plan_kind": plan_kind,
@@ -911,11 +770,13 @@ def _as_plan(item: Mapping[str, Any], plan_kind: str, release_id: Any) -> dict[s
         "condition_results": item["condition_results"],
         "strategy": item["strategy"],
         "cultivation": item["cultivation"],
+        "cultivation_cost": item["cultivation_cost"],
         "evidence_refs": item["evidence_refs"],
         "ranking": {"known_condition_count": sum(c["match_status"] == "satisfied" for c in item["condition_results"]), "unknown_condition_count": sum(c["match_status"] == "unknown" for c in item["condition_results"]), "equipment_changes": len(equipment["actions"]) if equipment else 0, "allocation_search_truncated": allocation_truncated, "meaning": "仅用于适配顺序，不是通关概率"},
         "warnings": [c["condition_id"] for c in item["condition_results"] if c["match_status"] != "satisfied"] + (["equipment_allocation_search_truncated"] if allocation_truncated else []),
     }
     if plan_kind == "pending_confirmation":
+        result["candidate_plan_kind"] = item["candidate_plan_kind"]
         result["pending_reasons"] = item.get("pending_reasons", [])
         result["equipment_status"] = "unknown" if item.get("equipment_unknown") else "assessed"
     return result
@@ -952,23 +813,6 @@ def _all_result_refs(*groups: Sequence[Mapping[str, Any]]) -> list[dict[str, Any
     return _dedupe_refs(refs)
 
 
-def _reference_issues(value: Any, available_refs: set[tuple[str, str]], owner_id: str) -> list[dict[str, str]]:
-    issues: list[dict[str, str]] = []
-    if isinstance(value, Mapping):
-        for key, child in value.items():
-            if str(key).endswith("_refs"):
-                for ref in _mapping_list(child):
-                    identity = (str(ref.get("id", "")), str(ref.get("revision", "")))
-                    if not identity[0] or not identity[1] or identity not in available_refs:
-                        issues.append({"code": "missing_member", "message": f"{owner_id} has an unresolved {key} reference {identity[0]}@{identity[1]}"})
-            else:
-                issues.extend(_reference_issues(child, available_refs, owner_id))
-    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
-        for child in value:
-            issues.extend(_reference_issues(child, available_refs, owner_id))
-    return issues
-
-
 def _degradation_reasons(status: str, matching_templates: Sequence[Mapping[str, Any]], rejections: Sequence[Mapping[str, Any]], pending: Sequence[Mapping[str, Any]]) -> list[str]:
     reasons: list[str] = []
     if not matching_templates:
@@ -987,13 +831,14 @@ def _rejection(variant_id: str, code: str, reason: str, details: Any = None) -> 
 
 
 def _error_result(request: Any, code: str, message: str, details: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    mapping = _mapping(request)
+    mapping = request if type(request) is dict else {}
     return {
         "contract_version": _CONTRACT,
         "schema_id": "AnalysisResult",
         "schema_version": _CONTRACT,
         "planner_version": PLANNER_VERSION,
-        "request_id": mapping.get("request_id"),
+        "adapter_profile": ADAPTER_PROFILE,
+        "request_id": mapping.get("request_id") if type(mapping.get("request_id")) is str else None,
         "status": "error",
         "error": {"code": code, "message": message, "retryable": False, "details": dict(details or {})},
         "current_equipment_plans": [],

@@ -5,9 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .engine import analyze_request
-
-PLANNER_VERSION = "0.1.0"
+from .engine import ADAPTER_PROFILE, PLANNER_VERSION, analyze_request
 
 
 def analyze(request: Mapping[str, Any]) -> dict[str, Any]:
