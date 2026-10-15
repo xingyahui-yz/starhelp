@@ -35,6 +35,30 @@ def test_rearrangement_plan_reports_actual_moves_and_respects_allow_flag() -> No
     assert "fixture:variant:main" not in [p["variant"]["id"] for p in result["rearrangement_plans"]]
 
 
+def test_allocator_uses_a_consistent_minimum_move_mapping_for_multiple_slots() -> None:
+    request = fresh_synthetic_request()
+    request["public_bundle"]["stages"][0]["partitions"][1]["slots"].append({"slot_id": "fixture:lower:2"})
+    request["public_bundle"]["variants"][0]["teams"]["fixture:lower"].append({
+        "slot_id": "fixture:lower:2", "character_id": "fixture:char:c",
+        "equipment_requirements": [{"kind": "relic", "slot": "body", "public_type_id": "fixture:relic:type"}],
+    })
+    request["public_bundle"]["variants"][0]["teams"]["fixture:upper"][0]["equipment_requirements"] = [
+        {"kind": "relic", "slot": "body", "public_type_id": "fixture:relic:type"}
+    ]
+    request["account_snapshot"]["equipment_instances"] = [
+        {"local_instance_id": "fixture:gear:2", "public_type_id": "fixture:relic:type", "kind": "relic", "slot": "body", "identity_state": "player_confirmed", "equipped_by": "fixture:char:b"},
+        {"local_instance_id": "fixture:gear:1", "public_type_id": "fixture:relic:type", "kind": "relic", "slot": "body", "identity_state": "player_confirmed", "equipped_by": "fixture:char:c"},
+        {"local_instance_id": "fixture:gear:old", "public_type_id": "fixture:other:type", "kind": "relic", "slot": "body", "identity_state": "player_confirmed", "equipped_by": "fixture:char:a"},
+    ]
+
+    result = analyze(request)
+
+    plan = next(p for p in result["rearrangement_plans"] if p["variant"]["id"] == "fixture:variant:main")
+    assert len(plan["equipment"]["actions"]) == 2
+    assert any(action["local_instance_id"] == "fixture:gear:2" and action["to_character_id"] == "fixture:char:a" for action in plan["equipment"]["actions"])
+    assert any(action.get("action") == "unequip" and action["local_instance_id"] == "fixture:gear:old" for action in plan["equipment"]["actions"])
+
+
 def test_hard_unknown_condition_is_pending_not_satisfied() -> None:
     request = fresh_synthetic_request()
     request["account_snapshot"]["characters"][0]["fields"]["fixture:stat:speed"]["state"] = "stale"

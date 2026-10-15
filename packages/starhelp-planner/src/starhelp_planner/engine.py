@@ -127,7 +127,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
             rejection_reasons.append(_rejection(variant_id, "hard_constraint_conflict", "roster or fixed/excluded character constraints conflict", role_state["reasons"]))
             continue
         condition_results = _evaluate_conditions(
-            _conditions_for(variant), slots, snapshot_characters, equipment, task, request.get("feedback")
+            _conditions_for(variant), slots, snapshot_characters, task, request.get("feedback")
         )
         hard_failed = [c for c in condition_results if c["requirement"] == "hard" and c["match_status"] == "not_satisfied"]
         if hard_failed:
@@ -137,7 +137,8 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
         role_unknown = role_state["pending"]
         equip_sets = _equipment_options(slots, equipment, locked_instances, stage, bool(task.get("allow_rearrangement", False)))
         if not equip_sets["current"] and not equip_sets["rearranged"]:
-            if _mapping(snapshot.get("coverage")).get("inventory") != "complete":
+            inventory_incomplete = _mapping(snapshot.get("coverage")).get("inventory") != "complete"
+            if inventory_incomplete or equip_sets.get("search_limited"):
                 pending.append(_public_candidate({
                     "template": _template_summary(template),
                     "variant": _variant_summary(variant), "team": slots,
@@ -154,6 +155,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
                     "evidence_refs": _collect_evidence_refs(template, variant, condition_results, evidence),
                     "sort": _rank_key(condition_results, equip_sets),
                     "equipment_unknown": True,
+                    "equipment_unknown_reason": "allocation_search_incomplete" if equip_sets.get("search_limited") else "inventory_coverage_incomplete",
                 }))
                 continue
             rejection_reasons.append(_rejection(variant_id, "equipment_conflict", "no legal equipment assignment satisfies the complete variant", equip_sets["reasons"]))
@@ -187,7 +189,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
     current_plans = [_as_plan(item, "current", release_id) for item in evaluated if item["current_equipment"]]
     rearrangement_plans = [_as_plan(item, "rearrangement", release_id) for item in evaluated if item["rearranged_equipment"] and item["rearranged_equipment"]["actions"]]
     pending_candidates = [_as_plan(item, "pending_confirmation", release_id) for item in pending]
-    troubleshooting = _troubleshooting(request.get("feedback"), bundle, variants, snapshot_characters, equipment, task, task_scope, withdrawn)
+    troubleshooting = _troubleshooting(request.get("feedback"), bundle, variants, snapshot_characters, task, task_scope, withdrawn)
     if current_plans or rearrangement_plans:
         status = "plans_available"
     elif pending_candidates:
@@ -469,7 +471,7 @@ def _conditions_for(variant: Mapping[str, Any]) -> list[dict[str, Any]]:
     return [dict(c) for c in _mapping_list(variant.get("conditions"))]
 
 
-def _evaluate_conditions(conditions: Sequence[Mapping[str, Any]], slots: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], equipment: Sequence[Mapping[str, Any]], task: Mapping[str, Any], feedback: Any) -> list[dict[str, Any]]:
+def _evaluate_conditions(conditions: Sequence[Mapping[str, Any]], slots: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], task: Mapping[str, Any], feedback: Any) -> list[dict[str, Any]]:
     by_slot = {str(s.get("slot_id")): s for s in slots}
     result: list[dict[str, Any]] = []
     for condition in conditions:
@@ -484,8 +486,6 @@ def _evaluate_conditions(conditions: Sequence[Mapping[str, Any]], slots: Sequenc
             owner = characters.get(str(slot.get("character_id", ""))) if slot else None
         elif kind == "character":
             owner = characters.get(str(subject.get("character_id", "")))
-        elif kind == "equipment_instance":
-            owner = next((e for e in equipment if e.get("local_instance_id") == subject.get("local_instance_id")), None)
         elif kind == "feedback":
             owner = _mapping(feedback)
         elif kind == "task":
@@ -612,6 +612,13 @@ def _equipment_options(slots: Sequence[Mapping[str, Any]], equipment: Sequence[M
         _first_assignment(requirements, move_choices, equipment, locked, stage, allow_unconfirmed=False)
         if allow_rearrangement and not missing_locked else None
     )
+    search_limited = False
+    if current and current[0].get("no_feasible_found"):
+        search_limited = True
+        current = None
+    if rearranged and rearranged[0].get("no_feasible_found"):
+        search_limited = True
+        rearranged = None
     reasons: list[str] = []
     if current is None:
         reasons.append("current_equipment_does_not_meet_requirements")
@@ -620,6 +627,7 @@ def _equipment_options(slots: Sequence[Mapping[str, Any]], equipment: Sequence[M
     return {
         "current": _assignment_result(current, requirements, equipment) if current else None,
         "rearranged": _assignment_result(rearranged, requirements, equipment) if rearranged else None,
+        "search_limited": search_limited,
         "reasons": reasons,
     }
 
@@ -640,11 +648,26 @@ def _first_assignment(requirements: Sequence[tuple[Mapping[str, Any], Mapping[st
     exclusive = _mapping(stage.get("resource_reuse")).get("equipment", "exclusive") == "exclusive"
     chosen: list[dict[str, Any]] = []
     used: set[str] = set()
+    candidates: list[dict[str, Any]] = []
+    remaining_nodes = 50_000
+    truncated = False
 
-    def search(index: int) -> bool:
+    def search(index: int) -> None:
+        nonlocal remaining_nodes, truncated
+        remaining_nodes -= 1
+        if remaining_nodes < 0 or len(candidates) >= 256:
+            truncated = True
+            return
         if index == len(requirements):
+            destinations = [
+                (str(entry["to_character_id"]), str(entry["kind"]), str(entry["requirement"].get("slot", "")))
+                for entry in chosen
+            ]
+            if len(destinations) != len(set(destinations)):
+                return
             selected = {str(entry["local_instance_id"]) for entry in chosen}
-            for entry in list(chosen):
+            final_assignments = [dict(entry) for entry in chosen]
+            for entry in chosen:
                 destination = (str(entry["to_character_id"]), str(entry["kind"]), str(entry["requirement"].get("slot", "")))
                 occupants = [
                     item for item in equipment
@@ -654,22 +677,37 @@ def _first_assignment(requirements: Sequence[tuple[Mapping[str, Any], Mapping[st
                     and str(item.get("local_instance_id", "")) not in selected
                 ]
                 if occupants and allow_unconfirmed:
-                    return False
+                    return
                 for occupant in occupants:
                     occupant_id = str(occupant.get("local_instance_id", ""))
                     if occupant_id in locked or occupant.get("identity_state") not in {"player_confirmed", "source_verified"}:
-                        return False
-                    chosen.append({
+                        return
+                    final_assignments.append({
                         "slot_id": entry["slot_id"], "partition_id": entry["partition_id"],
                         "character_id": entry["character_id"], "local_instance_id": occupant_id,
                         "public_type_id": occupant.get("public_type_id"), "kind": occupant.get("kind"),
                         "from_character_id": destination[0], "to_character_id": None,
                         "action": "unequip", "requirement": dict(entry["requirement"]),
                     })
-            return True
+            actions = [
+                {
+                    "local_instance_id": entry["local_instance_id"],
+                    "from_character_id": entry["from_character_id"],
+                    "to_character_id": entry["to_character_id"],
+                    **({"action": entry["action"]} if entry.get("action") else {}),
+                }
+                for entry in final_assignments
+                if entry.get("action") == "unequip" or entry["from_character_id"] != entry["to_character_id"]
+            ]
+            candidates.append({"assignments": final_assignments, "actions": actions})
+            return
         slot, requirement = requirements[index]
         current_owner = str(slot.get("character_id", ""))
-        for item in choices[index]:
+        ordered_choices = sorted(
+            choices[index],
+            key=lambda item: (str(item.get("equipped_by", "")) != current_owner, str(item.get("local_instance_id", ""))),
+        )
+        for item in ordered_choices:
             item_id = str(item.get("local_instance_id", ""))
             owner = str(item.get("equipped_by", "")) if item.get("equipped_by") is not None else None
             identity_ok = item.get("identity_state") in {"player_confirmed", "source_verified"}
@@ -683,26 +721,25 @@ def _first_assignment(requirements: Sequence[tuple[Mapping[str, Any], Mapping[st
                 continue
             chosen.append({"slot_id": slot.get("slot_id"), "partition_id": slot.get("partition_id"), "character_id": current_owner, "local_instance_id": item_id, "public_type_id": item.get("public_type_id"), "kind": item.get("kind"), "from_character_id": owner, "to_character_id": current_owner, "requirement": dict(requirement)})
             used.add(item_id)
-            if search(index + 1):
-                return True
+            search(index + 1)
             used.discard(item_id)
             chosen.pop()
-        return False
+            if truncated:
+                break
 
-    if not search(0):
+    search(0)
+    if not candidates:
+        if truncated:
+            return [{"assignments": [], "actions": [], "search_truncated": True, "no_feasible_found": True}]
         return None
-    assignments = [dict(x) for x in chosen]
-    actions = [
-        {
-            "local_instance_id": a["local_instance_id"],
-            "from_character_id": a["from_character_id"],
-            "to_character_id": a["to_character_id"],
-            **({"action": a["action"]} if a.get("action") else {}),
-        }
-        for a in assignments
-        if a.get("action") == "unequip" or a["from_character_id"] != a["to_character_id"]
-    ]
-    return [{"assignments": assignments, "actions": actions}]
+    candidates.sort(key=lambda item: (
+        len(item["actions"]),
+        sum(action.get("from_character_id") != action.get("to_character_id") for action in item["actions"] if action.get("action") != "unequip"),
+        tuple(str(entry["local_instance_id"]) for entry in item["assignments"]),
+    ))
+    best = candidates[0]
+    best["search_truncated"] = truncated
+    return [best]
 
 
 def _assignment_result(result: list[dict[str, Any]], requirements: Sequence[Any], equipment: Sequence[Any]) -> dict[str, Any]:
@@ -753,7 +790,7 @@ def _cultivation(variant: Mapping[str, Any], snapshot: Mapping[str, Any], slots:
     return steps
 
 
-def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], equipment: Sequence[Mapping[str, Any]], task: Mapping[str, Any], task_scope: Mapping[str, Any], withdrawn: set[str]) -> dict[str, Any]:
+def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequence[Mapping[str, Any]], characters: Mapping[str, Mapping[str, Any]], task: Mapping[str, Any], task_scope: Mapping[str, Any], withdrawn: set[str]) -> dict[str, Any]:
     if not isinstance(feedback, Mapping):
         return {"status": "not_requested", "suggestions": []}
     published = {str(v.get("id")): v for v in variants if _reviewed_and_published(v)}
@@ -776,7 +813,11 @@ def _troubleshooting(feedback: Any, bundle: Mapping[str, Any], variants: Sequenc
         if not _mapping_list(rule.get("trigger_conditions")):
             unsupported.append(str(rule.get("id")))
             continue
-        trigger = _evaluate_conditions(_mapping_list(rule.get("trigger_conditions")), [], characters, equipment, task, feedback)
+        try:
+            trigger = _evaluate_conditions(_mapping_list(rule.get("trigger_conditions")), [], characters, task, feedback)
+        except _InputError:
+            unsupported.append(str(rule.get("id")))
+            continue
         if any(c["match_status"] == "unknown" for c in trigger):
             unsupported.append(str(rule.get("id")))
             continue
@@ -859,6 +900,7 @@ def _variant_summary(variant: Mapping[str, Any]) -> dict[str, Any]:
 
 def _as_plan(item: Mapping[str, Any], plan_kind: str, release_id: Any) -> dict[str, Any]:
     equipment = item["current_equipment"] if plan_kind == "current" else item["rearranged_equipment"] if plan_kind == "rearrangement" else None
+    allocation_truncated = bool(equipment and equipment.get("search_truncated"))
     result = {
         "plan_kind": plan_kind,
         "index_release_id": release_id,
@@ -870,8 +912,8 @@ def _as_plan(item: Mapping[str, Any], plan_kind: str, release_id: Any) -> dict[s
         "strategy": item["strategy"],
         "cultivation": item["cultivation"],
         "evidence_refs": item["evidence_refs"],
-        "ranking": {"known_condition_count": sum(c["match_status"] == "satisfied" for c in item["condition_results"]), "unknown_condition_count": sum(c["match_status"] == "unknown" for c in item["condition_results"]), "equipment_changes": len(equipment["actions"]) if equipment else 0, "meaning": "仅用于适配顺序，不是通关概率"},
-        "warnings": [c["condition_id"] for c in item["condition_results"] if c["match_status"] != "satisfied"],
+        "ranking": {"known_condition_count": sum(c["match_status"] == "satisfied" for c in item["condition_results"]), "unknown_condition_count": sum(c["match_status"] == "unknown" for c in item["condition_results"]), "equipment_changes": len(equipment["actions"]) if equipment else 0, "allocation_search_truncated": allocation_truncated, "meaning": "仅用于适配顺序，不是通关概率"},
+        "warnings": [c["condition_id"] for c in item["condition_results"] if c["match_status"] != "satisfied"] + (["equipment_allocation_search_truncated"] if allocation_truncated else []),
     }
     if plan_kind == "pending_confirmation":
         result["pending_reasons"] = item.get("pending_reasons", [])
@@ -882,7 +924,7 @@ def _as_plan(item: Mapping[str, Any], plan_kind: str, release_id: Any) -> dict[s
 def _public_candidate(item: Mapping[str, Any]) -> dict[str, Any]:
     reasons = [*item["role_unknown"], *[{"condition_id": c["condition_id"], "reason": c["reason_code"]} for c in item["hard_unknown"]]]
     if item.get("equipment_unknown"):
-        reasons.append({"reason": "inventory_coverage_incomplete"})
+        reasons.append({"reason": item.get("equipment_unknown_reason", "inventory_coverage_incomplete")})
     return {**item, "pending_reasons": reasons}
 
 
