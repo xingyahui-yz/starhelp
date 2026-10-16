@@ -50,6 +50,10 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Structured/manual import preview and an optional local RapidOCR adapter. The UI runs OCR in a
   worker, hides UID-like OCR text, requires a player-selected text-row-to-field mapping, and then
   asks for a separate confirmation. Images are size/type/dimension checked and not persisted.
+- Imported equipment is listed per profile with its current identity. A player can explicitly
+  confirm an individual equipment instance; the decision is written to the encrypted snapshot and
+  only then becomes eligible for reassignment. The UI does not infer copy identity from a public
+  equipment type ID.
 - A consent-gated Mihomo request adapter, public-query allowlist, current-user DPAPI file store,
   encrypted profile catalog/snapshots, profile generation/revocation gate, signature-gated bundle
   validator/cache, and explicit-save report service. Saving and revocation are serialized to prevent
@@ -69,14 +73,15 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
   save/restore and the explicit planner-unavailable status. No real UID was queried.
+- After adding the equipment identity UI, `compileall` passed and a fresh PyInstaller 6.22.3
+  candidate was built. All 677 candidate manifest entries matched their SHA-256 hashes, and the
+  executable stayed running for an 8-second startup smoke. No automated tests were added or run for
+  this UI change.
 - The Windows candidate builds with PyInstaller 6.22.3 and includes a SHA-256 manifest plus
   per-user install/rollback script. Installer install/upgrade/rollback and tamper rejection passed
   with synthetic v1/v2 fixtures; the actual candidate was copied and upgraded in a component-local
-  temporary directory. Startup rechecks with both PyInstaller 6.10.0 and 6.22.3 showed an exception
-  dialog: `ImportError: DLL load failed while importing QtWidgets`. A process-lifetime-only smoke was
-  insufficient; the current diagnostic dialog shows the error, and no Qt DLLs are loaded in the
-  failing process. A console probe narrows this to loading `QtCore.pyd`; the same collected Qt DLLs
-  load from normal Python. The cause was PyInstaller discovering Poppler's ICU 78.3 through the
+  temporary directory. An earlier candidate failed to start because PyInstaller discovered
+  Poppler's ICU 78.3 through the
   inherited `PATH`; Qt 6.10.3 imports unversioned ICU symbols, while that DLL exports `_78`-suffixed
   symbols. Normal Python loads Windows System32 ICU 72, which exports the required symbols. The build
   script now limits PATH to Windows system directories while PyInstaller analyzes dependencies. A
@@ -99,3 +104,8 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   documentation does not define UID-to-region routing, so the selected server label stays local and
   region correctness remains an M0 decision.
 - Cross-component planner/backend integration is not performed; no sibling source is imported.
+- Automatic public-profile refresh is not exposed. UID is deliberately not retained, and there is
+  no scheduler that could honor a separately confirmed opt-in. Current refresh remains manual.
+- Equipment identity confirmation is now wired through the desktop UI and encrypted snapshot
+  repository; no duplicate-link UI is provided, so matching two records as the same physical copy
+  remains unsupported.

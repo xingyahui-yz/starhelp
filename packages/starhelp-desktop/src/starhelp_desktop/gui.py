@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from .bundles import PublicBundleCache
+from .models import EquipmentIdentity
 from .imports import (
     ManualImportAdapter,
     OcrDraft,
@@ -284,6 +286,8 @@ class AccountsPage(_Page):
         self.map_ocr_button = QPushButton("将 OCR 行映射到手动字段")
         self.save_button = QPushButton("确认预览并保存")
         self.revoke_button = QPushButton("撤权并删除本地档案")
+        self.equipment_list = QComboBox()
+        self.confirm_equipment_button = QPushButton("确认所选装备实例")
         self.progress = QProgressBar()
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
@@ -303,6 +307,11 @@ class AccountsPage(_Page):
             row.addWidget(button)
         self.content.addLayout(row)
         self.content.addWidget(self.ocr_candidate)
+        equipment_row = QHBoxLayout()
+        equipment_row.addWidget(QLabel("装备身份"))
+        equipment_row.addWidget(self.equipment_list, 1)
+        equipment_row.addWidget(self.confirm_equipment_button)
+        self.content.addLayout(equipment_row)
         self.content.addWidget(self.progress)
         self.content.addWidget(self.preview, 1)
         self.fetch_button.clicked.connect(self.fetch_public)
@@ -313,6 +322,8 @@ class AccountsPage(_Page):
         self.map_ocr_button.clicked.connect(self.map_ocr_line)
         self.save_button.clicked.connect(self.save_preview)
         self.revoke_button.clicked.connect(self.revoke_selected)
+        self.confirm_equipment_button.clicked.connect(self.confirm_equipment_identity)
+        self.equipment_list.currentIndexChanged.connect(self._update_equipment_confirmation_enabled)
         self.profile_list.currentIndexChanged.connect(self._selection_changed)
         self._reload_profiles()
         self._selection_changed()
@@ -335,6 +346,70 @@ class AccountsPage(_Page):
 
     def _selection_changed(self, *_args: object) -> None:
         self.revoke_button.setEnabled(self._selected_profile() is not None)
+        self._reload_equipment()
+
+    def _reload_equipment(self) -> None:
+        self.equipment_list.clear()
+        profile = self._selected_profile()
+        if profile is None:
+            self.equipment_list.addItem("选择已有档案查看装备实例", None)
+            self.confirm_equipment_button.setEnabled(False)
+            return
+        try:
+            snapshot = self.repository.load_snapshot(profile.profile_id, profile.generation)
+        except FileNotFoundError:
+            snapshot = None
+        except Exception as exc:
+            self.equipment_list.addItem(f"无法读取档案：{exc}", None)
+            self.confirm_equipment_button.setEnabled(False)
+            return
+        if snapshot is None or not snapshot.equipment:
+            self.equipment_list.addItem("此档案没有已导入的装备实例", None)
+            self.confirm_equipment_button.setEnabled(False)
+            return
+        for item in snapshot.equipment:
+            owner = f"角色 {item.owner_character_id}" if item.owner_character_id else "未识别角色"
+            identity = item.identity.value
+            self.equipment_list.addItem(
+                f"{item.slot} · 类型 {item.public_type_id} · {owner} · 身份 {identity}",
+                (str(item.local_instance_id), identity),
+            )
+        self._update_equipment_confirmation_enabled()
+
+    def _update_equipment_confirmation_enabled(self, *_args: object) -> None:
+        selected = self.equipment_list.currentData()
+        self.confirm_equipment_button.setEnabled(
+            selected is not None
+            and selected[1] not in {
+                EquipmentIdentity.SOURCE_CONFIRMED.value,
+                EquipmentIdentity.PLAYER_CONFIRMED.value,
+            }
+        )
+
+    def confirm_equipment_identity(self) -> None:
+        profile = self._selected_profile()
+        selection = self.equipment_list.currentData()
+        if profile is None or selection is None:
+            return
+        answer = QMessageBox.question(
+            self,
+            "确认装备实例身份",
+            "请确认所选记录对应玩家存档中的这个具体装备实例。确认后，规划器可将它作为可调配装备；"
+            "仅类型相同或出现在公开展示页，不足以确认是同一件装备。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            self.repository.confirm_equipment_instance(
+                profile.profile_id, profile.generation, UUID(selection[0])
+            )
+        except Exception as exc:
+            QMessageBox.warning(self, "装备身份未保存", str(exc))
+            return
+        self._reload_equipment()
+        self.preview.setPlainText("玩家已逐件确认装备实例身份；确认结果已加密保存到当前档案。")
 
     def fetch_public(self) -> None:
         if not self.confirm_consent.isChecked():
@@ -570,6 +645,7 @@ class AccountsPage(_Page):
         self.pending = None
         self.pending_profile = None
         self.save_button.setEnabled(False)
+        self._reload_equipment()
         conflict_note = f" 已逐项处理 {len(result.conflicts)} 个冲突。" if result.conflicts else ""
         self.preview.setPlainText(
             "用户已确认预览；规范化字段已加密写入当前档案。" + conflict_note +

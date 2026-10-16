@@ -30,6 +30,9 @@ requires Windows; the encryption contract is injected in platform-independent un
   it does not call a planner or present a recommendation.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
+- Equipment instances appear in the selected account profile. Each can be individually confirmed
+  by the player and the identity decision is saved in the encrypted snapshot. Automatic UID refresh
+  is not available: UID is not retained and there is no background scheduler.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated

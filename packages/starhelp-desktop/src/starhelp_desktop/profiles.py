@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from .imports import confirm_import
+from .equipment import EquipmentIdentityService
 from .lifecycle import ProfileLifecycle
 from .merge import MergeResult, merge_import
 from .models import (
@@ -243,6 +244,17 @@ class ProfileRepository:
         if snapshot.profile_id != profile_id:
             raise ValueError("snapshot belongs to a different profile")
         return snapshot
+
+    def confirm_equipment_instance(
+        self, profile_id: UUID, generation: int, local_instance_id: UUID
+    ) -> AccountSnapshot:
+        """Persist one player's explicit equipment-instance identity decision."""
+        with self._lock:
+            snapshot = self.load_snapshot(profile_id, generation)
+            confirmed = EquipmentIdentityService().confirm_instance(snapshot, local_instance_id)
+            if confirmed is not snapshot:
+                self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(confirmed))
+            return confirmed
 
     def set_auto_refresh(self, profile_id: UUID, enabled: bool, *, separately_confirmed: bool) -> None:
         if enabled and not separately_confirmed:
