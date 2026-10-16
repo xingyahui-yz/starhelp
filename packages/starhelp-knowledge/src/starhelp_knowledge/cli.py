@@ -72,10 +72,16 @@ def _parser() -> argparse.ArgumentParser:
     serve.add_argument("--auth-config", type=Path, default=_default_auth_path())
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765)
-    token = subcommands.add_parser("create-token", help="provision one invite identity by role")
+    token = subcommands.add_parser("create-token", help="provision one invite identity with one or more roles")
     token.add_argument("--auth-config", type=Path, default=_default_auth_path())
     token.add_argument("--actor-id", required=True)
-    token.add_argument("--role", required=True, choices=sorted(ROLE_PERMISSIONS))
+    token.add_argument(
+        "--role",
+        required=True,
+        action="append",
+        choices=sorted(ROLE_PERMISSIONS),
+        help="assign a role; repeat to combine least-privilege permissions",
+    )
     token.add_argument("--rotate", action="store_true")
     export = subcommands.add_parser("export-bundle", help="export one validated public release bundle")
     export.add_argument("--database", required=True, type=Path)
@@ -121,13 +127,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.actor_id in actors and not args.rotate:
             print("actor already exists; pass --rotate to replace its token", file=sys.stderr)
             return 2
+        roles = list(dict.fromkeys(args.role))
         plaintext = secrets.token_urlsafe(32)
         actors[args.actor_id] = {
             "token_sha256": hashlib.sha256(plaintext.encode("utf-8")).hexdigest(),
-            "roles": [args.role],
+            "roles": roles,
         }
         _save_actors(args.auth_config, actors)
-        print(json.dumps({"actor_id": args.actor_id, "role": args.role, "token": plaintext, "token_config": str(args.auth_config)}))
+        response = {"actor_id": args.actor_id, "roles": roles, "token": plaintext, "token_config": str(args.auth_config)}
+        if len(roles) == 1:
+            response["role"] = roles[0]
+        print(json.dumps(response))
         print("Store this token securely; it is shown once and is not written to the config file.", file=sys.stderr)
         return 0
     if args.command == "export-bundle":

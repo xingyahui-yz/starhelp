@@ -29,9 +29,10 @@ Create an identity with the minimum role needed:
 python -m starhelp_knowledge create-token --actor-id curator-1 --role updater
 python -m starhelp_knowledge create-token --actor-id reviewer-1 --role reviewer
 python -m starhelp_knowledge create-token --actor-id publisher-1 --role publisher
+python -m starhelp_knowledge create-token --actor-id maintainer-1 --role updater --role reviewer
 ```
 
-The command prints the random bearer token once and stores only its SHA-256 hash and role in the auth config, normally `%USERPROFILE%\.starhelp-knowledge\auth.json`. Keep the token out of source control and logs. The three roles have separate permissions; `reader` is the default for invitees and cannot update, review, or publish. `admin` is required to mark a source policy allowed or claim a capability verified. Restart the service after changing its auth config so the new identity set is loaded.
+The command prints the random bearer token once and stores only its SHA-256 hash and role list in the auth config, normally `%USERPROFILE%\.starhelp-knowledge\auth.json`. Repeat `--role` to assign a least-privilege updater/reviewer identity for explicit self-review; use a separate publisher actor for release actions. The service enforces that every release publisher has a different actor ID from all included candidate authors and approvers. Keep the token out of source control and logs. The roles have separate permissions; `reader` is the default for invitees and cannot update, review, or publish. `admin` is a trusted override with every permission, including publish, but it cannot bypass the release actor-separation check. Self-review is permitted as an explicit hash-bound action; the package does not require a second reviewer. Restart the service after changing its auth config so the new identity set is loaded.
 
 ## HTTP surface
 
@@ -48,7 +49,7 @@ The request schema and route names are implementation drafts pending the shared 
 
 ## Content lifecycle
 
-Source policy must be explicitly recorded before evidence can be stored. Marking a policy allowed requires an admin identity, a dated terms reference, permitted domains and optional paths, rate policy, and storage policy. Evidence storage is limited to a small excerpt unless a source policy explicitly allows full text. Candidates require evidence; unknown/withdrawn evidence cannot be published. Review is tied to an immutable revision hash, the creator cannot approve their own candidate, and approval does not activate a release. Release validation and activation are separate, idempotent publisher actions.
+Source policy must be explicitly recorded before evidence can be stored. Marking a policy allowed requires an admin identity, a dated terms reference, permitted domains and optional paths, rate policy, and storage policy. Evidence storage is limited to a small excerpt unless a source policy explicitly allows full text. Candidates require evidence; unknown/withdrawn evidence cannot be published. Review requires the reviewer permission and the exact immutable revision hash; a maintainer with both updater and reviewer permissions may explicitly review their own candidate. Approval does not activate a release, and a publisher action remains separately authorized and audited. Release validation and activation are separate, idempotent publisher actions.
 
 Templates reference one stage and one or more complete variants. Every variant contains a full team, entity dependencies, finite declarative conditions, and ordered steps. Release construction rejects missing stage, variant, entity, or evidence dependencies. A client fetch is pinned to one `index_release_id`; no missing object is filled from a newer release. `sha256-canonical-json-utf8` covers the public record and evidence members, and the manifest stores dependency references and object hashes.
 

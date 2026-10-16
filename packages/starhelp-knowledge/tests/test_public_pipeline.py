@@ -5,9 +5,11 @@ import io
 import copy
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from starhelp_knowledge.database import KnowledgeDatabase
+from starhelp_knowledge.cli import main as cli_main
 from starhelp_knowledge.bundle import verify_public_bundle
 from starhelp_knowledge.errors import Conflict, IntegrityFailure, InvalidPayload, InvalidTransition, PermissionDenied, SourceBlocked, WithdrawnEvidence
 from starhelp_knowledge.http import KnowledgeApplication
@@ -268,6 +270,26 @@ class PublicPipelineTests(unittest.TestCase):
         auth = TokenAuthenticator({"invited": {"token_sha256": "a" * 64, "roles": ["reader"]}})
         self.assertIsNone(auth.authenticate("not-the-token"))
 
+    def test_create_token_can_provision_a_least_privilege_multi_role_maintainer(self) -> None:
+        auth_path = Path(self.tempdir.name) / "auth.json"
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            exit_code = cli_main([
+                "create-token",
+                "--auth-config", str(auth_path),
+                "--actor-id", "fixture:maintainer-token",
+                "--role", "updater",
+                "--role", "reviewer",
+            ])
+        self.assertEqual(exit_code, 0)
+        output = json.loads(stdout.getvalue())
+        stored_actor = json.loads(auth_path.read_text(encoding="utf-8"))["actors"]["fixture:maintainer-token"]
+        principal = TokenAuthenticator({"fixture:maintainer-token": stored_actor}).authenticate(output["token"])
+        self.assertIsNotNone(principal)
+        self.assertEqual(principal.roles, frozenset({"updater", "reviewer"}))
+        self.assertEqual(output["roles"], ["updater", "reviewer"])
+
     def test_explicit_review_publication_and_release_scoped_complete_fetch(self) -> None:
         release = self.build_synthetic_release()
         validated = self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="validate-1")
@@ -347,9 +369,25 @@ class PublicPipelineTests(unittest.TestCase):
         )
         self.service.validate_release(PUBLISHER, second["index_release_id"], idempotency_key="validate-new")
         self.service.activate_release(PUBLISHER, second["index_release_id"], expected_active_release_id=first["index_release_id"], idempotency_key="activate-new")
+        reviewer_publisher = Principal(REVIEWER.actor_id, frozenset({"reviewer", "publisher"}))
+        with self.assertRaises(PermissionDenied):
+            self.service.rollback_release(
+                reviewer_publisher,
+                first["index_release_id"],
+                expected_active_release_id=second["index_release_id"],
+                idempotency_key="rollback-by-reviewer",
+            )
+        rolled_back = self.service.rollback_release(
+            PUBLISHER,
+            first["index_release_id"],
+            expected_active_release_id=second["index_release_id"],
+            idempotency_key="rollback-valid-release",
+        )
+        self.assertEqual(rolled_back["state"], "active")
+        self.assertEqual(rolled_back["rollback_from"], second["index_release_id"])
         self.service.disable_record(PUBLISHER, kind="entity", record_id="fixture:entity:1", revision=1, reason="synthetic test withdrawal")
         with self.assertRaises(WithdrawnEvidence):
-            self.service.rollback_release(PUBLISHER, first["index_release_id"], expected_active_release_id=second["index_release_id"], idempotency_key="rollback-disabled")
+            self.service.rollback_release(PUBLISHER, second["index_release_id"], expected_active_release_id=first["index_release_id"], idempotency_key="rollback-disabled")
         with self.assertRaises(WithdrawnEvidence):
             self.service.get_release_bundle()
 
@@ -371,7 +409,7 @@ class PublicPipelineTests(unittest.TestCase):
                 revision=stage["revision"],
                 expected_content_hash=stage["content_hash"],
                 decision="approved",
-                note="Updater role cannot approve, even its own candidate.",
+                note="Updater role lacks reviewer permission.",
             )
         with self.assertRaises(InvalidTransition):
             self.service.build_release(
@@ -383,8 +421,8 @@ class PublicPipelineTests(unittest.TestCase):
         with self.assertRaises(PermissionDenied):
             self.service.validate_release(UPDATER, "fixture:unknown-release", idempotency_key="wrong-role")
 
-    def test_lifecycle_requires_explicit_separate_author_reviewer_and_publisher(self) -> None:
-        maintainer = Principal("fixture:maintainer", frozenset({"admin"}))
+    def test_single_maintainer_can_explicitly_review_own_candidate_with_separate_publisher(self) -> None:
+        maintainer = Principal("fixture:maintainer", frozenset({"updater", "reviewer"}))
         stage = self.service.create_candidate(
             maintainer,
             kind="stage",
@@ -394,7 +432,27 @@ class PublicPipelineTests(unittest.TestCase):
             evidence_refs=self.evidence_ref,
             dependency_refs=[],
         )
-        with self.assertRaises(PermissionDenied):
+        with self.assertRaises(Conflict):
+            self.service.review_candidate(
+                maintainer,
+                kind="stage",
+                record_id="fixture:stage:single-maintainer",
+                revision=stage["revision"],
+                expected_content_hash="wrong-content-hash",
+                decision="approved",
+                note="A stale or mismatched hash cannot be approved.",
+            )
+        approved = self.service.review_candidate(
+            maintainer,
+            kind="stage",
+            record_id="fixture:stage:single-maintainer",
+            revision=stage["revision"],
+            expected_content_hash=stage["content_hash"],
+            decision="approved",
+            note="Explicit author review using the immutable content hash.",
+        )
+        self.assertEqual(approved["state"], "approved")
+        with self.assertRaises(InvalidTransition):
             self.service.review_candidate(
                 maintainer,
                 kind="stage",
@@ -402,27 +460,15 @@ class PublicPipelineTests(unittest.TestCase):
                 revision=stage["revision"],
                 expected_content_hash=stage["content_hash"],
                 decision="approved",
-                note="An author cannot approve their own candidate.",
-            )
-        approved = self.service.review_candidate(
-            REVIEWER,
-            kind="stage",
-            record_id="fixture:stage:single-maintainer",
-            revision=stage["revision"],
-            expected_content_hash=stage["content_hash"],
-            decision="approved",
-            note="Explicit review by a separate reviewer identity.",
-        )
-        self.assertEqual(approved["state"], "approved")
-        with self.assertRaises(InvalidTransition):
-            self.service.review_candidate(
-                REVIEWER,
-                kind="stage",
-                record_id="fixture:stage:single-maintainer",
-                revision=stage["revision"],
-                expected_content_hash=stage["content_hash"],
-                decision="approved",
                 note="Duplicate review must not replay as a new action.",
+            )
+        maintainer_with_publish = Principal(maintainer.actor_id, frozenset({"updater", "reviewer", "publisher"}))
+        with self.assertRaises(PermissionDenied):
+            self.service.build_release(
+                maintainer_with_publish,
+                members=[{"kind": "stage", "id": "fixture:stage:single-maintainer", "revision": 1}],
+                coverage={"status": "synthetic"},
+                required_capabilities=[],
             )
         release = self.service.build_release(
             PUBLISHER,
@@ -430,7 +476,20 @@ class PublicPipelineTests(unittest.TestCase):
             coverage={"status": "synthetic"},
             required_capabilities=[],
         )
+        with self.assertRaises(PermissionDenied):
+            self.service.validate_release(
+                maintainer_with_publish,
+                release["index_release_id"],
+                idempotency_key="self-reviewer-validate",
+            )
         self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="separate-roles-validate")
+        with self.assertRaises(PermissionDenied):
+            self.service.activate_release(
+                maintainer_with_publish,
+                release["index_release_id"],
+                expected_active_release_id=None,
+                idempotency_key="self-reviewer-activate",
+            )
         self.service.activate_release(
             PUBLISHER,
             release["index_release_id"],
@@ -448,8 +507,9 @@ class PublicPipelineTests(unittest.TestCase):
         )
         self.assertEqual(
             [event["actor_id"] for event in events],
-            [maintainer.actor_id, REVIEWER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id],
+            [maintainer.actor_id, maintainer.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id],
         )
+        self.assertNotEqual(maintainer.actor_id, PUBLISHER.actor_id)
 
     def test_update_run_idempotency_and_checkpoint_recovery(self) -> None:
         first = self.service.create_update_run(UPDATER, idempotency_key="run-1", source_id=None, public_scope={"mode_id": "fixture:m"})
