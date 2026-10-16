@@ -354,12 +354,18 @@ class KnowledgeService:
         members: list[dict[str, Any]],
         coverage: dict[str, Any],
         required_capabilities: list[str],
+        attribute_definitions: dict[str, Any] | None = None,
         schema_version: str = "0.1-draft",
     ) -> dict[str, Any]:
         principal.require("publish")
         if not isinstance(members, list) or not members or len(members) > 10000:
             raise InvalidPayload("release must list at least one public member")
-        if not isinstance(coverage, dict) or not isinstance(required_capabilities, list) or any(not isinstance(cap, str) for cap in required_capabilities):
+        if (
+            not isinstance(coverage, dict)
+            or not isinstance(required_capabilities, list)
+            or any(not isinstance(cap, str) for cap in required_capabilities)
+            or attribute_definitions is not None and not isinstance(attribute_definitions, dict)
+        ):
             raise InvalidPayload("invalid release manifest")
         release_id = _new_id("rel")
         with self.database.transaction() as db:
@@ -413,6 +419,7 @@ class KnowledgeService:
                 "index_release_id": release_id,
                 "parent_release_id": parent_id,
                 "required_capabilities": sorted(set(required_capabilities)),
+                "attribute_definitions": attribute_definitions or {},
                 "coverage": coverage,
                 "members": member_manifest,
                 "evidence_ids": sorted(evidence_rows),

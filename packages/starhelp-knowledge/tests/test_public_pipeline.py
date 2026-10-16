@@ -363,6 +363,16 @@ class PublicPipelineTests(unittest.TestCase):
             evidence_refs=self.evidence_ref,
             dependency_refs=[],
         )
+        with self.assertRaises(PermissionDenied):
+            self.service.review_candidate(
+                UPDATER,
+                kind="stage",
+                record_id="fixture:stage:no-review",
+                revision=stage["revision"],
+                expected_content_hash=stage["content_hash"],
+                decision="approved",
+                note="Updater role cannot approve, even its own candidate.",
+            )
         with self.assertRaises(InvalidTransition):
             self.service.build_release(
                 PUBLISHER,
@@ -372,6 +382,74 @@ class PublicPipelineTests(unittest.TestCase):
             )
         with self.assertRaises(PermissionDenied):
             self.service.validate_release(UPDATER, "fixture:unknown-release", idempotency_key="wrong-role")
+
+    def test_lifecycle_requires_explicit_separate_author_reviewer_and_publisher(self) -> None:
+        maintainer = Principal("fixture:maintainer", frozenset({"admin"}))
+        stage = self.service.create_candidate(
+            maintainer,
+            kind="stage",
+            record_id="fixture:stage:single-maintainer",
+            scope={"game_version": "fixture:v", "mode_id": "fixture:m", "cycle_id": "fixture:c", "stage_id": "fixture:stage:single-maintainer"},
+            payload={"partitions": ["upper"]},
+            evidence_refs=self.evidence_ref,
+            dependency_refs=[],
+        )
+        with self.assertRaises(PermissionDenied):
+            self.service.review_candidate(
+                maintainer,
+                kind="stage",
+                record_id="fixture:stage:single-maintainer",
+                revision=stage["revision"],
+                expected_content_hash=stage["content_hash"],
+                decision="approved",
+                note="An author cannot approve their own candidate.",
+            )
+        approved = self.service.review_candidate(
+            REVIEWER,
+            kind="stage",
+            record_id="fixture:stage:single-maintainer",
+            revision=stage["revision"],
+            expected_content_hash=stage["content_hash"],
+            decision="approved",
+            note="Explicit review by a separate reviewer identity.",
+        )
+        self.assertEqual(approved["state"], "approved")
+        with self.assertRaises(InvalidTransition):
+            self.service.review_candidate(
+                REVIEWER,
+                kind="stage",
+                record_id="fixture:stage:single-maintainer",
+                revision=stage["revision"],
+                expected_content_hash=stage["content_hash"],
+                decision="approved",
+                note="Duplicate review must not replay as a new action.",
+            )
+        release = self.service.build_release(
+            PUBLISHER,
+            members=[{"kind": "stage", "id": "fixture:stage:single-maintainer", "revision": 1}],
+            coverage={"status": "synthetic"},
+            required_capabilities=[],
+        )
+        self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="separate-roles-validate")
+        self.service.activate_release(
+            PUBLISHER,
+            release["index_release_id"],
+            expected_active_release_id=None,
+            idempotency_key="separate-roles-activate",
+        )
+        with self.service.database.reader() as db:
+            events = db.execute(
+                "SELECT action,actor_id FROM audit_events WHERE target_id IN (?,?) ORDER BY rowid",
+                ("fixture:stage:single-maintainer", release["index_release_id"]),
+            ).fetchall()
+        self.assertEqual(
+            [event["action"] for event in events],
+            ["candidate_created", "candidate_approved", "release_built", "release_validated", "release_activated"],
+        )
+        self.assertEqual(
+            [event["actor_id"] for event in events],
+            [maintainer.actor_id, REVIEWER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id],
+        )
 
     def test_update_run_idempotency_and_checkpoint_recovery(self) -> None:
         first = self.service.create_update_run(UPDATER, idempotency_key="run-1", source_id=None, public_scope={"mode_id": "fixture:m"})

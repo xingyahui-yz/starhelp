@@ -1,6 +1,6 @@
 # StarHelp Knowledge
 
-An independently installable Python package for StarHelp's **public-only** knowledge service. It uses the Python standard library and SQLite; supported Python is 3.12 or later.
+An independently installable Python package for StarHelp's **public-only** knowledge service. Version 0.2.0 uses the Python standard library and SQLite for the service; cross-version Ed25519 signing and verification are an optional `crypto` dependency. Supported Python is 3.12 or later.
 
 ## Local development
 
@@ -67,6 +67,29 @@ python -m starhelp_knowledge verify-bundle --path .\data\release.json
 
 The export operation uses the service's release checks, writes canonical JSON through a temporary file, and includes only members in that release. Verification checks record/evidence hashes, manifest hash, and reference closure without opening the database.
 
+## Signed B distribution and C planner view
+
+The `starhelp.local.v0.2` adapter preserves three separate integrity layers: A's native release hash, C's `sha256-json-v1` member hashes, and B's Ed25519-signed `PublicBundle/0.1-draft` envelope. `verify-distribution` checks all three layers, exact collection schemas, release identity, capability declarations, object hashes, and dependency closure. B's pinned `BundleValidator` independently validates the outer envelope.
+
+Install the optional signing dependency, then export a published release with a separately provisioned Ed25519 private key:
+
+```powershell
+python -m pip install -e '.[crypto]'
+python -m starhelp_knowledge export-distribution --database .\data\knowledge.sqlite3 --release RELEASE_ID --profile starhelp.local.v0.2 --private-key .\secrets\production-ed25519-private.pem --key-id production-knowledge-v1 --producer-commit COMMIT_SHA --output .\data\knowledge-distribution.json
+python -m starhelp_knowledge verify-distribution --path .\data\knowledge-distribution.json --trusted-public-key .\secrets\production-ed25519-public.pem --trusted-key-id production-knowledge-v1
+```
+
+Keep signing and trust keys outside source control. The exporter requires an active or superseded release, exact approved review hashes, and an activation/rollback audit event. It refuses a C projection when public meanings such as stage seats, resource reuse, variant rosters, equipment requirements, public goals, or registered condition attributes are missing or ambiguous.
+
+The deterministic fixture command exercises the A lifecycle using only synthetic `fixture:` records, then calls the snapshot serializer and bundle validator from the exact pinned B source commit. Pass the read-only B repository path explicitly:
+
+```powershell
+python -m starhelp_knowledge build-fixture-distribution --output-dir .\artifacts --b-root ..\desktop-account --overwrite
+python -m starhelp_knowledge verify-distribution --path .\artifacts\knowledge-planner-fixture-v1.bpublic.json --trusted-public-key .\artifacts\fixture-ed25519-public.pem --trusted-key-id starhelp-fixture-ed25519-v1
+```
+
+This writes the signed envelope, a test-only public key, a synthetic B account snapshot, and `SHA256SUMS.txt`. The deterministic private fixture seed is test-only and is not a production trust anchor. The fixture contains synthetic approvals to exercise the exporter; it does not represent human approval or real game content. The interop tests load the exact pinned C planner source into a temporary directory and verify main, complete-alternate, and no-matching-goal outcomes without modifying B or C.
+
 ## Verification
 
 From the repository root, with the package source on `PYTHONPATH`:
@@ -76,4 +99,4 @@ $env:PYTHONPATH = '.\packages\starhelp-knowledge\src'
 python -m unittest discover -s .\packages\starhelp-knowledge\tests -v
 ```
 
-The tests use synthetic fixture data and simulated identities. They do not establish real-source permission, real game content coverage, or human approval of production content.
+The tests use synthetic fixture data and simulated identities. They do not establish real-source permission, real game content coverage, production-key provisioning, or human approval of production content.
