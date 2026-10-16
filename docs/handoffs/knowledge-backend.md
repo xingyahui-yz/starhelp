@@ -68,9 +68,9 @@ This mapping was written before implementation. It deliberately names three dist
 
 The versioned adapter is implemented, but current generic draft records are not automatically C-compatible. Export requires explicitly authored C stage seats/resource reuse, template public goals, complete variant rosters with per-slot equipment requirements, and a registered condition attribute type/unit/phase/loadout meaning. It rejects unsupported operators/subjects and ambiguous evidence or dependencies. B production signing/trust keys have not been provisioned.
 
-### Expected repeatable commands
+### Delivered synthetic artifact
 
-The fixture command is intentionally synthetic and uses only fixture identifiers/data. The final implementation will provide these commands (exact options are pinned here for reproducibility):
+The committed sample uses only `fixture:` records and deterministic test identities. Rebuild it from the A repository root with Python 3.12+ and the pinned B checkout at `..\desktop-account`:
 
 ```powershell
 $env:PYTHONPATH = '.\packages\starhelp-knowledge\src'
@@ -78,7 +78,27 @@ python -m starhelp_knowledge build-fixture-distribution --output-dir .\packages\
 python -m starhelp_knowledge verify-distribution --path .\packages\starhelp-knowledge\artifacts\knowledge-planner-fixture-v1.bpublic.json --trusted-public-key .\packages\starhelp-knowledge\artifacts\fixture-ed25519-public.pem --trusted-key-id starhelp-fixture-ed25519-v1 --supported-capability starhelp.knowledge-distribution.v1
 ```
 
-Expected artifact set: signed B envelope, test-only Ed25519 public key, synthetic B snapshot, and `SHA256SUMS.txt`. Production export requires an external Ed25519 private-key path and a production trust configuration; the fixture key ID is never a production trust anchor. The final artifact record includes producer commit/package version, profile version, release and member/dependency closure, native/projected/B digest algorithms, artifact SHA-256 values, signature algorithm/key ID/use, fixture label, and independent verify command.
+The current committed artifact was produced from A commit `b790a52aea4fabdb362d35c37d9b511b737e1fe4`, package `starhelp-knowledge` 0.2.0, B snapshot source commit `045965bce4fbc38a3baa79b594535c9dd983d776`, and C planner commit `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` for interoperability validation. It contains release `rel_fixture_0001` and these exact integrity layers:
+
+| Layer | Version and identity | Integrity evidence |
+|---|---|---|
+| A native release | `starhelp.knowledge.native.v0.1-draft` | `sha256-canonical-json-utf8`; release content hash `e34461116bb66071262067a3804acf66652b1907c840a9eb21bb303304086f85` |
+| B envelope | `starhelp.b-publicbundle-envelope.v1`, B `PublicBundle` contract/schema `0.1-draft` | Ed25519 signature over B-canonical manifest bytes; key ID `starhelp-fixture-ed25519-v1` is a deterministic test-only key, never a production trust anchor |
+| C planner view | `starhelp.local.v0.2` | `sha256-json-v1`; planner manifest hash `ea436574636cb9094c4e7e53ed1bd75e2e6aa8900ae8bc4f33f995b5a5cc28d8` |
+
+The signed B envelope has exactly two objects: `native-release:rel_fixture_0001` (B member SHA-256 `bdad022b849db38dfd0cd37c8d26fd1fb829f9bf4e441473dd27c7b1427ba136`) and `planner-view:rel_fixture_0001` (B member SHA-256 `f32738aafd7c4c220bf3d69744ce5a2e1ed5e1485b33cc135a078cddd4ab1ed3`). The native release has seven record members: characters `fixture:character:a`, `:b`, and `:c`; stage `fixture:stage:one`; template `fixture:template:one`; and variants `fixture:variant:main` and `:alternate`. The template depends on the stage and both complete variants; the main variant depends on characters a/b, and the alternate depends on b/c. Evidence `ev_fixture_0001` is included in the native evidence closure and is a member of the eight-member C projection. The planner object references the native-release object, and its entity, stage, template, and variant dependencies all remain within `rel_fixture_0001`.
+
+The synthetic B snapshot is serialized from the exact pinned B source commit. `SHA256SUMS.txt` records:
+
+| File | SHA-256 |
+|---|---|
+| `knowledge-planner-fixture-v1.bpublic.json` | `145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00` |
+| `fixture-ed25519-public.pem` | `7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e` |
+| `synthetic-b-snapshot-045965b.json` | `a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5` |
+
+The checksum-list file itself has SHA-256 `2766c29414b6d0b3a1ff35ff987da29c17a26f728bc1744084f5b1c343913419`. The bundle labels its coverage `synthetic` with reason `fixture_only_no_game_facts`; fixture approvals exercise the existing review/publish lifecycle and do not claim human approval of real content.
+
+The independent command above reported `valid: true`, signature algorithm `ed25519`, matching test key ID, the two B member hashes, native release hash, and C planner manifest hash. The committed artifact itself was then loaded by B's `BundleValidator` from the pinned B commit and by C's planner from the pinned C commit: the normal goal returned `plans_available` with main and alternate plans; fixing character c returned `plans_available` with only the complete alternate; an unsupported goal returned `no_reviewed_template` with no plans. The tests additionally cover tampering, missing dependencies, cross-release references, revocation, unknown capabilities, and identity/permission failures. Production export still requires an externally provisioned Ed25519 private key and a separately configured production trust anchor.
 
 ## Implemented package areas
 
@@ -95,7 +115,7 @@ The package currently provides SQLite migrations and tables for sources/policies
 
 ## Verification evidence
 
-Verification run on 2026-10-15: `compileall` succeeded; `unittest discover` passed all 12 tests, including explicit release hash tampering and source-policy/capability binding rejection. Tests use `fixture:` identifiers and simulated curator/reviewer/publisher/admin principals. The test identities are not production identities; their approvals do not approve any real game content.
+Verification run on 2026-10-16 from the A repository root: `python -m unittest discover -s packages/starhelp-knowledge/tests -v` passed all 20 tests. The suite exercised A lifecycle/review separation and pinned B/C interoperability, including signed-envelope reproducibility, all three planner outcomes, hash tampering, missing dependencies, cross-release references, revocation, unsupported semantics/capabilities, and permission failures. The standalone `verify-distribution` command accepted the committed artifact and reported `valid: true`; separate direct checks accepted the committed artifact in B's pinned validator and produced the three stated outcomes in C's pinned planner. Tests use `fixture:` identifiers and simulated curator/reviewer/publisher/admin principals; their approvals do not approve any real game content. The test-only signing key is not production trust.
 
 ## Reference links
 
