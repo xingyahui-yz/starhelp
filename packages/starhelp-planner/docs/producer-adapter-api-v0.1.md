@@ -1,6 +1,6 @@
 # Producer adapter API v0.1
 
-Status: round-2 implementation in progress. Native rules remain 0.2.0; final A commit/output acceptance is pending. Do not interpret the existence of this API as completed A/B/C interoperability.
+Status: native rules remain 0.2.0; the first fixed A `b790a52` distribution is supported. Its limited fixture data leaves three-mode and nontrivial equipment interoperability unaccepted. Do not interpret API availability as complete round-2 or MVP acceptance.
 
 ## Separate versions and entry points
 
@@ -58,10 +58,10 @@ Use `Path(...).read_bytes().decode("utf-8")` in the external loader to preserve 
 ## Validation and conversion boundary
 
 1. Validate materialized JSON shape/limits, original byte SHA-256 and duplicate-key/non-finite-number rejection.
-2. Recognize the fixed producer/profile. The old A `313508f` native export is digest/closure checked and explicitly refused for missing executable semantics. A new executable commit is not accepted until its delivery is locked.
+2. Recognize the fixed producer/profile. The old A `313508f` native export is digest/closure checked and explicitly refused for missing executable semantics. The accepted new producer is exactly `b790a52aea4fabdb362d35c37d9b511b737e1fe4`; other commits do not become supported merely by retaining a profile name.
 3. Verify the original Ed25519 manifest signature against the caller's separately pinned synthetic-test keyring; no `verified: true` shortcut or always-true verifier exists. The `producer-signature` extra supplies the cryptography implementation. Missing optional verification support fails closed. Production trust is not established by a fixture public key.
 4. Verify original signed object membership/digests/references, original A release digest/closure, projected C member digests and the original review/publication ledger bound to exactly the same source identities, revisions and hashes.
-5. Check explicit field mapping: public goal/stage seats, complete main/alternate teams, condition operator/value/unit/context, tactics/cultivation and evidence identities cannot change during adaptation. `ne` may map to typed `neq`; unsupported `not_in` and team-wide predicates are refused.
+5. Check explicit field mapping: public goal/stage seats, complete main/alternate teams, condition operator/value/unit/context, tactics/cultivation and evidence identities cannot change during adaptation. Known release/schema/capability stamps may be added by A v1 only with their exact supported values; they do not change predicates. `ne` may map to typed `neq`; unsupported `not_in` and team-wide predicates are refused.
 6. Build a separate consumption copy. Original entity/evidence scopes omitted from the A projection are retained from the verified native records; contradictory supplied scopes are rejected. Recompute only this new internal view's member digests, preserving declared dependencies. Original bytes, signatures, original member/release hashes and approval ledger remain unchanged and separately reported. Internal hashes are not producer signatures.
 7. Adapt B's exact fixed serializer, preserving ownership, revisions, IDs, sources, field states and timestamps. Missing unit/context remains unknown. String scope is retained as producer metadata, not interpreted as a battle phase. Observed field paths never become complete coverage. `source_confirmed` is not silently upgraded to `source_verified`; unknown public item types cannot establish equipment kinds. Raw slot identity is retained.
 8. Pass the normalized request to unchanged native rules. Unknown hard fields/ownership cannot enter available plans. Only supported full approved variants are considered.
@@ -76,4 +76,4 @@ Adapter failures have `status: error`, `analysis: null`, and `{code, message, de
 
 `interop/baseline/producer-locks.json` identifies actual A CLI output and B serializer output. The baseline A release contains no C-required seat/goal/registry/approval view, so it is not an executable interoperability sample. `tools/replay_baseline.py` reproduces the precise refusal and B measurement degradation. `tools/check_producer_source.py` compares temporary source copies against immutable Git objects before producer execution. Capture tools refuse to overwrite locked outputs.
 
-A's new signed distribution is under development. Its final producer commit/profile/release/raw SHA, actual B verifier acceptance, installed-wheel positive main/alternate/no-match and remaining negative replays are not yet accepted. Shared M0, real source permissions, production signing trust, real accounts and complete MVP acceptance remain outside this technical round's completion claim.
+The first A signed delivery is locked in `interop/a-b790a52/consumer-capture-locks.json`. Actual B validator acceptance and deterministic producer regeneration are recorded under `interop/reports/`. Nine additional actual B serializer outputs, including a confirmed scalar lacking unit/context, are in `interop/b-b790a52-cases/`. The final installed-wheel replay reports passing cases separately from unexercised requirements; the producer has one mode and no equipment constraints, so full technical acceptance is not claimed. Shared M0, real source permissions, production signing trust, real accounts and complete MVP acceptance remain unverified.

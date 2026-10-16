@@ -14,6 +14,8 @@ def main() -> None:
     parser.add_argument("--capture-dir", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--installed-root", type=Path)
+    parser.add_argument("--wheel", type=Path)
+    parser.add_argument("--consumer-source-commit")
     args = parser.parse_args()
     if args.installed_root:
         sys.path.insert(0, str(args.installed_root.resolve()))
@@ -47,6 +49,8 @@ def main() -> None:
         "producer_locks": {key: locks[key] for key in ("a", "b")},
         "baseline_result": result, "snapshot_mapping": {"proof": b_proof, "coverage": normalized["coverage"], "diagnostics": diagnostics},
         "positive_interoperability_accepted": False,
+        "consumer_source_commit": args.consumer_source_commit,
+        "consumer_wheel_sha256": hashlib.sha256(args.wheel.read_bytes()).hexdigest() if args.wheel else None,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")

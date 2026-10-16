@@ -1,0 +1,51 @@
+{
+  "a_artifact": "knowledge-planner-fixture-v1.bpublic.json",
+  "a_package_version": "0.2.0",
+  "a_producer_commit": "b790a52aea4fabdb362d35c37d9b511b737e1fe4",
+  "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+  "b_snapshot": "synthetic-b-snapshot-045965b.json",
+  "b_snapshot_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "distribution_profile": "starhelp.b-publicbundle-envelope.v1",
+  "entry_point": "starhelp_knowledge.cli.main build-fixture-distribution",
+  "files": {
+    "SHA256SUMS.txt": "2766c29414b6d0b3a1ff35ff987da29c17a26f728bc1744084f5b1c343913419",
+    "fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+    "knowledge-planner-fixture-v1.bpublic.json": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+    "synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5"
+  },
+  "fixture_key_id": "starhelp-fixture-ed25519-v1",
+  "fixture_public_key": "fixture-ed25519-public.pem",
+  "independent_verifier": "starhelp_knowledge.cli.main verify-distribution",
+  "production_trust_established": false,
+  "release_id": "rel_fixture_0001",
+  "source_proof": {
+    "all_files_verified": true,
+    "commit": "b790a52aea4fabdb362d35c37d9b511b737e1fe4",
+    "file_sha256": {
+      ".gitignore": "1223c530980cb9ab29e825ec34c9eb7c86984035370f46d7070c466856587b37",
+      "README.md": "939c3d43e13daf42a8a9fc651ff15046d70cca0a788ad1cdb8fb3c876e15d76a",
+      "pyproject.toml": "8447683c5dc37452b26b24ecb6670bc33f61f5dafd224038ca4ad580c30489cc",
+      "src/starhelp_knowledge/__init__.py": "a4de83ee69d63386da59e8bc02fd49f62d3f8ebb4b98d135b37e74841650253c",
+      "src/starhelp_knowledge/__main__.py": "c8046e828678dd3cf3f080dee77462283ec27d08d9fd61a20c1d0fe9e80679d7",
+      "src/starhelp_knowledge/bundle.py": "967134c126000787c498186bf56f9fab6a5e6cec975695072708b28450a806bf",
+      "src/starhelp_knowledge/cli.py": "ebb9316dd956f3c0d7b012ccf2bce40249c5cb20d4f923bbc5f4d228c179e2a6",
+      "src/starhelp_knowledge/database.py": "a2d83ccb14881b04584b1c84861cdb4fdf2d2b5cfaa14fe46057505a7b27b877",
+      "src/starhelp_knowledge/distribution.py": "e0c3397b9e23f99d47298c1be84d4436ecc4e03163572dc35b3d9c356dbb13d5",
+      "src/starhelp_knowledge/errors.py": "c2f4bcf5a73fde5cf9e73b8371d3a3b4376dca528be6af2cfde41f6493fa324d",
+      "src/starhelp_knowledge/fixture.py": "cf4be77f768ab4e37228be874311f5fbf2f669e0c6e0888774317001fe72fe06",
+      "src/starhelp_knowledge/http.py": "9bf1f3545066d06a828cede481e44a83f3b05481fb2b954465bee26520d846c9",
+      "src/starhelp_knowledge/interop.py": "cf297e023d22878420309c7464fa885b9c97e317bca32882495dd7219e90fdc8",
+      "src/starhelp_knowledge/migrations/001_initial.sql": "ce98d3577d84e80ce74e4571b2081418679b915c3a58f287f41018dedc84a728",
+      "src/starhelp_knowledge/migrations/__init__.py": "1419c23520470f18063a76c4947ffa9924af1e83c0e88efdf4e4f3a0a59aa3a7",
+      "src/starhelp_knowledge/policy.py": "e1001370a2c29bffd6b387b245acf250e0bd1cbc5847d2bc13a7721cb50d6023",
+      "src/starhelp_knowledge/records.py": "9b90d6b9ab8e268a50c00510aaf6ccf862ae8cc281cfdc1b430cead07d342c9a",
+      "src/starhelp_knowledge/service.py": "b489234a0e0974395335e56703db8204cc8c0c4671470040d52eaa52808f8324",
+      "src/starhelp_knowledge/sources.py": "75eb407af7f76ec7b6870e3bff15c3c627e66b5c3e7d3999fae3b958ae69aa37",
+      "tests/test_interop.py": "bc6625c9ef8aa4e50f3163d93a6f85a93738e40d39e2ed4a4d81910eb7dec77e",
+      "tests/test_public_pipeline.py": "f5164ca86eb8e8e5c39460cc1235c001e662873fb2aa084c138ef4cf7174b07d"
+    },
+    "git_tree": "b4adba15e5fac9345ba249f918b6ba784b01dfa8",
+    "package_subdir": "packages/starhelp-knowledge"
+  },
+  "synthetic_only": true
+}

@@ -1,0 +1,17 @@
+{
+  "synthetic_only": true,
+  "b_producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "validator": "starhelp_desktop.bundles.BundleValidator",
+  "signature_verifier": "starhelp_desktop.bundles.Ed25519Keyring",
+  "a_artifact_sha256": "e67206216b14b071a3d8b96111f608bb828c66b4634c8096dfaed64948eddb88",
+  "expected_release": "rel_36f95797d51749ff8cc097245a064971",
+  "key_id": null,
+  "public_key_sha256": null,
+  "cryptography_version": null,
+  "accepted": false,
+  "release": null,
+  "error": "trusted release signature verification is unavailable",
+  "source_git_tree": "e45a302b20aa18cb239653c6a6ccac3ca8d6cc3c",
+  "all_source_files_verified": true,
+  "production_trust_established": false
+}

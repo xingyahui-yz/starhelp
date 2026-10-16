@@ -34,6 +34,7 @@ def main() -> None:
     if (output / "producer-locks.json").exists():
         raise SystemExit("capture is already locked; use a new output directory")
     sys.dont_write_bytecode = True
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     a_root, b_root = args.a_source.resolve(), args.b_source.resolve()
     from check_producer_source import check_source
     source_proofs = {

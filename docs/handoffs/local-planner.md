@@ -1,16 +1,22 @@
 # Local planner handoff
 
-## Round 2 — version adapters and producer black-box replay (in progress)
+## Round 2 — fixed producer adaptation, partial acceptance
 
 The user approved the round-2 A/C plan on 2026-10-16. The registered Goal still has the old objective and its production/M0 requirements remain unfulfilled. It was blocked, then resumed with the old objective unchanged; current Goal tools cannot edit or clear it. Registering the new Goal requires the user to edit/clear the old Goal in the progress panel. Authorized round-2 implementation proceeds independently of that registration.
 
-Baseline C is `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` / native 0.2.0. B is pinned to `045965bce4fbc38a3baa79b594535c9dd983d776`, not its newer working HEAD. A baseline is `313508f895cb422d4a309743eb7f8b99f45a7a91`; its final positive export has not yet been pinned or accepted.
+Baseline C is `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` / native 0.2.0. B is pinned to `045965bce4fbc38a3baa79b594535c9dd983d776`, not its newer working HEAD. Old A `313508f895cb422d4a309743eb7f8b99f45a7a91` remains a verified refusal case. The first accepted new A producer is exactly `b790a52aea4fabdb362d35c37d9b511b737e1fe4` / package 0.2.0 / profile `starhelp.b-publicbundle-envelope.v1`.
 
-Early compatibility matrix and precise missing semantics: [producer-compatibility-v0.1.md](../../packages/starhelp-planner/docs/producer-compatibility-v0.1.md). B's serializer has no independent unit/context metadata, authorization context or completeness claims. These cannot be supplied as confirmed facts by conversion. Positive producer replay must preserve that boundary. No final A/B/C positive acceptance is claimed at this stage.
+Compatibility matrix: [producer-compatibility-v0.1.md](../../packages/starhelp-planner/docs/producer-compatibility-v0.1.md). B's serializer has no independent unit/context metadata, authorization context or completeness claims. These remain unknown or separately supplied caller context. `source_confirmed` is not promoted to `source_verified`. New A conditional metadata stamps are checked against the exact supported release/schema/capability values; predicate meaning is unchanged.
 
-Intermediate evidence: `interop/baseline/` contains an actual A baseline CLI export and B fixed serializer output with byte SHA-256 locks. `interop/b-baseline-cases/` contains eight additional outputs of B's serializer on synthetic models, covering missing fields, ownership and instance identity states. `interop/reports/*source-proof.json` compares every copied producer file against the named Git objects (17 A files, 21 B files). The 52 current component tests pass; no final positive A export has been accepted yet. Native 0.2 engine/condition/allocation/cost/validation files are unchanged.
+The new raw A bundle SHA-256 is `145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00`, release `rel_fixture_0001`. B snapshot SHA-256 is `a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5`. `interop/a-b790a52/consumer-capture-locks.json` records the exact sources and files. A's real export/verify command and B's actual `BundleValidator`/`Ed25519Keyring` accepted it. Repeating the real producer command produced byte-identical bundle/key/snapshot. The key is `starhelp-fixture-ed25519-v1`, synthetic test trust only.
+
+`interop/baseline/` retains actual old producer outputs and refusal evidence. `interop/b-baseline-cases/` and `interop/b-b790a52-cases/` contain actual fixed B serializer outputs from synthetic model inputs. `interop/reports/*source-proof.json` compares the copied producer files against immutable Git objects. Source compilation and **57 tests** pass, including five tests on the new actual A/B capture. Native 0.2 engine/condition/allocation/cost/validation files are unchanged.
 
 Producer API contract: [producer-adapter-api-v0.1.md](../../packages/starhelp-planner/docs/producer-adapter-api-v0.1.md). The new component version is 0.3.0 while its native rule version stays 0.2.0. Signature support is optional and uses caller-pinned test public keys with mathematical Ed25519 verification; absence of verification support has no bypass. The isolated verification dependency installation uses cryptography 46.0.7, within B's declared `<47` range, and does not change A/B or the shared Python runtime.
+
+Reproduction commands: [producer-replay-commands.md](../../packages/starhelp-planner/docs/producer-replay-commands.md). The current producer has **one** synthetic mode, two complete variants, soft statistical conditions and **zero** equipment requirements. Missing fields/units produce unknown warnings; available plans do not claim those soft conditions are satisfied. Three-mode data and nontrivial equipment-lock/ambiguous-instance replay are not accepted. A must provide another explicitly versioned fixture delivery with those authored/public equipment and mode semantics; C will not edit this payload to manufacture coverage.
+
+The final installed-wheel report and artifact are recorded below after packaging. Full round-2 technical acceptance remains false while the unexercised producer cases remain; real source permissions, production trust, real accounts and full MVP acceptance are also not claimed.
 
 ## Round 1 handoff (retained)
 

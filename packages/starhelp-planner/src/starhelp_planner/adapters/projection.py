@@ -71,8 +71,18 @@ def check_projection(native: dict[str, Any], view: dict[str, Any]) -> None:
             elif subject["kind"] != "team_slot":
                 fail("unsupported_projection_semantics", "team-wide predicates have no finite supported mapping")
             conditions.append(condition)
-        if obj.get("conditions") != conditions:
+        projected_conditions = obj.get("conditions", [])
+        if len(projected_conditions) != len(conditions):
             fail("projection_semantics_mismatch", "condition value/unit/context/requirement mapping differs")
+        decorations = {"index_release_id": native["manifest"]["index_release_id"], "schema_version": "0.1-draft", "required_capabilities": ["starhelp.local-profile.v0.2"]}
+        for expected, actual in zip(conditions, projected_conditions):
+            # A v1 may stamp supported release/schema/capability metadata. It does
+            # not change the original predicate, unit, context or evidence.
+            for key, value in decorations.items():
+                if key in actual and key not in expected:
+                    expected[key] = value
+            if actual != expected:
+                fail("projection_semantics_mismatch", "condition value/unit/context/requirement mapping differs")
         for key in ("steps", "mechanics", "failure_conditions", "risks", "cultivation_requirements"):
             if obj.get(key, []) != payload.get(key, []):
                 fail("projection_semantics_mismatch", "strategy/cultivation projection differs from the original")

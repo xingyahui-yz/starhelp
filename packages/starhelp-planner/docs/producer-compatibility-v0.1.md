@@ -1,6 +1,6 @@
 # Producer compatibility matrix — round 2
 
-Status: in progress, 2026-10-16. This proposal does not change the shared contract. Technical interoperability uses synthetic producer outputs; it does not establish production content approval or complete the old M0/MVP Goal.
+Status: first fixed producer delivery consumed, partial acceptance, 2026-10-16. This proposal does not change the shared contract. Technical interoperability uses synthetic producer outputs; it does not establish production content approval or complete the old M0/MVP Goal.
 
 ## Fixed baselines
 
@@ -10,7 +10,24 @@ Status: in progress, 2026-10-16. This proposal does not change the shared contra
 | B desktop serializer | `045965bce4fbc38a3baa79b594535c9dd983d776` | Generate synthetic snapshots through `profiles._snapshot_to_dict`; no store/repository/account operations |
 | C native planner | `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` / wheel `0.2.0` | Preserve the native `analyze` entry and `starhelp.local.v0.2` semantics |
 
-B's working HEAD has advanced; it is not used. Producer sources are read from the specified Git commit and executed only from a temporary copy inside C. A's final positive export will be locked separately after delivery, with its actual commit/profile/release/raw byte SHA-256. Developing A versions cannot be mixed into one acceptance result.
+B's working HEAD has advanced; it is not used. Producer sources are read from the specified Git commit and executed only from a temporary copy inside C. A's first new positive export is locked separately below, with its actual commit/profile/release/raw byte SHA-256. Developing A versions cannot be mixed into one acceptance result.
+
+## Accepted first delivery (kept separate from the baseline)
+
+| Item | Fixed value |
+|---|---|
+| A executing code commit / package | `b790a52aea4fabdb362d35c37d9b511b737e1fe4` / `0.2.0` |
+| A profile | `starhelp.b-publicbundle-envelope.v1` |
+| Release | `rel_fixture_0001` |
+| Original raw A SHA-256 | `145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00` |
+| A native content digest | `e34461116bb66071262067a3804acf66652b1907c840a9eb21bb303304086f85` |
+| Original projected manifest digest | `ea436574636cb9094c4e7e53ed1bd75e2e6aa8900ae8bc4f33f995b5a5cc28d8` |
+| B serialized snapshot SHA-256 | `a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5` |
+| Test signing identity | `starhelp-fixture-ed25519-v1`, Ed25519, synthetic purpose only |
+
+The actual producer command was invoked from a detached temporary checkout of that commit. A's own verifier accepted the result; the fixed B `BundleValidator` with its real `Ed25519Keyring` also accepted it. Repeating the actual producer command produced byte-identical bundle, public key and B snapshot. No artifact from another A development revision is used in this acceptance set.
+
+Current producer data has one mode (`fixture:mode:duo`), two complete reviewed variants, one soft statistical condition per variant, and no equipment requirements or equipment entities. Missing fields/units remain unknown warnings, not satisfied conditions. This supports normal/complete-alternate/no-match and refusal/degradation checks. It does **not** establish three-mode coverage or nontrivial equipment-lock/ambiguity interoperability. Those remain explicit acceptance gaps requiring additional A-produced fixtures.
 
 ## Current semantic matrix
 

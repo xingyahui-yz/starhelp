@@ -21,6 +21,8 @@ def main() -> None:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--equipment-type", default="fixture:relic:type")
     parser.add_argument("--slot", default="relic:1")
+    parser.add_argument("--field-path")
+    parser.add_argument("--field-value", type=int, default=105)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     output = args.output.resolve()
@@ -29,11 +31,12 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     if (output / "producer-locks.json").exists():
         raise SystemExit("capture is already locked; use a new output directory")
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
     from check_producer_source import check_source
     source_proof = check_source(args.b_repository, B_COMMIT, "packages/starhelp-desktop", args.b_source.resolve())
     sys.dont_write_bytecode = True
     sys.path.insert(0, str(args.b_source.resolve() / "src"))
-    from starhelp_desktop.models import EquipmentIdentity, EquipmentInstance, Ownership
+    from starhelp_desktop.models import EquipmentIdentity, EquipmentInstance, Ownership, FieldFact, FieldStatus, SourceKind
     from starhelp_desktop.profiles import _snapshot_from_dict, _snapshot_to_dict
 
     base = _snapshot_from_dict(json.loads(args.base.read_bytes()))
@@ -49,6 +52,10 @@ def main() -> None:
         "player_confirmed_equipment": replace(base, equipment=(instance,)),
         "zero_revision": replace(base, revision=0),
     }
+    if args.field_path:
+        # Producer model input, not edits to an already serialized snapshot.
+        fact = FieldFact(args.field_value, FieldStatus.CONFIRMED, SourceKind.MANUAL, "fixture:C-synthetic-model-input", base.generated_at, base.generated_at, "synthetic-unspecified-measurement")
+        cases["confirmed_field_without_measurement"] = replace(base, fields={args.field_path: fact})
     locks = {"synthetic_only": True, "producer_commit": B_COMMIT, "entry_point": "starhelp_desktop.profiles._snapshot_to_dict", "base_sha256": hashlib.sha256(args.base.read_bytes()).hexdigest(), "source_proof": source_proof, "cases": {}}
     for index, (name, snapshot) in enumerate(cases.items(), start=100):
         snapshot = replace(snapshot, snapshot_id=UUID(int=index))

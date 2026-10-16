@@ -33,5 +33,6 @@ def verify_manifest_signature(manifest: dict[str, Any], signature: Any, trust: A
     return {
         "signature_verified": True, "signature_algorithm": "Ed25519",
         "signing_key_id": key_id, "public_key_sha256": hashlib.sha256(public_bytes).hexdigest(),
+        "public_key_encoding": "raw-32-byte-Ed25519",
         "trust_basis": "caller-pinned synthetic-test public key", "production_trust_established": False,
     }
