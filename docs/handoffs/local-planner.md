@@ -1,5 +1,19 @@
 # Local planner handoff
 
+## Round 2 — version adapters and producer black-box replay (in progress)
+
+The user approved the round-2 A/C plan on 2026-10-16. The registered Goal still has the old objective and its production/M0 requirements remain unfulfilled. It was blocked, then resumed with the old objective unchanged; current Goal tools cannot edit or clear it. Registering the new Goal requires the user to edit/clear the old Goal in the progress panel. Authorized round-2 implementation proceeds independently of that registration.
+
+Baseline C is `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` / native 0.2.0. B is pinned to `045965bce4fbc38a3baa79b594535c9dd983d776`, not its newer working HEAD. A baseline is `313508f895cb422d4a309743eb7f8b99f45a7a91`; its final positive export has not yet been pinned or accepted.
+
+Early compatibility matrix and precise missing semantics: [producer-compatibility-v0.1.md](../../packages/starhelp-planner/docs/producer-compatibility-v0.1.md). B's serializer has no independent unit/context metadata, authorization context or completeness claims. These cannot be supplied as confirmed facts by conversion. Positive producer replay must preserve that boundary. No final A/B/C positive acceptance is claimed at this stage.
+
+Intermediate evidence: `interop/baseline/` contains an actual A baseline CLI export and B fixed serializer output with byte SHA-256 locks. `interop/b-baseline-cases/` contains eight additional outputs of B's serializer on synthetic models, covering missing fields, ownership and instance identity states. `interop/reports/*source-proof.json` compares every copied producer file against the named Git objects (17 A files, 21 B files). The 52 current component tests pass; no final positive A export has been accepted yet. Native 0.2 engine/condition/allocation/cost/validation files are unchanged.
+
+Producer API contract: [producer-adapter-api-v0.1.md](../../packages/starhelp-planner/docs/producer-adapter-api-v0.1.md). The new component version is 0.3.0 while its native rule version stays 0.2.0. Signature support is optional and uses caller-pinned test public keys with mathematical Ed25519 verification; absence of verification support has no bypass. The isolated verification dependency installation uses cryptography 46.0.7, within B's declared `<47` range, and does not change A/B or the shared Python runtime.
+
+## Round 1 handoff (retained)
+
 Status: component 0.2.0 under the **proposed** `starhelp.local.v0.2` adapter profile. The shared `mvp-v0.1` contract is still `0.1-draft`. Local behavior has been checked with synthetic data; this is not real-game integration, human approval of guides, or MVP completion.
 
 ## Entry point and current artifact

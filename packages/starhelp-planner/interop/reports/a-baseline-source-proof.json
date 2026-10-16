@@ -1,0 +1,25 @@
+{
+  "all_files_verified": true,
+  "commit": "313508f895cb422d4a309743eb7f8b99f45a7a91",
+  "file_sha256": {
+    ".gitignore": "1223c530980cb9ab29e825ec34c9eb7c86984035370f46d7070c466856587b37",
+    "README.md": "6ad308ff31a8357e074ca25d7a71ff9aa9dfc150a7ceb7da18bac016bfa8ce4a",
+    "pyproject.toml": "fa328617ca658867e17bb031cc4c0e536254b9a3b9ddaa9bcbe23736c67d9a93",
+    "src/starhelp_knowledge/__init__.py": "d6937d9db53fbf85773e1b3340842b222aa1aaf44c0846c83b6e062401bdc87a",
+    "src/starhelp_knowledge/__main__.py": "c8046e828678dd3cf3f080dee77462283ec27d08d9fd61a20c1d0fe9e80679d7",
+    "src/starhelp_knowledge/bundle.py": "967134c126000787c498186bf56f9fab6a5e6cec975695072708b28450a806bf",
+    "src/starhelp_knowledge/cli.py": "83f5c2ef385d82eb5b929f61d6f79ac7e822508a3be1fcaf9ccc88acebdf6da5",
+    "src/starhelp_knowledge/database.py": "a2d83ccb14881b04584b1c84861cdb4fdf2d2b5cfaa14fe46057505a7b27b877",
+    "src/starhelp_knowledge/errors.py": "c2f4bcf5a73fde5cf9e73b8371d3a3b4376dca528be6af2cfde41f6493fa324d",
+    "src/starhelp_knowledge/http.py": "9bf1f3545066d06a828cede481e44a83f3b05481fb2b954465bee26520d846c9",
+    "src/starhelp_knowledge/migrations/001_initial.sql": "ce98d3577d84e80ce74e4571b2081418679b915c3a58f287f41018dedc84a728",
+    "src/starhelp_knowledge/migrations/__init__.py": "1419c23520470f18063a76c4947ffa9924af1e83c0e88efdf4e4f3a0a59aa3a7",
+    "src/starhelp_knowledge/policy.py": "e1001370a2c29bffd6b387b245acf250e0bd1cbc5847d2bc13a7721cb50d6023",
+    "src/starhelp_knowledge/records.py": "9b90d6b9ab8e268a50c00510aaf6ccf862ae8cc281cfdc1b430cead07d342c9a",
+    "src/starhelp_knowledge/service.py": "bbbd007f9657f980097d20612703dec3e88929a469c116da4264dadca3eb035a",
+    "src/starhelp_knowledge/sources.py": "75eb407af7f76ec7b6870e3bff15c3c627e66b5c3e7d3999fae3b958ae69aa37",
+    "tests/test_public_pipeline.py": "1e5774192225c06584895eae42809e6bd2f51938abfd79b9f2fc8b64c5a03b58"
+  },
+  "git_tree": "1bcd4376f6456176c8cc2a99b2b2fa2d3851a74a",
+  "package_subdir": "packages/starhelp-knowledge"
+}

@@ -1,0 +1,29 @@
+{
+  "all_files_verified": true,
+  "commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "file_sha256": {
+    "README.md": "1a9b7c35de7dab3e7a0d8d72b00103f7a2281b244676f49ec55d4781589e5e16",
+    "packaging/README.md": "e0536c511ea62b9dca760da4122d4ea2f80e6a69c29700eea5bc85e74b978205",
+    "packaging/StarHelp.spec": "11f02cfa5a1452f2e7a753acc9312fc23e9b8c7f76213aa2fb276009034f883e",
+    "packaging/build-candidate.ps1": "c6129b44bbe909d7ad27b5ca77624c05cbaf0e4f3b01d63d8ed60c33832b1431",
+    "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+    "pyproject.toml": "73bdb0a4d9ebcb0bb05417b50949591b9193e7e02d95ed1e0f80d768d63d9e5f",
+    "src/starhelp_desktop/__init__.py": "933d5259b23104c3c25ea918aea9b1751d31ee9ac316f85aebc4718746bf6350",
+    "src/starhelp_desktop/__main__.py": "bd20d56cfab3fc7d65dc315d0cb3b79752de3d1184172072c98380388d168dfb",
+    "src/starhelp_desktop/bundles.py": "7e73093aaea676f9bf889a5d4493818f6f74519581bd45a22d27e74eac2a0711",
+    "src/starhelp_desktop/equipment.py": "062c7d43fbe48e86db0e86caa607a9fbc8ca0980e7bc54103bfda1a2435edfc2",
+    "src/starhelp_desktop/gui.py": "17a59794057256e2092385880522b5bfd4f1b1968bbb6b0d1ddbacd10e492c25",
+    "src/starhelp_desktop/imports.py": "5e82433da96705f1032b7621b069071438bb6675dde2a0ceed1879f90d4a7f6b",
+    "src/starhelp_desktop/lifecycle.py": "4e0f9743247702e14420759cd1a7fc990ba5d7f1982aaecf38b7fffb3b38c6f0",
+    "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+    "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+    "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+    "src/starhelp_desktop/profiles.py": "67ce13ddf53c13e472227b654cc3b078984d617fe55d61d9627eff9a000d30b6",
+    "src/starhelp_desktop/public_profile.py": "9f194d5ceafbddf48dd38d95ab2cb6f8800ee5005a20170fcc71fa7d9eef25f7",
+    "src/starhelp_desktop/reports.py": "2edbedba61ad40755ecac8d58656f5ada4aba10f6d46f41d2b09d4b1886243fd",
+    "src/starhelp_desktop/storage.py": "48d847cae27a0bce754f3cabd49bae390318216b20b0f8b308517708b895e9cb",
+    "tests/test_account_core.py": "647fbe9c91497f6105042df56bd5912159cdf1baf2c78a7e7ffc39dc1562175f"
+  },
+  "git_tree": "e45a302b20aa18cb239653c6a6ccac3ca8d6cc3c",
+  "package_subdir": "packages/starhelp-desktop"
+}

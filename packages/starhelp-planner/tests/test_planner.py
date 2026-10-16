@@ -322,7 +322,7 @@ def test_planner_package_has_no_network_gui_storage_or_game_input_dependencies()
     source_root = Path(__file__).parents[1] / "src" / "starhelp_planner"
     forbidden = {"socket", "http", "urllib", "requests", "aiohttp", "websockets", "tkinter", "PySide6", "PyQt6", "PyQt5", "sqlite3", "subprocess", "pyautogui", "pynput", "mss"}
     violations: list[str] = []
-    for path in source_root.glob("*.py"):
+    for path in source_root.rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):

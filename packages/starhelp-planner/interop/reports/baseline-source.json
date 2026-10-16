@@ -1,0 +1,87 @@
+{
+  "synthetic_only": true,
+  "execution": "source tree",
+  "producer_locks": {
+    "a": {
+      "commit": "313508f895cb422d4a309743eb7f8b99f45a7a91",
+      "content_hash": "c2df590c80f9a11ef3a8afcf7edcbb4bfb50ac0ed9830129f0c0a0c43b0b7d18",
+      "entry_point": "starhelp_knowledge.cli.main export-bundle",
+      "file": "a-313508f-native-export.json",
+      "fixture_builder": "test_public_pipeline.PublicPipelineTests.build_synthetic_release",
+      "raw_sha256": "e67206216b14b071a3d8b96111f608bb828c66b4634c8096dfaed64948eddb88",
+      "release_id": "rel_36f95797d51749ff8cc097245a064971"
+    },
+    "b": {
+      "commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+      "entry_point": "starhelp_desktop.profiles._snapshot_to_dict",
+      "file": "b-045965b-snapshot.json",
+      "raw_sha256": "1982b473443dabde484d4591d0feba402b626ce8d80a1ac6dd268ba65bce353f"
+    }
+  },
+  "baseline_result": {
+    "schema_id": "ProducerAnalysisResult",
+    "schema_version": "0.1",
+    "adapter_profile": "starhelp.producers.v0.1",
+    "component_version": "0.3.0",
+    "request_id": "fixture:baseline-replay",
+    "status": "error",
+    "analysis": null,
+    "error": {
+      "code": "producer_semantics_missing",
+      "message": "A baseline export integrity is valid, but required executable semantics/provenance are absent",
+      "details": {
+        "original_proof": {
+          "producer": "starhelp_knowledge",
+          "producer_commit": "313508f895cb422d4a309743eb7f8b99f45a7a91",
+          "format_profile": "starhelp.knowledge.native.313508f",
+          "sha256": "e67206216b14b071a3d8b96111f608bb828c66b4634c8096dfaed64948eddb88",
+          "raw_digest_verified": true,
+          "signature_verification": "not_performed_by_C",
+          "index_release_id": "rel_36f95797d51749ff8cc097245a064971",
+          "original_content_hash": "c2df590c80f9a11ef3a8afcf7edcbb4bfb50ac0ed9830129f0c0a0c43b0b7d18",
+          "original_digest_and_closure_verified": true
+        },
+        "missing": [
+          "explicit consumer export profile",
+          "required stage seats",
+          "exact public goals",
+          "typed attribute registry",
+          "revisioned evidence identity",
+          "digest-bound review/publication provenance"
+        ]
+      },
+      "retryable": false
+    }
+  },
+  "snapshot_mapping": {
+    "proof": {
+      "producer": "starhelp_desktop",
+      "producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+      "format_profile": "starhelp.desktop.snapshot.045965b",
+      "sha256": "1982b473443dabde484d4591d0feba402b626ce8d80a1ac6dd268ba65bce353f",
+      "raw_digest_verified": true,
+      "signature_verification": "not_performed_by_C",
+      "snapshot_id": "00000000-0000-4000-8000-000000000002",
+      "snapshot_revision": 1,
+      "original_coverage": [
+        "ownership:fixture:entity:1",
+        "ownership:fixture:entity:2",
+        "ownership:fixture:entity:3",
+        "ownership:fixture:entity:4"
+      ],
+      "authorization_basis": "separate caller context; not serialized in B snapshot"
+    },
+    "coverage": {
+      "roster": "partial",
+      "inventory": "partial",
+      "materials": "unknown"
+    },
+    "diagnostics": [
+      {
+        "path": "character:fixture:entity:1.stat:speed",
+        "reason": "producer_unit_and_measurement_context_unavailable"
+      }
+    ]
+  },
+  "positive_interoperability_accepted": false
+}

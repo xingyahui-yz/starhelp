@@ -1,0 +1,40 @@
+{
+  "base_sha256": "1982b473443dabde484d4591d0feba402b626ce8d80a1ac6dd268ba65bce353f",
+  "cases": {
+    "ambiguous_equipment": {
+      "file": "ambiguous_equipment.json",
+      "sha256": "af1f72b0a5fd265ce2719e22c1bd75325e54827165752c8ef89ef7d1bfe353a6"
+    },
+    "missing_fields": {
+      "file": "missing_fields.json",
+      "sha256": "6cd40acb8aa11dc34d65e46b780a523d03e6f43ee1bc8b86942a7fff825ef300"
+    },
+    "normal": {
+      "file": "normal.json",
+      "sha256": "14104a50f5bb82884526d9735ff3c8d77d1f577f726f8db47c8a2959d8703c3f"
+    },
+    "not_owned": {
+      "file": "not_owned.json",
+      "sha256": "f803f1ff8852944aae2d8631901ab2e20aabdf5d524dcc916e0b3c0d35755f95"
+    },
+    "player_confirmed_equipment": {
+      "file": "player_confirmed_equipment.json",
+      "sha256": "6e7aa48b1d50a630561aa03d311810f44d5a414c227b252a67d42b7d59eaf69c"
+    },
+    "source_confirmed_equipment": {
+      "file": "source_confirmed_equipment.json",
+      "sha256": "2cb16abfb306a2ed15d1b0a621cbd57ea953fd56048fa7d99d53176bf5fdfc49"
+    },
+    "unknown_ownership": {
+      "file": "unknown_ownership.json",
+      "sha256": "569142748911a46f7ddf0882a0798ea28f9cca735593f9d98577ca1ae3a3057e"
+    },
+    "zero_revision": {
+      "file": "zero_revision.json",
+      "sha256": "cca54f1fe7e96f913fa0de96d7b34f9d10b87984dcde5f606a7d078f12e644e7"
+    }
+  },
+  "entry_point": "starhelp_desktop.profiles._snapshot_to_dict",
+  "producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "synthetic_only": true
+}

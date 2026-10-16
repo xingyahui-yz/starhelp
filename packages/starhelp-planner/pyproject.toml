@@ -1,10 +1,13 @@
 [project]
 name = "starhelp-planner"
-version = "0.2.0"
+version = "0.3.0"
 description = "Pure local StarHelp template matching and planning core"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
+
+[project.optional-dependencies]
+producer-signature = ["cryptography>=43,<47"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.8"]

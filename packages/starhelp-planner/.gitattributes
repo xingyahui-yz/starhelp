@@ -1,0 +1,2 @@
+# Producer byte digests must survive checkout on Windows unchanged.
+interop/** -text
