@@ -9,6 +9,7 @@ from .models import (
     ProfileAuthorization,
     SourceKind,
 )
+from .planner import LocalPlannerProcess, PlannerCancelled, PlannerResult, PlannerUnavailable
 from .tasks import AnalysisTaskDraft, TaskRepository, TaskState
 
 __all__ = [
@@ -22,4 +23,8 @@ __all__ = [
     "AnalysisTaskDraft",
     "TaskRepository",
     "TaskState",
+    "LocalPlannerProcess",
+    "PlannerCancelled",
+    "PlannerResult",
+    "PlannerUnavailable",
 ]

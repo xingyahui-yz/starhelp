@@ -25,6 +25,13 @@ requires Windows; the encryption contract is injected in platform-independent un
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: contract adapters only; no cross-branch source or
   runtime is loaded here.
+- A local planner process bridge is available for an explicitly configured executable. It sends one
+  complete `AnalysisRequest` as UTF-8 JSON on stdin and accepts one versioned result envelope on
+  stdout, checks declared capabilities, bounds payload sizes and runtime, discards stderr, and kills
+  the process when profile authorization is revoked. It binds returned results to request ID,
+  snapshot revision, and authorization generation. This is an integration seam only: no C planner
+  executable, production capability set, complete request builder, or GUI task-to-result flow is
+  currently wired.
 - The task form saves the latest target and local constraints under the selected encrypted profile,
   restores that profile's values, and clears them on profile revocation. It records a waiting state;
   it does not call a planner or present a recommendation.

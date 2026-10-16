@@ -68,6 +68,17 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   without a planner result. TaskPage exposes a temporary-report signal; the report page previews it
   and saves only after the user clicks the explicit save action. Report writes and task-preference
   writes serialize with revocation. No planner currently emits that signal.
+- A local planner subprocess bridge accepts only an explicit argument vector (no shell), sends one
+  complete `AnalysisRequest` as UTF-8 JSON through stdin, and validates a single stdout envelope
+  declaring protocol version, planner version, capabilities, and result. It enforces request and
+  response limits and a timeout, discards stderr, uses no temporary files, and registers the process
+  with profile lifecycle so revoke kills it and rejects a late result. It also verifies that returned
+  request ID, snapshot revision, and authorization generation match the submitted request.
+  Synthetic child-process checks cover a compatible result, missing required capability,
+  oversized output, and timeout.
+  This bridge is not yet used by TaskPage: no planner executable, production capability list,
+  complete request builder from profile/bundle/task repositories, or end-to-end report emission is
+  available. It does not count as C integration.
 - A verify-before-activate public bundle synchronizer interface and two-version atomic local cache.
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
@@ -78,7 +89,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-16: 21 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-16: 25 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
@@ -94,6 +105,10 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - A fresh PyInstaller 6.22.3 candidate containing these changes was built. All 677 manifest entries
   matched their SHA-256 hashes. The executable remained open for an 8-second startup smoke under an
   isolated temporary `LOCALAPPDATA`, so it could not see or query any real saved profile.
+- After adding the local planner subprocess bridge, the candidate was rebuilt again with PyInstaller
+  6.22.3. All 677 file-manifest entries revalidated, and an 8-second smoke using a fresh isolated
+  `LOCALAPPDATA` confirmed the app remained open and loaded `Qt6Core.dll` and `Qt6Widgets.dll`.
+  This packaging smoke does not exercise a planner executable, which is not available.
 - The Windows candidate builds with PyInstaller 6.22.3 and includes a SHA-256 manifest plus
   per-user install/rollback script. Installer install/upgrade/rollback and tamper rejection passed
   with synthetic v1/v2 fixtures; the actual candidate was copied and upgraded in a component-local

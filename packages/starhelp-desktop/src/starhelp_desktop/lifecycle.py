@@ -68,6 +68,20 @@ class ProfileLifecycle:
             self._tasks.setdefault(profile_id, []).append(task)
             return task.cancel
 
+    def unregister_task(
+        self, profile_id: UUID, generation: int, cancel: threading.Event
+    ) -> None:
+        """Forget completed work while keeping revoke able to cancel active work."""
+        with self._lock:
+            tasks = self._tasks.get(profile_id)
+            if tasks is None:
+                return
+            self._tasks[profile_id] = [
+                task for task in tasks if not (task.generation == generation and task.cancel is cancel)
+            ]
+            if not self._tasks[profile_id]:
+                self._tasks.pop(profile_id, None)
+
     def accepts_result(self, profile_id: UUID, generation: int) -> bool:
         return self.is_active(profile_id, generation)
 

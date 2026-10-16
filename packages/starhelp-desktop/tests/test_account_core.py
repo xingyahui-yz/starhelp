@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import sys
 import threading
 import tempfile
 import unittest
@@ -40,6 +41,7 @@ from starhelp_desktop.models import (
     SourceKind,
 )
 from starhelp_desktop.privacy import PublicQueryBuilder, PublicScope
+from starhelp_desktop.planner import LocalPlannerProcess, PlannerCancelled, PlannerUnavailable
 from starhelp_desktop.public_profile import (
     MihomoPublicProfileClient,
     ProfileRequestError,
@@ -631,6 +633,106 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(cache.current_release_id(), "fixture-release-2")
             self.assertEqual(cache.available_release_ids(),
                              ("fixture-release-1", "fixture-release-2"))
+
+
+class LocalPlannerProcessTests(unittest.TestCase):
+    @staticmethod
+    def request(profile_id: object, generation: int) -> dict[str, object]:
+        return {
+            "contract_version": "0.1-draft",
+            "schema_id": "AnalysisRequest",
+            "schema_version": "0.1-draft",
+            "request_id": "fixture:request:1",
+            "authorization_generation": generation,
+            "account_snapshot": {
+                "profile_id": str(profile_id),
+                "authorization_generation": generation,
+                "authorization_state": "active",
+                "snapshot_revision": 7,
+            },
+            "public_bundle": {"manifest": {"index_release_id": "fixture:release:1"}},
+            "task": {"public_goal": {"kind": "fixture:goal:clear"}},
+        }
+
+    def _run(self, script: str, *, required: frozenset[str] = frozenset(), timeout: float = 3.0,
+             max_response: int = 1024 * 1024) -> object:
+        with temporary_directory() as temporary:
+            root = Path(temporary)
+            profile_id = uuid4()
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"analysis"}), datetime.now(UTC)
+            ))
+            adapter = LocalPlannerProcess(
+                (sys.executable, "-c", script), required_capabilities=required,
+                timeout_seconds=timeout, max_response_bytes=max_response,
+            )
+            return adapter.analyze(
+                request=self.request(profile_id, 1), profile_id=profile_id,
+                authorization_generation=1, lifecycle=lifecycle,
+            )
+
+    def test_local_process_receives_complete_request_and_returns_compatible_result(self) -> None:
+        script = (
+            "import json,sys; request=json.loads(sys.stdin.readline()); "
+            "print(json.dumps({'protocol':'starhelp-local-planner','protocol_version':'0.1-draft',"
+            "'planner_version':'fixture:planner:1','capabilities':['fixture:analyze:v1'],"
+            "'result':{'status':'coverage_insufficient','request_id':request['request_id'],"
+            "'snapshot_revision':request['account_snapshot']['snapshot_revision'],"
+            "'authorization_generation':request['account_snapshot']['authorization_generation']}}))"
+        )
+        result = self._run(script, required=frozenset({"fixture:analyze:v1"}))
+        self.assertEqual(result.planner_version, "fixture:planner:1")
+        self.assertEqual(result.result["status"], "coverage_insufficient")
+
+    def test_incompatible_or_oversized_results_are_rejected(self) -> None:
+        incompatible = (
+            "import json; print(json.dumps({'protocol':'starhelp-local-planner',"
+            "'protocol_version':'0.1-draft','planner_version':'fixture:planner:1',"
+            "'capabilities':[],'result':{'status':'coverage_insufficient'}}))"
+        )
+        with self.assertRaisesRegex(PlannerUnavailable, "lacks required capabilities"):
+            self._run(incompatible, required=frozenset({"fixture:required:v1"}))
+        with self.assertRaisesRegex(PlannerUnavailable, "size limit"):
+            self._run("print('x' * 4096)", max_response=128)
+
+    def test_timeout_terminates_planner_process(self) -> None:
+        with self.assertRaisesRegex(PlannerUnavailable, "timed out"):
+            self._run("import time; time.sleep(5)", timeout=0.15)
+
+    def test_revoke_cancels_subprocess_and_rejects_result(self) -> None:
+        with temporary_directory() as temporary:
+            root = Path(temporary)
+            profile_id = uuid4()
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"analysis"}), datetime.now(UTC)
+            ))
+            adapter = LocalPlannerProcess(
+                (sys.executable, "-c", "import time; time.sleep(5)"),
+                required_capabilities=frozenset(), timeout_seconds=10,
+            )
+            outcome: list[BaseException] = []
+
+            def analyze() -> None:
+                try:
+                    adapter.analyze(
+                        request=self.request(profile_id, 1), profile_id=profile_id,
+                        authorization_generation=1, lifecycle=lifecycle,
+                    )
+                except BaseException as exc:
+                    outcome.append(exc)
+
+            worker = threading.Thread(target=analyze)
+            worker.start()
+            threading.Event().wait(0.2)
+            lifecycle.revoke(profile_id)
+            worker.join(2)
+            self.assertFalse(worker.is_alive())
+            self.assertEqual(len(outcome), 1)
+            self.assertIsInstance(outcome[0], PlannerCancelled)
 
 
 if __name__ == "__main__":
