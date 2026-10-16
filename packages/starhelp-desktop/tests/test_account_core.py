@@ -296,12 +296,35 @@ class StorageLifecycleTests(unittest.TestCase):
             reports = ReportLifecycle(store, lifecycle)
             report = reports.make_temporary(profile_id=profile_id, generation=1, task={"fixture": True},
                                              result={"fixture": "result"}, snapshot_revision=1,
-                                             public_release_id="fixture-release", planner_version="fixture")
+                                             public_release_id="fixture-release", planner_version="fixture",
+                                             public_refs=frozenset({"fixture:evidence:1"}))
             self.assertEqual(list((root / "private").glob("*.bin")), [])
             self.assertEqual(reports.mark_stale(report, current_snapshot_revision=2).validity,
                              ReportValidity.EXPIRED)
             saved = reports.save_explicitly(report)
             self.assertTrue(saved.exists())
+            withdrawn = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                withdrawn_refs=frozenset({"fixture:evidence:1"}),
+            )
+            self.assertEqual(withdrawn[0].validity, ReportValidity.EVIDENCE_WITHDRAWN)
+            still_withdrawn = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=2
+            )
+            self.assertEqual(still_withdrawn[0].validity, ReportValidity.EVIDENCE_WITHDRAWN)
+            snapshot_bound = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "second"},
+                result={"fixture": "result"}, snapshot_revision=1,
+                public_release_id="fixture-release", planner_version="fixture",
+            )
+            reports.save_explicitly(snapshot_bound)
+            expired = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=2
+            )
+            by_id = {item.report_id: item for item in expired}
+            self.assertEqual(by_id[snapshot_bound.report_id].validity, ReportValidity.EXPIRED)
 
     def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
         with temporary_directory() as directory:

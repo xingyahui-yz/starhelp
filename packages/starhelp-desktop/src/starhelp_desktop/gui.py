@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import UUID
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QMessageBox,
     QPushButton,
@@ -26,7 +28,6 @@ from PySide6.QtWidgets import (
 )
 
 from .bundles import PublicBundleCache
-from .models import EquipmentIdentity
 from .imports import (
     ManualImportAdapter,
     OcrDraft,
@@ -36,9 +37,10 @@ from .imports import (
     proposal_from_ocr_mapping,
 )
 from .lifecycle import ProfileLifecycle
-from .models import ImportProposal
+from .models import EquipmentIdentity, ImportProposal
 from .profiles import ProfileRepository, ProfileSummary
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
+from .reports import AnalysisReport, ReportLifecycle
 from .storage import EncryptedPrivateStore
 from .tasks import AnalysisTaskDraft, TaskRepository
 
@@ -844,11 +846,109 @@ class AccountsPage(_Page):
 
 
 class ReportsPage(_Page):
-    def __init__(self) -> None:
-        super().__init__("报告", "报告仅在用户主动保存后以用户级加密形式留存。")
-        self.content.addWidget(QLabel(
-            "规划器尚未接入，本组件不会编造攻略报告。接入后将显示报告版本、过期与撤回状态。"
-        ))
+    def __init__(self, profiles: ProfileRepository, lifecycle: ProfileLifecycle,
+                 store: EncryptedPrivateStore) -> None:
+        super().__init__("报告", "仅显示用户主动保存的加密报告；快照变化会使旧报告失效。")
+        self.profiles = profiles
+        self.lifecycle = lifecycle
+        self.reports = ReportLifecycle(store, lifecycle)
+        self.saved_reports: dict[str, AnalysisReport] = {}
+        self.profile_list = QComboBox()
+        self.refresh_button = QPushButton("刷新档案与报告状态")
+        self.status = QLabel("规划器尚未接入，不会自动生成或保存攻略报告。")
+        self.status.setWordWrap(True)
+        self.report_list = QListWidget()
+        self.detail = QTextEdit()
+        self.detail.setReadOnly(True)
+        self.content.addWidget(QLabel("本地档案"))
+        row = QHBoxLayout()
+        row.addWidget(self.profile_list, 1)
+        row.addWidget(self.refresh_button)
+        self.content.addLayout(row)
+        self.content.addWidget(self.status)
+        self.content.addWidget(self.report_list, 1)
+        self.content.addWidget(self.detail, 2)
+        self.refresh_button.clicked.connect(self.reload_profiles)
+        self.profile_list.currentIndexChanged.connect(self.refresh_reports)
+        self.report_list.currentItemChanged.connect(self.show_report)
+        self.reload_profiles()
+
+    def reload_profiles(self) -> None:
+        selected = self.profile_list.currentData()
+        self.profile_list.clear()
+        for profile in self.profiles.list_profiles():
+            self.profile_list.addItem(profile.label, str(profile.profile_id))
+        if selected is not None:
+            index = self.profile_list.findData(selected)
+            if index >= 0:
+                self.profile_list.setCurrentIndex(index)
+        self.refresh_reports()
+
+    def refresh_reports(self, *_args: object) -> None:
+        self.report_list.clear()
+        self.saved_reports.clear()
+        self.detail.clear()
+        selected = self.profile_list.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == selected), None)
+        if profile is None:
+            self.status.setText("当前没有已授权档案。报告仅在用户主动保存后留存。")
+            return
+        try:
+            snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+            revision: int | None = snapshot.revision
+        except FileNotFoundError:
+            revision = None
+        try:
+            reports = self.reports.list_saved(
+                profile_id=profile.profile_id,
+                generation=profile.generation,
+                current_snapshot_revision=revision,
+            )
+        except Exception as exc:
+            self.status.setText(f"无法读取报告：{exc}")
+            return
+        if not reports:
+            self.status.setText(
+                "没有已保存报告。规划器尚未接入；本组件不会生成模拟攻略或自动保存结果。"
+            )
+            return
+        self.status.setText(
+            f"已加载 {len(reports)} 份用户主动保存的报告。证据撤回清单当前不可用，在线撤回状态未核实。"
+        )
+        labels = {
+            "current": "当前",
+            "needs_review": "需要核对",
+            "expired": "快照已变化",
+            "evidence_withdrawn": "证据已撤回",
+        }
+        for report in reports:
+            report_key = str(report.report_id)
+            self.saved_reports[report_key] = report
+            item = QListWidgetItem(
+                f"{report.created_at.astimezone().strftime('%Y-%m-%d %H:%M')} · "
+                f"{labels[report.validity.value]} · {report.planner_version}"
+            )
+            item.setData(Qt.ItemDataRole.UserRole, report_key)
+            self.report_list.addItem(item)
+
+    def show_report(self, current: QListWidgetItem | None, _previous: QListWidgetItem | None) -> None:
+        if current is None:
+            self.detail.clear()
+            return
+        report = self.saved_reports.get(str(current.data(Qt.ItemDataRole.UserRole)))
+        if report is None:
+            return
+        self.detail.setPlainText(json.dumps({
+            "状态": report.validity.value,
+            "状态说明": report.validity_reason,
+            "创建时间": report.created_at.isoformat(),
+            "快照修订": report.snapshot_revision,
+            "公共资料版本": report.public_release_id,
+            "规划器版本": report.planner_version,
+            "任务": report.task,
+            "结果": report.result,
+        }, ensure_ascii=False, indent=2))
 
 
 class PublicKnowledgePage(_Page):
@@ -921,7 +1021,7 @@ class StarHelpWindow(QMainWindow):
         self.pages.addWidget(PublicKnowledgePage(public_cache))
         self.pages.addWidget(self.accounts_page)
         self.pages.addWidget(self.progress_page)
-        self.pages.addWidget(ReportsPage())
+        self.pages.addWidget(ReportsPage(self.profiles, self.lifecycle, store))
         self.pages.addWidget(SettingsPage())
         layout.addWidget(self.navigation)
         layout.addWidget(self.pages, 1)

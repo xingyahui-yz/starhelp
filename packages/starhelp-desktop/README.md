@@ -35,6 +35,10 @@ requires Windows; the encryption contract is injected in platform-independent un
   is off by default. Per-profile opt-in stores the UID in current-user DPAPI storage, runs while the
   app is open (immediately on opt-in, then at most once every 24 hours), and leaves every result in
   preview until the player confirms import. Revoking or disabling the opt-in deletes the saved UID.
+- The report page lists only explicitly saved reports, reloads them under the active profile, and
+  persists snapshot-expired or evidence-withdrawn status. It reports that online withdrawal state is
+  unknown when A's signed withdrawal feed is unavailable. No report is generated without a planner
+  result.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated

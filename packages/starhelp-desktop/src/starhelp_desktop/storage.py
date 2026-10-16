@@ -134,5 +134,13 @@ class EncryptedPrivateStore:
             removed.append(path)
         return tuple(removed)
 
+    def list_profile_keys(self, profile_id: UUID, kind: str) -> tuple[str, ...]:
+        if not kind or any(char not in "abcdefghijklmnopqrstuvwxyz0123456789-" for char in kind):
+            raise ValueError("invalid private object kind")
+        prefix = f"profile-{profile_id.hex}-{kind}-"
+        return tuple(sorted(
+            path.stem for path in self.root.glob(f"{prefix}*.bin") if path.is_file()
+        ))
+
     def delete_key(self, key: str) -> None:
         (self.root / f"{self._safe_key(key)}.bin").unlink(missing_ok=True)

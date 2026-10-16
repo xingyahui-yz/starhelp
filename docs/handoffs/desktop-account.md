@@ -63,6 +63,10 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   validator/cache, and explicit-save report service. UID requests reject redirects, so the UID stays
   on the player-selected HTTPS service. Saving and revocation are serialized to prevent a late write
   after cleanup.
+- The report page lists saved reports per profile, persists snapshot-expired/evidence-withdrawn
+  validity, and displays when online withdrawal state is unknown. It does not manufacture a report
+  without a planner result; report generation and the user-triggered save action still need
+  connection to a real temporary result.
 - A verify-before-activate public bundle synchronizer interface and two-version atomic local cache.
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
@@ -83,6 +87,8 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   persistence, restart recovery, attempt timestamps, opt-out deletion, and revoke cleanup. An
   additional test confirms UID redirects are rejected. An offscreen window smoke confirms automatic
   refresh defaults off and the scheduler stays idle; no real UID request was made.
+- The report browser was exercised offscreen with one synthetic authorized profile, snapshot, and
+  explicitly saved report. It listed and rendered the report locally; no recommendation was shown.
 - A fresh PyInstaller 6.22.3 candidate containing these changes was built. All 677 manifest entries
   matched their SHA-256 hashes. The executable remained open for an 8-second startup smoke under an
   isolated temporary `LOCALAPPDATA`, so it could not see or query any real saved profile.
