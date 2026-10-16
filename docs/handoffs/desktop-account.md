@@ -57,8 +57,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   key, or final A-side bundle format is available yet.
 - An unsigned Windows folder-style candidate packaging script/spec that collects the bundled
   RapidOCR models and ONNX Runtime. PyInstaller is pinned to 6.10.0: the candidate built with
-  6.22.3 failed to load QtCore/QtWidgets, while this version starts successfully. Signing and
-  target-system install validation remain explicit release gates.
+  6.22.3 failed to load QtCore/QtWidgets, while this version starts successfully. A per-user
+  installer validates a file manifest, stages changes, keeps rollback folders, and can restore the
+  most recent preserved version.
 
 ## Remaining work / verification limits
 
@@ -66,11 +67,13 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. No real UID was queried.
-- The Windows candidate built successfully with PyInstaller 6.10.0. Its executable remained running
-  for a four-second startup smoke check and was then closed. The same frozen Qt import failed under
-  PyInstaller 6.22.3. The candidate is unsigned and folder-style; no installer, code signature,
-  update metadata, or install/upgrade/recovery run has been produced. A prior PySide6 6.12.0 wheel
-  hash mismatch was not bypassed; the component uses the verified 6.10.3 wheel instead.
+- The Windows candidate built successfully with PyInstaller 6.10.0 and includes a SHA-256 manifest
+  plus per-user install/rollback script. The actual candidate was installed under a component-local
+  temporary directory, launched for four seconds, upgraded, and rolled back; a synthetic v1/v2 flow
+  also verified install, backup preservation, rollback, and rejection of a tampered file. These runs
+  do not count as target-user install acceptance. The candidate is unsigned and folder-style; no
+  signed update metadata or publisher identity is present. A prior PySide6 6.12.0 wheel hash mismatch
+  was not bypassed; the component uses the verified 6.10.3 wheel instead.
 - The API adapter uses the documented `version=v2` response shape. It only imports displayed
   characters and equipped showcase details; undisplayed account inventory remains unknown. The API
   documentation does not define UID-to-region routing, so the selected server label stays local and

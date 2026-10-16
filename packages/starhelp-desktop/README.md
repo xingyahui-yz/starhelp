@@ -26,5 +26,7 @@ requires Windows; the encryption contract is injected in platform-independent un
   runtime is loaded here.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
-- An unsigned folder-style candidate builds and starts with PyInstaller 6.10.0. Signing, update
-  metadata, and target-Windows install/upgrade/recovery validation remain release work.
+- An unsigned folder-style candidate builds and starts with PyInstaller 6.10.0. Its per-user
+  installer verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can
+  roll back. Publisher signing, update metadata, and target-Windows install/upgrade/recovery
+  validation remain release work.

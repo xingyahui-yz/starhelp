@@ -25,4 +25,15 @@ try {
     Pop-Location
 }
 
-Write-Output 'Unsigned Windows candidate created. Do not distribute until publisher signing and Windows install/upgrade validation are complete.'
+$candidate = Join-Path $component 'dist\StarHelp'
+$manifest = Join-Path $candidate 'candidate-manifest.sha256'
+$manifestRows = Get-ChildItem -LiteralPath $candidate -File -Recurse | ForEach-Object {
+    $relative = $_.FullName.Substring($candidate.TrimEnd('\').Length + 1)
+    $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+    "$hash *$relative"
+} | Sort-Object { $_.Substring(66) }
+[System.IO.File]::WriteAllLines($manifest, [string[]]$manifestRows, [System.Text.UTF8Encoding]::new($false))
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-candidate.ps1') `
+    -Destination (Join-Path $component 'dist\install-candidate.ps1') -Force
+
+Write-Output 'Unsigned Windows candidate and SHA-256 file manifest created. Use dist\install-candidate.ps1 for per-user install, upgrade, and rollback evaluation. Do not distribute until publisher signing and target-Windows validation are complete.'
