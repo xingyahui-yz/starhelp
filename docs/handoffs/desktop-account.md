@@ -54,10 +54,15 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   confirm an individual equipment instance; the decision is written to the encrypted snapshot and
   only then becomes eligible for reassignment. The UI does not infer copy identity from a public
   equipment type ID.
+- Public-profile refresh stays manual by default. A separate per-profile opt-in stores the UID only
+  in current-user DPAPI storage, queries directly while the app is running (immediately on opt-in,
+  then at most once per 24 hours), and keeps results in preview until the player confirms import.
+  Disabling refresh or revoking the profile deletes the encrypted UID configuration.
 - A consent-gated Mihomo request adapter, public-query allowlist, current-user DPAPI file store,
   encrypted profile catalog/snapshots, profile generation/revocation gate, signature-gated bundle
-  validator/cache, and explicit-save report service. Saving and revocation are serialized to prevent
-  a late write after cleanup.
+  validator/cache, and explicit-save report service. UID requests reject redirects, so the UID stays
+  on the player-selected HTTPS service. Saving and revocation are serialized to prevent a late write
+  after cleanup.
 - A verify-before-activate public bundle synchronizer interface and two-version atomic local cache.
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
@@ -68,15 +73,19 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-16: 18 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-16: 20 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
   save/restore and the explicit planner-unavailable status. No real UID was queried.
-- After adding the equipment identity UI, `compileall` passed and a fresh PyInstaller 6.22.3
-  candidate was built. All 677 candidate manifest entries matched their SHA-256 hashes, and the
-  executable stayed running for an 8-second startup smoke. No automated tests were added or run for
-  this UI change.
+- The equipment confirmation UI and separately opted-in automatic refresh both compile. The
+  automatic refresh test uses only synthetic UID data and verifies consent gating, encrypted
+  persistence, restart recovery, attempt timestamps, opt-out deletion, and revoke cleanup. An
+  additional test confirms UID redirects are rejected. An offscreen window smoke confirms automatic
+  refresh defaults off and the scheduler stays idle; no real UID request was made.
+- A fresh PyInstaller 6.22.3 candidate containing these changes was built. All 677 manifest entries
+  matched their SHA-256 hashes. The executable remained open for an 8-second startup smoke under an
+  isolated temporary `LOCALAPPDATA`, so it could not see or query any real saved profile.
 - The Windows candidate builds with PyInstaller 6.22.3 and includes a SHA-256 manifest plus
   per-user install/rollback script. Installer install/upgrade/rollback and tamper rejection passed
   with synthetic v1/v2 fixtures; the actual candidate was copied and upgraded in a component-local
@@ -104,8 +113,6 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   documentation does not define UID-to-region routing, so the selected server label stays local and
   region correctness remains an M0 decision.
 - Cross-component planner/backend integration is not performed; no sibling source is imported.
-- Automatic public-profile refresh is not exposed. UID is deliberately not retained, and there is
-  no scheduler that could honor a separately confirmed opt-in. Current refresh remains manual.
 - Equipment identity confirmation is now wired through the desktop UI and encrypted snapshot
   repository; no duplicate-link UI is provided, so matching two records as the same physical copy
   remains unsupported.

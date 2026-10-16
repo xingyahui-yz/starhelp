@@ -32,6 +32,13 @@ class ProfileRequestError(RuntimeError):
         self.status_code = status_code
 
 
+class _RejectRedirects(urllib.request.HTTPRedirectHandler):
+    """A UID request must stay on the service the player selected."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 @dataclass(frozen=True, slots=True)
 class PublicProfileSelection:
     uid: str
@@ -72,7 +79,8 @@ class MihomoPublicProfileClient:
             method="GET",
         )
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
+            opener = urllib.request.build_opener(_RejectRedirects())
+            with opener.open(request, timeout=self._timeout) as response:
                 if response.status != 200:
                     raise ProfileRequestError("public profile service returned an error", status_code=response.status)
                 raw = response.read(4 * 1024 * 1024 + 1)

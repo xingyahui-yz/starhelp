@@ -5,6 +5,7 @@ import hmac
 import json
 import tempfile
 import unittest
+import urllib.request
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ from starhelp_desktop.public_profile import (
     MihomoPublicProfileClient,
     ProfileRequestError,
     PublicProfileSelection,
+    _RejectRedirects,
 )
 from starhelp_desktop.profiles import ProfileRepository
 from starhelp_desktop.reports import ReportLifecycle, ReportValidity
@@ -162,6 +164,15 @@ class MergeTests(unittest.TestCase):
 
 
 class ImportAndPrivacyTests(unittest.TestCase):
+    def test_public_uid_redirects_are_rejected(self) -> None:
+        handler = _RejectRedirects()
+        request = urllib.request.Request(
+            "https://api.mihomo.me/sr_info_parsed/100000999?lang=cn&version=v2"
+        )
+        self.assertIsNone(handler.redirect_request(
+            request, None, 302, "Found", {}, "https://other.example/redirected"
+        ))
+
     def test_structured_import_rejects_uid_and_credentials(self) -> None:
         adapter = StructuredImportAdapter()
         base = {
@@ -355,6 +366,46 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertFalse(task_path.exists())
             with self.assertRaises(PermissionError):
                 restarted_tasks.load_last(profile.profile_id, profile.generation)
+
+    def test_auto_refresh_uid_requires_separate_consent_is_encrypted_and_cleared(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            profile = repository.begin_profile(
+                label="Synthetic public profile",
+                provider_id=MihomoPublicProfileClient.PROVIDER_ID,
+                server_label="fixture-region",
+            )
+            with self.assertRaises(PermissionError):
+                repository.set_auto_refresh(
+                    profile.profile_id, True, separately_confirmed=False, uid="100000999"
+                )
+            repository.set_auto_refresh(
+                profile.profile_id, True, separately_confirmed=True, uid="100000999"
+            )
+            config_path = root / "private" / f"profile-{profile.profile_id.hex}-refresh.bin"
+            self.assertNotIn(b"100000999", config_path.read_bytes())
+
+            restarted = ProfileRepository(store, ProfileLifecycle(store, root / "temp"))
+            config = restarted.auto_refresh_config(profile.profile_id, profile.generation)
+            self.assertEqual(config["uid"], "100000999")
+            attempted = datetime(2026, 10, 16, tzinfo=UTC)
+            restarted.record_auto_refresh_attempt(profile.profile_id, profile.generation, attempted)
+            self.assertEqual(
+                restarted.auto_refresh_config(profile.profile_id, profile.generation)["last_attempt_at"],
+                attempted.isoformat(),
+            )
+
+            restarted.set_auto_refresh(profile.profile_id, False, separately_confirmed=False)
+            self.assertFalse(config_path.exists())
+            self.assertIsNone(restarted.auto_refresh_config(profile.profile_id, profile.generation))
+            restarted.set_auto_refresh(
+                profile.profile_id, True, separately_confirmed=True, uid="100000999"
+            )
+            restarted.revoke(profile.profile_id)
+            self.assertFalse(config_path.exists())
 
     def test_task_rejects_conflicting_or_malformed_constraints(self) -> None:
         base = {

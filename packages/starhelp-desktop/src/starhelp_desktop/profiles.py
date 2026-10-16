@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import re
+import threading
 from dataclasses import dataclass
 from datetime import UTC, datetime
-import threading
 from typing import Any
 from uuid import UUID, uuid4
 
-from .imports import confirm_import
 from .equipment import EquipmentIdentityService
+from .imports import confirm_import
 from .lifecycle import ProfileLifecycle
 from .merge import MergeResult, merge_import
 from .models import (
@@ -256,13 +257,46 @@ class ProfileRepository:
                 self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(confirmed))
             return confirmed
 
-    def set_auto_refresh(self, profile_id: UUID, enabled: bool, *, separately_confirmed: bool) -> None:
+    def set_auto_refresh(
+        self,
+        profile_id: UUID,
+        enabled: bool,
+        *,
+        separately_confirmed: bool,
+        uid: str | None = None,
+    ) -> None:
         if enabled and not separately_confirmed:
             raise PermissionError("auto-refresh requires separate per-profile confirmation")
         with self._lock:
             summary = self._catalog[profile_id]
             self._lifecycle.require_active(profile_id, summary.generation)
-            self._catalog[profile_id] = ProfileSummary(
+            if enabled:
+                if summary.provider_id != "mihomo-public-profile":
+                    raise ValueError("automatic refresh is supported only for Mihomo profiles")
+                if uid is None or re.fullmatch(r"\d{8,12}", uid) is None:
+                    raise ValueError("a valid UID is required for automatic refresh")
+                last_attempt_at = None
+                if summary.auto_refresh:
+                    try:
+                        previous = self._store.load(self._refresh_key(profile_id))
+                    except FileNotFoundError:
+                        previous = {}
+                    if previous.get("uid") == uid:
+                        previous_attempt = previous.get("last_attempt_at")
+                        if isinstance(previous_attempt, str):
+                            try:
+                                parsed_attempt = datetime.fromisoformat(previous_attempt)
+                            except ValueError:
+                                parsed_attempt = None
+                            if parsed_attempt is not None and parsed_attempt.tzinfo is not None:
+                                last_attempt_at = previous_attempt
+                self._store.save(self._refresh_key(profile_id), {
+                    "schema_id": "ProfileRefreshAuthorization",
+                    "schema_version": "0.1-draft",
+                    "uid": uid,
+                    "last_attempt_at": last_attempt_at,
+                })
+            updated = ProfileSummary(
                 profile_id=summary.profile_id,
                 label=summary.label,
                 provider_id=summary.provider_id,
@@ -271,7 +305,47 @@ class ProfileRepository:
                 created_at=summary.created_at,
                 auto_refresh=enabled,
             )
-            self._save_catalog()
+            self._catalog[profile_id] = updated
+            try:
+                self._save_catalog()
+            except Exception:
+                self._catalog[profile_id] = summary
+                if enabled:
+                    self._store.delete_key(self._refresh_key(profile_id))
+                raise
+            if not enabled:
+                self._store.delete_key(self._refresh_key(profile_id))
+
+    def auto_refresh_config(self, profile_id: UUID, generation: int) -> dict[str, str | None] | None:
+        self._lifecycle.require_active(profile_id, generation)
+        summary = self._catalog.get(profile_id)
+        if summary is None or not summary.auto_refresh:
+            return None
+        try:
+            config = self._store.load(self._refresh_key(profile_id))
+        except FileNotFoundError:
+            return None
+        if (config.get("schema_id") != "ProfileRefreshAuthorization"
+                or config.get("schema_version") != "0.1-draft"):
+            raise ValueError("unsupported automatic refresh authorization")
+        uid = config.get("uid")
+        last_attempt_at = config.get("last_attempt_at")
+        if not isinstance(uid, str) or re.fullmatch(r"\d{8,12}", uid) is None:
+            raise ValueError("stored automatic refresh UID is invalid")
+        if last_attempt_at is not None and not isinstance(last_attempt_at, str):
+            raise ValueError("stored automatic refresh timestamp is invalid")
+        return {"uid": uid, "last_attempt_at": last_attempt_at}
+
+    def record_auto_refresh_attempt(
+        self, profile_id: UUID, generation: int, attempted_at: datetime
+    ) -> None:
+        with self._lock:
+            config = self.auto_refresh_config(profile_id, generation)
+            if config is None:
+                raise PermissionError("automatic refresh is not enabled for this profile")
+            raw = self._store.load(self._refresh_key(profile_id))
+            raw["last_attempt_at"] = attempted_at.isoformat()
+            self._store.save(self._refresh_key(profile_id), raw)
 
     def revoke(self, profile_id: UUID) -> None:
         # Disable in memory first, then durably remove the catalog reference before erasing blobs.
@@ -301,3 +375,7 @@ class ProfileRepository:
     @staticmethod
     def _snapshot_key(profile_id: UUID) -> str:
         return f"profile-{profile_id.hex}-snapshot"
+
+    @staticmethod
+    def _refresh_key(profile_id: UUID) -> str:
+        return f"profile-{profile_id.hex}-refresh"

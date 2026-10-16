@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import UUID
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -257,7 +258,10 @@ class AccountsPage(_Page):
         self.thread_pool = QThreadPool.globalInstance()
         self.pending: ImportProposal | None = None
         self.pending_profile: ProfileSummary | None = None
+        self.fetch_profile: ProfileSummary | None = None
         self.pending_cancel: Any = None
+        self.pending_auto_refresh = False
+        self.auto_refresh_running = False
         self.ocr_draft: OcrDraft | None = None
         self.preview = QTextEdit()
         self.preview.setReadOnly(True)
@@ -265,14 +269,21 @@ class AccountsPage(_Page):
         self.label = QLineEdit()
         self.label.setPlaceholderText("本地档案名称")
         self.uid = QLineEdit()
-        self.uid.setPlaceholderText("仅用于本次已确认的公开查询，不会保存")
+        self.uid.setPlaceholderText("手动查询临时使用；单独启用自动刷新后才会加密保存")
         self.server = QLineEdit()
         self.server.setPlaceholderText("明确选择/填写服务区；实际 UID 映射仍待 M0 核实")
         self.confirm_consent = QCheckBox(
-            "我确认此 UID、区服、Mihomo 服务商和展示数据用途；服务仅收到 UID，"
-            "区服字段留在本机且其服务端映射尚待核实。只读取公开展示档案，结果在本机预览，"
+            "我确认此 UID、区服、Mihomo 服务商和展示数据用途；请求会发送 UID、固定语言/接口版本，"
+            "服务也会看到网络来源地址；区服字段留在本机且服务端映射尚待核实。只读取公开展示档案，"
+            "结果在本机预览，"
             "我可随时撤权并删除本档案资料。"
         )
+        self.auto_refresh_consent = QCheckBox(
+            "单独允许应用运行期间自动查询：启用时立即读取一次，此后每 24 小时最多一次；"
+            "UID 将以当前 Windows 用户加密保存，"
+            "结果仍需预览并确认导入，可随时关闭"
+        )
+        self.save_auto_refresh_button = QPushButton("保存自动刷新授权")
         self.fetch_button = QPushButton("确认并读取公开档案")
         self.local_button = QPushButton("创建本地空档案")
         self.import_button = QPushButton("预览结构化 JSON")
@@ -300,6 +311,10 @@ class AccountsPage(_Page):
         form.addRow("手动字段值", self.manual_value)
         self.content.addLayout(form)
         self.content.addWidget(self.confirm_consent)
+        refresh_row = QHBoxLayout()
+        refresh_row.addWidget(self.auto_refresh_consent, 1)
+        refresh_row.addWidget(self.save_auto_refresh_button)
+        self.content.addLayout(refresh_row)
         row = QHBoxLayout()
         for button in (self.fetch_button, self.local_button, self.import_button, self.manual_button,
                        self.ocr_button, self.map_ocr_button,
@@ -323,10 +338,17 @@ class AccountsPage(_Page):
         self.save_button.clicked.connect(self.save_preview)
         self.revoke_button.clicked.connect(self.revoke_selected)
         self.confirm_equipment_button.clicked.connect(self.confirm_equipment_identity)
+        self.save_auto_refresh_button.clicked.connect(self.save_auto_refresh_setting)
+        self.uid.textChanged.connect(self._auto_refresh_uid_edited)
         self.equipment_list.currentIndexChanged.connect(self._update_equipment_confirmation_enabled)
         self.profile_list.currentIndexChanged.connect(self._selection_changed)
         self._reload_profiles()
         self._selection_changed()
+        self.auto_refresh_timer = QTimer(self)
+        self.auto_refresh_timer.setInterval(15 * 60 * 1000)
+        self.auto_refresh_timer.timeout.connect(self._run_due_auto_refreshes)
+        self.auto_refresh_timer.start()
+        QTimer.singleShot(0, self._run_due_auto_refreshes)
 
     def _reload_profiles(self) -> None:
         selected = self.profile_list.currentData()
@@ -345,8 +367,105 @@ class AccountsPage(_Page):
                      if str(item.profile_id) == profile_id), None)
 
     def _selection_changed(self, *_args: object) -> None:
-        self.revoke_button.setEnabled(self._selected_profile() is not None)
+        profile = self._selected_profile()
+        self.revoke_button.setEnabled(profile is not None)
+        if profile is None:
+            self.auto_refresh_consent.setChecked(False)
+            self.uid.clear()
+        else:
+            try:
+                config = self.repository.auto_refresh_config(profile.profile_id, profile.generation)
+            except Exception:
+                config = None
+            self.auto_refresh_consent.setChecked(config is not None)
+            self.uid.setText(config["uid"] if config else "")
+            self.server.setText(profile.server_label)
         self._reload_equipment()
+
+    def save_auto_refresh_setting(self) -> None:
+        profile = self._selected_profile()
+        if profile is None:
+            QMessageBox.information(self, "需要档案", "先创建或选择一个 Mihomo 公开档案。")
+            return
+        enabled = self.auto_refresh_consent.isChecked()
+        try:
+            if enabled and self.server.text().strip() != profile.server_label:
+                raise ValueError("区服与当前档案不一致，请创建独立档案后再授权。")
+            self.repository.set_auto_refresh(
+                profile.profile_id,
+                enabled,
+                separately_confirmed=enabled,
+                uid=self.uid.text().strip() if enabled else None,
+            )
+        except Exception as exc:
+            QMessageBox.warning(self, "自动刷新授权未保存", str(exc))
+            return
+        if self.pending_auto_refresh and self.fetch_profile == profile:
+            if self.pending_cancel is not None:
+                self.pending_cancel.set()
+            self.pending_cancel = None
+            self.fetch_profile = None
+            self.pending_profile = None
+            self.pending = None
+            self.pending_auto_refresh = False
+            self.auto_refresh_running = False
+            self.fetch_button.setEnabled(True)
+            self.progress.setRange(0, 1)
+            self.progress.setValue(0)
+        if enabled:
+            self._run_due_auto_refreshes()
+            self.preview.setPlainText(
+                "自动刷新已启用：本档案 UID 以当前 Windows 用户加密保存，每 24 小时最多查询一次；"
+                "新数据仍需预览并确认导入。"
+            )
+        else:
+            self.preview.setPlainText("自动刷新已关闭；加密保存的 UID 已删除。")
+
+    def _auto_refresh_uid_edited(self, value: str) -> None:
+        profile = self._selected_profile()
+        if profile is None:
+            return
+        try:
+            config = self.repository.auto_refresh_config(profile.profile_id, profile.generation)
+        except Exception:
+            return
+        if config is not None and value.strip() != config["uid"]:
+            self.auto_refresh_consent.setChecked(False)
+
+    def _run_due_auto_refreshes(self) -> None:
+        if self.auto_refresh_running or self.pending_cancel is not None:
+            return
+        now = datetime.now(UTC)
+        for profile in self.repository.list_profiles():
+            if not profile.auto_refresh or profile.provider_id != MihomoPublicProfileClient.PROVIDER_ID:
+                continue
+            try:
+                config = self.repository.auto_refresh_config(profile.profile_id, profile.generation)
+                last_attempt = (
+                    datetime.fromisoformat(config["last_attempt_at"])
+                    if config and config["last_attempt_at"] else None
+                )
+                if last_attempt is not None and last_attempt.tzinfo is None:
+                    continue
+            except Exception:
+                continue
+            if config is None or (
+                last_attempt is not None and now - last_attempt < timedelta(hours=24)
+            ):
+                continue
+            try:
+                self.repository.record_auto_refresh_attempt(
+                    profile.profile_id, profile.generation, now
+                )
+                cancel = self.lifecycle.register_task(profile.profile_id, profile.generation)
+            except Exception:
+                continue
+            selection = PublicProfileSelection(
+                uid=config["uid"], server_label=profile.server_label,
+                provider_id=profile.provider_id, confirmed_by_user=True,
+            )
+            self._begin_profile_fetch(profile, selection, cancel, automatic=True)
+            return
 
     def _reload_equipment(self) -> None:
         self.equipment_list.clear()
@@ -429,6 +548,17 @@ class AccountsPage(_Page):
             if selected_profile.server_label != selection.server_label:
                 QMessageBox.warning(self, "区服不匹配", "请使用当前档案已授权的区服，或新建独立档案。")
                 return
+            try:
+                refresh_config = self.repository.auto_refresh_config(
+                    selected_profile.profile_id, selected_profile.generation
+                )
+            except Exception:
+                refresh_config = None
+            if refresh_config and refresh_config["uid"] != selection.uid:
+                QMessageBox.warning(
+                    self, "UID 不匹配", "自动刷新已绑定另一 UID；请为不同 UID 创建独立档案。"
+                )
+                return
             profile = selected_profile
         else:
             if not self.label.text().strip():
@@ -440,19 +570,37 @@ class AccountsPage(_Page):
             )
             self._reload_profiles()
             self.profile_list.setCurrentIndex(self.profile_list.findData(str(profile.profile_id)))
+            self.uid.setText(selection.uid)
         try:
             cancel = self.lifecycle.register_task(profile.profile_id, profile.generation)
         except Exception as exc:
             self.preview.setPlainText(str(exc))
             return
+        self._begin_profile_fetch(profile, selection, cancel, automatic=False)
+
+    def _begin_profile_fetch(
+        self,
+        profile: ProfileSummary,
+        selection: PublicProfileSelection,
+        cancel: Any,
+        *,
+        automatic: bool,
+    ) -> None:
         self.pending_profile = profile
+        self.fetch_profile = profile
         self.pending = None
         self.pending_cancel = cancel
+        self.pending_auto_refresh = automatic
+        self.auto_refresh_running = automatic
         self.fetch_button.setEnabled(False)
         self.save_button.setEnabled(False)
         self.progress.setRange(0, 0)
-        self.preview.setPlainText("正在向 Mihomo 发送已确认的 UID 查询；UID 不写入应用日志或本地档案。")
-        self.progress_bus.updated.emit("读取已授权的公开档案…", -1)
+        if automatic:
+            self.preview.setPlainText("正在执行已单独授权的定时公开档案查询；UID 仅从加密配置读取。")
+            self.progress_bus.updated.emit("自动刷新公开档案…", -1)
+        else:
+            self.preview.setPlainText("正在向 Mihomo 发送已确认的 UID 查询；UID 不写入应用日志或明文配置。")
+            self.progress_bus.updated.emit("读取已授权的公开档案…", -1)
         worker = _ProfileFetchWorker(MihomoPublicProfileClient(), selection, cancel)
         worker.signals.completed.connect(self._fetch_completed)
         worker.signals.failed.connect(self._fetch_failed)
@@ -464,9 +612,12 @@ class AccountsPage(_Page):
         self.progress.setValue(1)
         self.fetch_button.setEnabled(True)
         self.pending_cancel = None
+        self.auto_refresh_running = False
         self.progress_bus.updated.emit("公开档案已到达本机，等待玩家确认导入。", 100)
-        if not self.pending_profile or not self.lifecycle.accepts_result(
-            self.pending_profile.profile_id, self.pending_profile.generation
+        fetched_profile = self.fetch_profile
+        self.fetch_profile = None
+        if not fetched_profile or not self.lifecycle.accepts_result(
+            fetched_profile.profile_id, fetched_profile.generation
         ):
             self.pending = None
             self.preview.setPlainText("档案已撤权；异步返回结果已丢弃。")
@@ -474,8 +625,14 @@ class AccountsPage(_Page):
         if not isinstance(proposal, ImportProposal):
             self.preview.setPlainText("服务返回了不支持的预览对象。")
             return
+        self.pending_profile = fetched_profile
         self.pending = proposal
         self._render_proposal(proposal)
+        if self.pending_auto_refresh:
+            self.preview.insertPlainText(
+                "\n\n定时读取候选：自动刷新不会自动写入快照，请检查后点击“确认预览并保存”。"
+            )
+        self.pending_auto_refresh = False
         self.save_button.setEnabled(True)
 
     def _fetch_failed(self, message: str) -> None:
@@ -483,10 +640,14 @@ class AccountsPage(_Page):
         self.progress.setValue(0)
         self.fetch_button.setEnabled(True)
         self.pending_cancel = None
+        self.auto_refresh_running = False
+        self.pending_auto_refresh = False
         self.progress_bus.updated.emit("公开档案读取失败；未导入数据。", 0)
         self.pending = None
-        if not self.pending_profile or not self.lifecycle.accepts_result(
-            self.pending_profile.profile_id, self.pending_profile.generation
+        failed_profile = self.fetch_profile
+        self.fetch_profile = None
+        if not failed_profile or not self.lifecycle.accepts_result(
+            failed_profile.profile_id, failed_profile.generation
         ):
             self.preview.setPlainText("档案已撤权；异步失败结果已丢弃。")
             return
@@ -665,7 +826,7 @@ class AccountsPage(_Page):
         if answer != QMessageBox.StandardButton.Yes:
             return
         try:
-            if self.pending_cancel is not None and self.pending_profile == profile:
+            if self.pending_cancel is not None and self.fetch_profile == profile:
                 self.pending_cancel.set()
             self.repository.revoke(profile.profile_id)
         except Exception as exc:
@@ -673,6 +834,11 @@ class AccountsPage(_Page):
             return
         self.pending = None
         self.pending_profile = None
+        self.fetch_profile = None
+        self.pending_cancel = None
+        self.pending_auto_refresh = False
+        self.auto_refresh_running = False
+        self.fetch_button.setEnabled(True)
         self._reload_profiles()
         self.preview.setPlainText("档案授权已撤销，关联本地资料已清理。")
 

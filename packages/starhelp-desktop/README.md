@@ -32,7 +32,9 @@ requires Windows; the encryption contract is injected in platform-independent un
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
 - Equipment instances appear in the selected account profile. Each can be individually confirmed
   by the player and the identity decision is saved in the encrypted snapshot. Automatic UID refresh
-  is not available: UID is not retained and there is no background scheduler.
+  is off by default. Per-profile opt-in stores the UID in current-user DPAPI storage, runs while the
+  app is open (immediately on opt-in, then at most once every 24 hours), and leaves every result in
+  preview until the player confirms import. Revoking or disabling the opt-in deletes the saved UID.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated
