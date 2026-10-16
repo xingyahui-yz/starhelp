@@ -16,13 +16,23 @@ $python = if ($env:STARHELP_PYTHON) { $env:STARHELP_PYTHON } else { 'python' }
 if ($LASTEXITCODE -ne 0) {
     throw 'PyInstaller, PySide6 Essentials, RapidOCR, ONNX Runtime, Pillow, and cryptography must be installed in the selected build environment'
 }
-Push-Location $component
+$pythonCommand = Get-Command $python -ErrorAction Stop
+$python = $pythonCommand.Source
+$originalPath = $env:PATH
 try {
-    & $python -m PyInstaller --clean --noconfirm --distpath (Join-Path $component 'dist') `
-        --workpath (Join-Path $component 'build') (Join-Path $PSScriptRoot 'StarHelp.spec')
-    if ($LASTEXITCODE -ne 0) { throw 'PyInstaller candidate build failed' }
+    # Do not let unrelated installations contribute same-named DLLs (for example,
+    # Poppler's ICU build) to the frozen application. Windows system DLLs remain discoverable.
+    $env:PATH = "$(Join-Path $env:SystemRoot 'System32');$env:SystemRoot"
+    Push-Location $component
+    try {
+        & $python -m PyInstaller --clean --noconfirm --distpath (Join-Path $component 'dist') `
+            --workpath (Join-Path $component 'build') (Join-Path $PSScriptRoot 'StarHelp.spec')
+        if ($LASTEXITCODE -ne 0) { throw 'PyInstaller candidate build failed' }
+    } finally {
+        Pop-Location
+    }
 } finally {
-    Pop-Location
+    $env:PATH = $originalPath
 }
 
 $candidate = Join-Path $component 'dist\StarHelp'

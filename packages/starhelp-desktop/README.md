@@ -32,6 +32,8 @@ requires Windows; the encryption contract is injected in platform-independent un
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
-  The frozen executable currently fails in the `PySide6.QtWidgets` import chain at startup on this
-  build machine; do not treat this candidate as runnable. Publisher signing, update metadata, and
-  target-Windows install/upgrade/recovery validation remain release work.
+  The build script limits the dependency search path to Windows system directories so unrelated
+  software cannot contribute incompatible DLLs. The rebuilt candidate starts on the Windows 11
+  build machine and loads Qt Core and Widgets. It relies on the target Windows system ICU; target
+  Windows compatibility and install/upgrade/recovery checks remain release work. Publisher signing
+  and update metadata are also outstanding.

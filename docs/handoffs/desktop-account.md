@@ -58,8 +58,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
 - An unsigned Windows folder-style candidate packaging script/spec that collects the bundled
-  RapidOCR models and ONNX Runtime. PyInstaller is pinned to 6.10.0: the candidate built with
-  6.22.3 failed to load QtCore/QtWidgets, while this version starts successfully. A per-user
+  RapidOCR models and ONNX Runtime. PyInstaller is pinned to 6.22.3. A per-user
   installer validates a file manifest, stages changes, keeps rollback folders, and can restore the
   most recent preserved version.
 
@@ -77,9 +76,22 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   dialog: `ImportError: DLL load failed while importing QtWidgets`. A process-lifetime-only smoke was
   insufficient; the current diagnostic dialog shows the error, and no Qt DLLs are loaded in the
   failing process. A console probe narrows this to loading `QtCore.pyd`; the same collected Qt DLLs
-  load from normal Python. A `pyside6-deploy`/Nuitka 2.7.11 fallback was also attempted; its
-  MinGW backend failed on the repository's non-ASCII path, and a minimal follow-up build stalled in
-  Scons. No Nuitka artifact is accepted. The candidate is unsigned and folder-style; no
+  load from normal Python. The cause was PyInstaller discovering Poppler's ICU 78.3 through the
+  inherited `PATH`; Qt 6.10.3 imports unversioned ICU symbols, while that DLL exports `_78`-suffixed
+  symbols. Normal Python loads Windows System32 ICU 72, which exports the required symbols. The build
+  script now limits PATH to Windows system directories while PyInstaller analyzes dependencies. A
+  rebuilt full candidate has a valid manifest and excludes the incompatible ICU. It started on the
+  Windows 11 build machine and loaded both `Qt6Core.dll` and `Qt6Widgets.dll` in an 8-second
+  isolated-profile smoke. The actual installer copied this candidate into a component-local
+  temporary install; the installed manifest had zero errors, and the installed app loaded Qt Core,
+  Qt Widgets, and System32 ICU. The synthetic installer flow also passed install, upgrade, two-way
+  rollback, and tamper rejection. This candidate relies on the target Windows system ICU and still
+  needs compatibility checks on the intended target Windows environment. A `pyside6-deploy`/Nuitka
+  2.7.11 fallback was also attempted; MinGW failed on the repository's non-ASCII path, then a minimal ASCII
+  build stalled in SCons with ccache. Disabling ccache exposed a MinGW GCC 14.2 header-search failure
+  for `<threadpoollegacyapiset.h>` even though the file exists; no Nuitka artifact is accepted. An
+  official embeddable Python imports Qt, but Nuitka repeatedly re-executes when its `._pth` forces
+  `site` loading, so that interpreter is not used for packaging. The candidate is unsigned; no
   signed update metadata or publisher identity is present. A prior PySide6 6.12.0 wheel hash mismatch
   was not bypassed; the component uses the verified 6.10.3 wheel instead.
 - The API adapter uses the documented `version=v2` response shape. It only imports displayed
