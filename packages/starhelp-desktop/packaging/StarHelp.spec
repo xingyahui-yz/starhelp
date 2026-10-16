@@ -1,0 +1,46 @@
+# PyInstaller candidate build. Publisher signing is a separate release gate.
+from pathlib import Path
+from PyInstaller.utils.hooks import collect_all
+
+root = Path(SPECPATH).parent
+ocr_datas, ocr_binaries, ocr_hiddenimports = collect_all("rapidocr")
+runtime_datas, runtime_binaries, runtime_hiddenimports = collect_all("onnxruntime")
+
+a = Analysis(
+    [str(root / "packaging" / "entrypoint.py")],
+    pathex=[str(root / "src")],
+    binaries=ocr_binaries + runtime_binaries,
+    datas=ocr_datas + runtime_datas,
+    hiddenimports=["PIL.Image", *ocr_hiddenimports, *runtime_hiddenimports],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["pytest", "unittest"],
+    noarchive=False,
+)
+pyz = PYZ(a.pure)
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    name="StarHelp",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="StarHelp",
+)

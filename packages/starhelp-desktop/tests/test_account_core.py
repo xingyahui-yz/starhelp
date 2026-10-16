@@ -1,0 +1,454 @@
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import tempfile
+import unittest
+from dataclasses import replace
+from datetime import UTC, datetime
+from pathlib import Path
+from uuid import uuid4
+
+from starhelp_desktop.bundles import (
+    BundleRejected,
+    BundleValidator,
+    PublicBundleCache,
+    PublicBundleSynchronizer,
+)
+from starhelp_desktop.equipment import EquipmentIdentityService
+from starhelp_desktop.imports import (
+    OcrDraft,
+    OcrTextLine,
+    StructuredImportAdapter,
+    confirm_import,
+    proposal_from_ocr_mapping,
+)
+from starhelp_desktop.lifecycle import ProfileLifecycle
+from starhelp_desktop.merge import merge_import
+from starhelp_desktop.models import (
+    AccountSnapshot,
+    EquipmentIdentity,
+    EquipmentInstance,
+    FieldFact,
+    FieldStatus,
+    ImportProposal,
+    Ownership,
+    ProfileAuthorization,
+    SourceKind,
+)
+from starhelp_desktop.privacy import PublicQueryBuilder, PublicScope
+from starhelp_desktop.public_profile import (
+    MihomoPublicProfileClient,
+    ProfileRequestError,
+    PublicProfileSelection,
+)
+from starhelp_desktop.profiles import ProfileRepository
+from starhelp_desktop.reports import ReportLifecycle, ReportValidity
+from starhelp_desktop.storage import EncryptedPrivateStore
+
+
+class TestProtector:
+    def protect(self, data: bytes) -> bytes:
+        return bytes(value ^ 0xA5 for value in data)
+
+    def unprotect(self, data: bytes) -> bytes:
+        return bytes(value ^ 0xA5 for value in data)
+
+
+def fact(value: object, source: str = "manual") -> FieldFact:
+    return FieldFact(
+        value=value,
+        status=FieldStatus.CONFIRMED,
+        source_kind=SourceKind.MANUAL,
+        source_id=source,
+        observed_at=datetime(2026, 10, 15, tzinfo=UTC),
+        confirmed_at=datetime(2026, 10, 15, tzinfo=UTC),
+    )
+
+
+def temporary_directory() -> tempfile.TemporaryDirectory[str]:
+    return tempfile.TemporaryDirectory(dir=Path(__file__).parent)
+
+
+class MergeTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.profile_id = uuid4()
+        self.snapshot = AccountSnapshot(
+            profile_id=self.profile_id,
+            snapshot_id=uuid4(),
+            revision=3,
+            generated_at=datetime(2026, 10, 14, tzinfo=UTC),
+            fields={"character:101.level": fact(80), "character:101.speed": fact(145)},
+            ownership={"101": Ownership.OWNED, "102": Ownership.UNKNOWN},
+            coverage=frozenset({"character:101.level", "character:101.speed", "ownership:101"}),
+        )
+
+    def test_partial_refresh_only_updates_covered_fields(self) -> None:
+        incoming = FieldFact(79, FieldStatus.NEEDS_REVIEW, SourceKind.PUBLIC_PROFILE,
+                             "fixture-source", datetime(2026, 10, 15, tzinfo=UTC))
+        existing_fields = dict(self.snapshot.fields)
+        existing_fields["character:101.level"] = FieldFact(
+            80, FieldStatus.CONFIRMED, SourceKind.PUBLIC_PROFILE, "fixture-source",
+            datetime(2026, 10, 14, tzinfo=UTC), datetime(2026, 10, 14, tzinfo=UTC),
+        )
+        snapshot = replace(self.snapshot, fields=existing_fields)
+        proposal = ImportProposal.create(
+            source_kind=SourceKind.PUBLIC_PROFILE,
+            source_id="fixture-source",
+            observed_at=datetime(2026, 10, 15, tzinfo=UTC),
+            fields={"character:101.level": incoming},
+            coverage=frozenset({"character:101.level"}),
+        )
+        result = merge_import(snapshot, confirm_import(proposal))
+        self.assertEqual(result.snapshot.fields["character:101.level"].value, 79)
+        self.assertEqual(result.snapshot.fields["character:101.speed"].value, 145)
+        self.assertEqual(result.snapshot.fields["character:101.speed"].observed_at,
+                         self.snapshot.fields["character:101.speed"].observed_at)
+        self.assertEqual(result.retained_uncovered, frozenset({"character:101.speed", "ownership:101"}))
+
+    def test_conflict_is_not_silently_overwritten_and_can_be_confirmed(self) -> None:
+        proposal = ImportProposal.create(
+            source_kind=SourceKind.OCR,
+            source_id="synthetic-ocr",
+            observed_at=datetime(2026, 10, 15, tzinfo=UTC),
+            fields={"character:101.level": fact(78, "synthetic-ocr")},
+            coverage=frozenset({"character:101.level"}),
+        )
+        confirmed_proposal = confirm_import(proposal)
+        result = merge_import(self.snapshot, confirmed_proposal)
+        self.assertEqual(result.snapshot.fields["character:101.level"].value, 80)
+        self.assertEqual(len(result.conflicts), 1)
+        confirmed = merge_import(self.snapshot, confirmed_proposal, confirmed_conflict_values={
+            "character:101.level": "incoming",
+        })
+        self.assertEqual(confirmed.snapshot.fields["character:101.level"].value, 78)
+        self.assertEqual(confirmed.snapshot.fields["character:101.level"].status, FieldStatus.CONFIRMED)
+
+    def test_equipment_type_and_identical_stats_do_not_merge_instances(self) -> None:
+        one = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.UNCONFIRMED,
+                               "101", {"crit": fact(0.1)})
+        two = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.UNCONFIRMED,
+                               "101", {"crit": fact(0.1)})
+        proposal = ImportProposal.create(
+            source_kind=SourceKind.STRUCTURED_IMPORT,
+            source_id="synthetic-file",
+            observed_at=datetime(2026, 10, 15, tzinfo=UTC),
+            fields={},
+            equipment=(two,),
+            coverage=frozenset({"equipment:displayed"}),
+        )
+        result = merge_import(replace(self.snapshot, equipment=(one,)), confirm_import(proposal))
+        self.assertEqual(len(result.snapshot.equipment), 2)
+        self.assertFalse(any(item.may_be_reassigned for item in result.snapshot.equipment))
+
+    def test_only_player_action_establishes_equipment_identity(self) -> None:
+        one = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.AMBIGUOUS,
+                                "101", {"crit": fact(0.1)})
+        two = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.UNCONFIRMED,
+                                "101", {"crit": fact(0.1)})
+        snapshot = replace(self.snapshot, equipment=(one, two))
+        identity = EquipmentIdentityService()
+        confirmed = identity.confirm_instance(snapshot, one.local_instance_id)
+        self.assertTrue(confirmed.equipment[0].may_be_reassigned)
+        self.assertFalse(confirmed.equipment[1].may_be_reassigned)
+        linked = identity.link_import_to_existing(
+            confirmed, imported_instance_id=two.local_instance_id,
+            existing_instance_id=one.local_instance_id, player_confirmed_same_copy=True,
+        )
+        self.assertEqual(len(linked.equipment), 1)
+        self.assertEqual(linked.equipment[0].local_instance_id, one.local_instance_id)
+
+
+class ImportAndPrivacyTests(unittest.TestCase):
+    def test_structured_import_rejects_uid_and_credentials(self) -> None:
+        adapter = StructuredImportAdapter()
+        base = {
+            "schema_id": adapter.SCHEMA_ID,
+            "schema_version": adapter.SCHEMA_VERSION,
+            "observed_at": "2026-10-15T00:00:00Z",
+            "fields": {"character:fixture.level": {"value": 80}},
+        }
+        with self.assertRaisesRegex(ValueError, "credential-like"):
+            adapter.preview_object({**base, "uid": "100000999"})
+        with self.assertRaisesRegex(ValueError, "credential-like"):
+            adapter.preview_object({**base, "other": {"access_token": "secret"}})
+        preview = adapter.preview_object(base)
+        self.assertEqual(preview.proposal.fields["character:fixture.level"].value, 80)
+        self.assertFalse(preview.proposal.confirmed)
+
+    def test_public_profile_fetch_requires_explicit_confirmation(self) -> None:
+        client = MihomoPublicProfileClient()
+        with self.assertRaises(PermissionError):
+            client.fetch(PublicProfileSelection("100000999", "CN", client.PROVIDER_ID, False))
+
+    def test_mihomo_fixture_only_marks_displayed_character_owned(self) -> None:
+        client = MihomoPublicProfileClient()
+        proposal = client.to_preview({
+            "player": {"uid": "100000999", "nickname": "synthetic", "signature": "private"},
+            "characters": [{
+                "id": "1212", "level": 80, "rank": 1,
+                "skills": [{"id": "121201", "level": 5}],
+                "light_cone": {
+                    "id": "23014", "level": 80, "rank": 1,
+                    "attributes": [{"field": "atk", "value": 582.1, "percent": False}],
+                },
+                "relics": [{"id": "61041", "type": 1, "level": 15, "set_id": "104"}],
+                "attributes": [{"field": "spd", "value": 134.5}],
+            }],
+        })
+        self.assertEqual(proposal.ownership, {"1212": Ownership.OWNED})
+        self.assertIn("character:1212.stat:spd", proposal.fields)
+        self.assertNotIn("100000999", json.dumps(proposal.fields, default=str))
+        self.assertEqual(proposal.equipment[0].identity, EquipmentIdentity.AMBIGUOUS)
+        self.assertFalse(proposal.equipment[0].may_be_reassigned)
+        self.assertIn("attribute:0.value", proposal.equipment[0].facts)
+
+    def test_mihomo_malformed_optional_arrays_are_ignored(self) -> None:
+        proposal = MihomoPublicProfileClient().to_preview({
+            "characters": [{"id": "fixture", "skills": None, "attributes": "bad"}],
+        })
+        self.assertEqual(proposal.ownership, {"fixture": Ownership.OWNED})
+        self.assertEqual(proposal.fields, {})
+
+    def test_public_query_is_allowlisted_and_uid_like_input_is_rejected(self) -> None:
+        builder = PublicQueryBuilder()
+        request = builder.build(PublicScope("fixture-version", "live", "fixture-mode",
+                                            "fixture-cycle", "fixture-stage", "stage_templates"))
+        self.assertIn(b'"schema_id":"PublicQuery"', builder.serialize(request))
+        with self.assertRaisesRegex(ValueError, "UID-like"):
+            builder.build(PublicScope("100000999", "live", "m", "c", "s", "stage_templates"))
+        with self.assertRaisesRegex(ValueError, "missing"):
+            builder.build(PublicScope("fixture-version", "live", "m", "", "s", "stage_templates"))
+        with self.assertRaisesRegex(ValueError, "public goal"):
+            builder.build(PublicScope("fixture-version", "live", "m", "c", "s",
+                                      "stage_templates", "100000999"))
+        request["account_snapshot"] = {"private": True}
+        with self.assertRaisesRegex(ValueError, "unapproved field"):
+            builder.serialize(request)
+
+    def test_ocr_text_requires_explicit_field_mapping_and_confirmation(self) -> None:
+        draft = OcrDraft(
+            lines=(OcrTextLine("等级 80", 0.93, ((0, 0), (10, 0), (10, 10), (0, 10))),),
+            recognized_at=datetime.now(UTC),
+            warnings=("synthetic fixture",),
+        )
+        proposal = proposal_from_ocr_mapping(draft, {"character:fixture.level": 0})
+        self.assertEqual(proposal.fields["character:fixture.level"].value, "等级 80")
+        self.assertFalse(proposal.confirmed)
+        with self.assertRaises(IndexError):
+            proposal_from_ocr_mapping(draft, {"character:fixture.level": 4})
+
+
+class StorageLifecycleTests(unittest.TestCase):
+    def test_encrypted_store_never_writes_plain_json(self) -> None:
+        with temporary_directory() as directory:
+            store = EncryptedPrivateStore(Path(directory), TestProtector())
+            path = store.save("profile-fixture-snapshot", {"display": "sensitive fixture"})
+            self.assertNotIn(b"sensitive fixture", path.read_bytes())
+            self.assertEqual(store.load("profile-fixture-snapshot")["display"], "sensitive fixture")
+
+    def test_revoke_cancels_tasks_rejects_late_results_and_deletes_private_files(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            profile_id = uuid4()
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"display"}),
+                datetime.now(UTC),
+            ))
+            cancel = lifecycle.register_task(profile_id, 1)
+            private_file = store.save(f"profile-{profile_id.hex}-snapshot", {"fixture": True})
+            temp_file = root / "temp" / profile_id.hex / "scan.tmp"
+            temp_file.parent.mkdir(parents=True)
+            temp_file.write_bytes(b"synthetic")
+            lifecycle.revoke(profile_id)
+            self.assertTrue(cancel.is_set())
+            self.assertFalse(lifecycle.accepts_result(profile_id, 1))
+            self.assertFalse(private_file.exists())
+            self.assertFalse(temp_file.exists())
+            with self.assertRaises(PermissionError):
+                lifecycle.require_active(profile_id, 1)
+
+    def test_reports_are_temporary_until_explicit_save_and_expire_on_snapshot_change(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            profile_id = uuid4()
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"analyze"}),
+                datetime.now(UTC),
+            ))
+            reports = ReportLifecycle(store, lifecycle)
+            report = reports.make_temporary(profile_id=profile_id, generation=1, task={"fixture": True},
+                                             result={"fixture": "result"}, snapshot_revision=1,
+                                             public_release_id="fixture-release", planner_version="fixture")
+            self.assertEqual(list((root / "private").glob("*.bin")), [])
+            self.assertEqual(reports.mark_stale(report, current_snapshot_revision=2).validity,
+                             ReportValidity.EXPIRED)
+            saved = reports.save_explicitly(report)
+            self.assertTrue(saved.exists())
+
+    def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            proposal = confirm_import(StructuredImportAdapter().preview_object({
+                "schema_id": StructuredImportAdapter.SCHEMA_ID,
+                "schema_version": StructuredImportAdapter.SCHEMA_VERSION,
+                "observed_at": "2026-10-15T00:00:00Z",
+                "fields": {"character:fixture.level": {"value": 80}},
+            }).proposal)
+            profile = repository.create_from_confirmed_import(
+                label="Synthetic profile",
+                provider_id="synthetic-source",
+                server_label="fixture-region",
+                proposal=proposal,
+            )
+            snapshot = repository.load_snapshot(profile.profile_id, profile.generation)
+            self.assertEqual(snapshot.fields["character:fixture.level"].value, 80)
+            self.assertFalse(any("100000999" in path.name for path in (root / "private").iterdir()))
+            repository.revoke(profile.profile_id)
+            self.assertEqual(repository.list_profiles(), ())
+            restored = ProfileRepository(store, ProfileLifecycle(store, root / "temp"))
+            self.assertEqual(restored.list_profiles(), ())
+            with self.assertRaises(FileNotFoundError):
+                store.load(f"profile-{profile.profile_id.hex}-snapshot")
+
+
+class BundleTests(unittest.TestCase):
+    def test_validates_hash_and_dependencies_before_activation(self) -> None:
+        validator = BundleValidator()
+        object_a = {"kind": "entity", "refs": []}
+        object_b = {"kind": "template", "refs": ["entity:1"]}
+        objects = {"entity:1": object_a, "template:1": object_b}
+        canonical = lambda obj: json.dumps(obj, ensure_ascii=False, sort_keys=True,
+                                           separators=(",", ":")).encode("utf-8")
+        fixture_key = b"synthetic-only-fixture-signing-key"
+
+        class FixtureVerifier:
+            def verify(self, key_id: str, signed_bytes: bytes, signature: bytes) -> bool:
+                return key_id == "synthetic" and hmac.compare_digest(
+                    hmac.digest(fixture_key, signed_bytes, "sha256"), signature
+                )
+
+        manifest = {
+            "index_release_id": "fixture-release-1",
+            "required_capabilities": [],
+            "signing_key_id": "synthetic",
+            "members": {key: hashlib.sha256(canonical(obj)).hexdigest()
+                        for key, obj in objects.items()},
+            "coverage": {"status": "synthetic"},
+        }
+        envelope = {
+            "contract_version": "0.1-draft",
+            "schema_id": "PublicBundle",
+            "schema_version": "0.1-draft",
+            "manifest": manifest,
+            "signature": hmac.digest(fixture_key, canonical(manifest), "sha256").hex(),
+            "objects": objects,
+        }
+        verifier = FixtureVerifier()
+        with self.assertRaisesRegex(BundleRejected, "signature verification is unavailable"):
+            validator.validate(envelope, supported_capabilities=frozenset())
+        bundle = validator.validate(envelope, supported_capabilities=frozenset(),
+                                    signature_verifier=verifier)
+        with temporary_directory() as directory:
+            cache = PublicBundleCache(Path(directory))
+            cache.activate(bundle)
+            self.assertEqual(cache.current_release_id(), "fixture-release-1")
+            self.assertEqual(cache.available_release_ids(), ("fixture-release-1",))
+        bad = json.loads(json.dumps(envelope))
+        bad["objects"]["entity:1"]["name"] = "mutated"
+        with self.assertRaises(BundleRejected):
+            validator.validate(bad, supported_capabilities=frozenset(), signature_verifier=verifier)
+        dangling = json.loads(json.dumps(envelope))
+        dangling["objects"]["template:1"]["refs"] = ["missing"]
+        for key in dangling["manifest"]["members"]:
+            canonical_object = canonical(dangling["objects"][key])
+            dangling["manifest"]["members"][key] = hashlib.sha256(canonical_object).hexdigest()
+        dangling["signature"] = hmac.digest(
+            fixture_key, canonical(dangling["manifest"]), "sha256"
+        ).hex()
+        with self.assertRaisesRegex(BundleRejected, "missing dependencies"):
+            validator.validate(dangling, supported_capabilities=frozenset(),
+                               signature_verifier=verifier)
+
+    def test_sync_keeps_previous_release_until_verified_candidate_activates(self) -> None:
+        fixture_key = b"synthetic-sync-signing-key"
+        canonical = lambda obj: json.dumps(obj, ensure_ascii=False, sort_keys=True,
+                                           separators=(",", ":")).encode("utf-8")
+
+        class FixtureVerifier:
+            def verify(self, key_id: str, signed_bytes: bytes, signature: bytes) -> bool:
+                return key_id == "sync-key" and hmac.compare_digest(
+                    hmac.digest(fixture_key, signed_bytes, "sha256"), signature
+                )
+
+        def make_release(release_id: str) -> dict[str, object]:
+            objects = {"fixture:object": {"kind": "fixture", "refs": []}}
+            manifest = {
+                "index_release_id": release_id,
+                "required_capabilities": [],
+                "signing_key_id": "sync-key",
+                "members": {"fixture:object": hashlib.sha256(
+                    canonical(objects["fixture:object"])
+                ).hexdigest()},
+                "coverage": {"fixture": True},
+            }
+            return {
+                "contract_version": "0.1-draft",
+                "schema_id": "PublicBundle",
+                "schema_version": "0.1-draft",
+                "manifest": manifest,
+                "signature": hmac.digest(fixture_key, canonical(manifest), "sha256").hex(),
+                "objects": objects,
+            }
+
+        class FixtureSource:
+            def __init__(self, envelope: dict[str, object], release_id: str) -> None:
+                self.envelope = envelope
+                self.release_id = release_id
+                self.fetches = 0
+
+            def discover_release(self, current_release_id: str | None) -> str | None:
+                return self.release_id
+
+            def fetch_release(self, release_id: str) -> object:
+                self.fetches += 1
+                if release_id != self.release_id:
+                    raise AssertionError("unexpected release request")
+                return self.envelope
+
+        with temporary_directory() as directory:
+            cache = PublicBundleCache(Path(directory))
+            sync = PublicBundleSynchronizer(
+                cache, signature_verifier=FixtureVerifier(), supported_capabilities=frozenset()
+            )
+            first = sync.sync(FixtureSource(make_release("fixture-release-1"), "fixture-release-1"))
+            self.assertTrue(first.updated)
+            second = sync.sync(FixtureSource(make_release("fixture-release-2"), "fixture-release-2"))
+            self.assertEqual(second.previous_release_id, "fixture-release-1")
+            self.assertEqual(cache.available_release_ids(),
+                             ("fixture-release-1", "fixture-release-2"))
+
+            current_source = FixtureSource(make_release("fixture-release-2"), "fixture-release-2")
+            current = sync.sync(current_source)
+            self.assertFalse(current.updated)
+            self.assertEqual(current_source.fetches, 0)
+
+            unsigned = make_release("fixture-release-3")
+            unsigned["signature"] = "00" * 64
+            with self.assertRaisesRegex(BundleRejected, "signature verification failed"):
+                sync.sync(FixtureSource(unsigned, "fixture-release-3"))
+            self.assertEqual(cache.current_release_id(), "fixture-release-2")
+            self.assertEqual(cache.available_release_ids(),
+                             ("fixture-release-1", "fixture-release-2"))
+
+
+if __name__ == "__main__":
+    unittest.main()
