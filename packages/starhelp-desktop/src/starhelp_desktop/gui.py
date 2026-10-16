@@ -110,6 +110,8 @@ class _Page(QWidget):
 
 
 class TaskPage(_Page):
+    temporary_report_ready = Signal(object)
+
     def __init__(self, profiles: ProfileRepository, tasks: TaskRepository,
                  progress_bus: _ProgressBus) -> None:
         super().__init__("任务", "选择公开关卡和本地档案。目标记忆按档案加密保存；规划器未连接时不会生成推荐。")
@@ -853,8 +855,11 @@ class ReportsPage(_Page):
         self.lifecycle = lifecycle
         self.reports = ReportLifecycle(store, lifecycle)
         self.saved_reports: dict[str, AnalysisReport] = {}
+        self.pending_report: AnalysisReport | None = None
         self.profile_list = QComboBox()
         self.refresh_button = QPushButton("刷新档案与报告状态")
+        self.save_pending_button = QPushButton("主动保存当前分析结果")
+        self.save_pending_button.setEnabled(False)
         self.status = QLabel("规划器尚未接入，不会自动生成或保存攻略报告。")
         self.status.setWordWrap(True)
         self.report_list = QListWidget()
@@ -864,11 +869,13 @@ class ReportsPage(_Page):
         row = QHBoxLayout()
         row.addWidget(self.profile_list, 1)
         row.addWidget(self.refresh_button)
+        row.addWidget(self.save_pending_button)
         self.content.addLayout(row)
         self.content.addWidget(self.status)
         self.content.addWidget(self.report_list, 1)
         self.content.addWidget(self.detail, 2)
         self.refresh_button.clicked.connect(self.reload_profiles)
+        self.save_pending_button.clicked.connect(self.save_pending_report)
         self.profile_list.currentIndexChanged.connect(self.refresh_reports)
         self.report_list.currentItemChanged.connect(self.show_report)
         self.reload_profiles()
@@ -888,7 +895,18 @@ class ReportsPage(_Page):
         self.report_list.clear()
         self.saved_reports.clear()
         self.detail.clear()
+        if self.pending_report is not None and not self.lifecycle.is_active(
+            self.pending_report.profile_id, self.pending_report.authorization_generation
+        ):
+            self.pending_report = None
         selected = self.profile_list.currentData()
+        self.save_pending_button.setEnabled(
+            self.pending_report is not None
+            and str(self.pending_report.profile_id) == selected
+            and self.lifecycle.is_active(
+                self.pending_report.profile_id, self.pending_report.authorization_generation
+            )
+        )
         profile = next((item for item in self.profiles.list_profiles()
                         if str(item.profile_id) == selected), None)
         if profile is None:
@@ -912,6 +930,7 @@ class ReportsPage(_Page):
             self.status.setText(
                 "没有已保存报告。规划器尚未接入；本组件不会生成模拟攻略或自动保存结果。"
             )
+            self._render_pending_report(selected)
             return
         self.status.setText(
             f"已加载 {len(reports)} 份用户主动保存的报告。证据撤回清单当前不可用，在线撤回状态未核实。"
@@ -931,6 +950,7 @@ class ReportsPage(_Page):
             )
             item.setData(Qt.ItemDataRole.UserRole, report_key)
             self.report_list.addItem(item)
+        self._render_pending_report(selected)
 
     def show_report(self, current: QListWidgetItem | None, _previous: QListWidgetItem | None) -> None:
         if current is None:
@@ -949,6 +969,71 @@ class ReportsPage(_Page):
             "任务": report.task,
             "结果": report.result,
         }, ensure_ascii=False, indent=2))
+
+    def stage_temporary_report(self, report: AnalysisReport) -> None:
+        if not self.lifecycle.is_active(report.profile_id, report.authorization_generation):
+            self.status.setText("分析结果所属档案已撤权；不能保存该结果。")
+            return
+        index = self.profile_list.findData(str(report.profile_id))
+        if index < 0:
+            self.reload_profiles()
+            index = self.profile_list.findData(str(report.profile_id))
+        if index < 0:
+            self.status.setText("找不到分析结果所属档案；不能保存该结果。")
+            return
+        self.pending_report = report
+        self.profile_list.setCurrentIndex(index)
+        self.refresh_reports()
+        self.status.setText(
+            "有一份未保存的本地分析结果。点击“主动保存当前分析结果”后才会加密留存。"
+        )
+        self.detail.setPlainText(json.dumps({
+            "状态": report.validity.value,
+            "快照修订": report.snapshot_revision,
+            "公共资料版本": report.public_release_id,
+            "规划器版本": report.planner_version,
+            "任务": report.task,
+            "结果": report.result,
+        }, ensure_ascii=False, indent=2))
+        self.save_pending_button.setEnabled(True)
+
+    def _render_pending_report(self, selected_profile_id: str | None) -> None:
+        report = self.pending_report
+        if report is None or str(report.profile_id) != selected_profile_id:
+            return
+        if not self.lifecycle.is_active(report.profile_id, report.authorization_generation):
+            self.pending_report = None
+            self.save_pending_button.setEnabled(False)
+            self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
+            return
+        self.status.setText(
+            "有一份未保存的本地分析结果。点击“主动保存当前分析结果”后才会加密留存。"
+        )
+        self.detail.setPlainText(json.dumps({
+            "状态": report.validity.value,
+            "快照修订": report.snapshot_revision,
+            "公共资料版本": report.public_release_id,
+            "规划器版本": report.planner_version,
+            "任务": report.task,
+            "结果": report.result,
+        }, ensure_ascii=False, indent=2))
+
+    def save_pending_report(self) -> None:
+        report = self.pending_report
+        if report is None:
+            return
+        if self.profile_list.currentData() != str(report.profile_id):
+            self.status.setText("先切回此结果所属档案，再保存。")
+            return
+        try:
+            self.reports.save_explicitly(report)
+        except Exception as exc:
+            self.status.setText(f"报告未保存：{exc}")
+            return
+        self.pending_report = None
+        self.reload_profiles()
+        self.status.setText("分析结果已由用户主动确认并加密保存。")
+        self.save_pending_button.setEnabled(False)
 
 
 class PublicKnowledgePage(_Page):
@@ -1021,7 +1106,9 @@ class StarHelpWindow(QMainWindow):
         self.pages.addWidget(PublicKnowledgePage(public_cache))
         self.pages.addWidget(self.accounts_page)
         self.pages.addWidget(self.progress_page)
-        self.pages.addWidget(ReportsPage(self.profiles, self.lifecycle, store))
+        self.reports_page = ReportsPage(self.profiles, self.lifecycle, store)
+        self.task_page.temporary_report_ready.connect(self.reports_page.stage_temporary_report)
+        self.pages.addWidget(self.reports_page)
         self.pages.addWidget(SettingsPage())
         layout.addWidget(self.navigation)
         layout.addWidget(self.pages, 1)

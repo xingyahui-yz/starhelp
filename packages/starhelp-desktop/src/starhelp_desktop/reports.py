@@ -61,9 +61,12 @@ class ReportLifecycle:
         )
 
     def save_explicitly(self, report: AnalysisReport) -> Path:
-        self._lifecycle.require_active(report.profile_id, report.authorization_generation)
         key = f"profile-{report.profile_id.hex}-report-{report.report_id.hex}"
-        return self._store.save(key, self._to_dict(report))
+        return self._lifecycle.run_authorized(
+            report.profile_id,
+            report.authorization_generation,
+            lambda: self._store.save(key, self._to_dict(report)),
+        )
 
     def mark_stale(
         self,
@@ -91,7 +94,25 @@ class ReportLifecycle:
         current_snapshot_revision: int | None,
         withdrawn_refs: frozenset[str] = frozenset(),
     ) -> tuple[AnalysisReport, ...]:
-        self._lifecycle.require_active(profile_id, generation)
+        return self._lifecycle.run_authorized(
+            profile_id,
+            generation,
+            lambda: self._list_saved_active(
+                profile_id=profile_id,
+                generation=generation,
+                current_snapshot_revision=current_snapshot_revision,
+                withdrawn_refs=withdrawn_refs,
+            ),
+        )
+
+    def _list_saved_active(
+        self,
+        *,
+        profile_id: UUID,
+        generation: int,
+        current_snapshot_revision: int | None,
+        withdrawn_refs: frozenset[str],
+    ) -> tuple[AnalysisReport, ...]:
         reports: list[AnalysisReport] = []
         for key in self._store.list_profile_keys(profile_id, "report"):
             data = self._store.load(key)

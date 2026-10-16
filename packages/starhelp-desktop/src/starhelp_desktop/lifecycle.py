@@ -4,10 +4,13 @@ import shutil
 import threading
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable, TypeVar
 from uuid import UUID
 
 from .models import ProfileAuthorization, utc_now
 from .storage import EncryptedPrivateStore
+
+_Result = TypeVar("_Result")
 
 
 @dataclass(slots=True)
@@ -49,6 +52,14 @@ class ProfileLifecycle:
     def require_active(self, profile_id: UUID, generation: int | None = None) -> None:
         if not self.is_active(profile_id, generation):
             raise PermissionError("profile is not authorized for this operation")
+
+    def run_authorized(
+        self, profile_id: UUID, generation: int, action: Callable[[], _Result]
+    ) -> _Result:
+        """Serialize a profile-scoped disk operation with revoke and generation changes."""
+        with self._lock:
+            self.require_active(profile_id, generation)
+            return action()
 
     def register_task(self, profile_id: UUID, generation: int) -> threading.Event:
         with self._lock:

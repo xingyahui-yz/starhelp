@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import threading
 import tempfile
 import unittest
 import urllib.request
@@ -283,6 +284,57 @@ class StorageLifecycleTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 lifecycle.require_active(profile_id, 1)
 
+    def test_revoke_serializes_with_in_flight_explicit_report_save(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profile_id = uuid4()
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"reports"}),
+                datetime.now(UTC),
+            ))
+            reports = ReportLifecycle(store, lifecycle)
+            report = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "task"},
+                result={"fixture": "result"}, snapshot_revision=1,
+                public_release_id="fixture-release", planner_version="fixture",
+            )
+            save_entered = threading.Event()
+            allow_save = threading.Event()
+            revoke_started = threading.Event()
+            revoke_done = threading.Event()
+            original_save = store.save
+
+            def slow_save(key: str, value: dict[str, object]):
+                save_entered.set()
+                if not allow_save.wait(2):
+                    raise TimeoutError("synthetic save gate timed out")
+                return original_save(key, value)
+
+            store.save = slow_save
+            saver = threading.Thread(target=reports.save_explicitly, args=(report,))
+
+            def revoke() -> None:
+                revoke_started.set()
+                lifecycle.revoke(profile_id)
+                revoke_done.set()
+
+            revoker = threading.Thread(target=revoke)
+            saver.start()
+            self.assertTrue(save_entered.wait(2))
+            revoker.start()
+            self.assertTrue(revoke_started.wait(2))
+            self.assertFalse(revoke_done.wait(0.05))
+            allow_save.set()
+            saver.join(2)
+            revoker.join(2)
+            self.assertFalse(saver.is_alive())
+            self.assertFalse(revoker.is_alive())
+            report_key = f"profile-{profile_id.hex}-report-{report.report_id.hex}"
+            with self.assertRaises(FileNotFoundError):
+                store.load(report_key)
+
     def test_reports_are_temporary_until_explicit_save_and_expire_on_snapshot_change(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)
@@ -325,6 +377,9 @@ class StorageLifecycleTests(unittest.TestCase):
             )
             by_id = {item.report_id: item for item in expired}
             self.assertEqual(by_id[snapshot_bound.report_id].validity, ReportValidity.EXPIRED)
+            lifecycle.revoke(profile_id)
+            with self.assertRaises(PermissionError):
+                reports.save_explicitly(snapshot_bound)
 
     def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
         with temporary_directory() as directory:

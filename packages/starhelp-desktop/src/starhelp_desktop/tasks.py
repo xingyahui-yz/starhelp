@@ -153,12 +153,15 @@ class TaskRepository:
         self._lifecycle = lifecycle
 
     def save_last(self, task: AnalysisTaskDraft) -> None:
-        self._lifecycle.require_active(task.profile_id, task.authorization_generation)
-        self._store.save(self._key(task.profile_id), {
-            "schema_id": self.SCHEMA_ID,
-            "schema_version": self.SCHEMA_VERSION,
-            "task": task.to_dict(),
-        })
+        self._lifecycle.run_authorized(
+            task.profile_id,
+            task.authorization_generation,
+            lambda: self._store.save(self._key(task.profile_id), {
+                "schema_id": self.SCHEMA_ID,
+                "schema_version": self.SCHEMA_VERSION,
+                "task": task.to_dict(),
+            }),
+        )
 
     def load_last(self, profile_id: UUID, generation: int) -> AnalysisTaskDraft | None:
         self._lifecycle.require_active(profile_id, generation)

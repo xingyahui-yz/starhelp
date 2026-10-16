@@ -36,9 +36,10 @@ requires Windows; the encryption contract is injected in platform-independent un
   app is open (immediately on opt-in, then at most once every 24 hours), and leaves every result in
   preview until the player confirms import. Revoking or disabling the opt-in deletes the saved UID.
 - The report page lists only explicitly saved reports, reloads them under the active profile, and
-  persists snapshot-expired or evidence-withdrawn status. It reports that online withdrawal state is
-  unknown when A's signed withdrawal feed is unavailable. No report is generated without a planner
-  result.
+  persists snapshot-expired or evidence-withdrawn status. A temporary planner result can be staged
+  from TaskPage and requires the visible save action before DPAPI persistence. Online withdrawal
+  state is reported as unknown until A's signed withdrawal feed is available. No report is generated
+  without a planner result.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated
