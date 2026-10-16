@@ -94,7 +94,7 @@ class LocalPlannerProcess:
                         return
                     process.stdin.write(request_bytes)
                     process.stdin.close()
-                except (BrokenPipeError, OSError) as exc:
+                except (BrokenPipeError, OSError, ValueError) as exc:
                     io_errors.append(exc)
 
             def read_response() -> None:
@@ -108,7 +108,7 @@ class LocalPlannerProcess:
                             output_limit_hit.set()
                             return
                         output.extend(chunk)
-                except OSError as exc:
+                except (OSError, ValueError) as exc:
                     io_errors.append(exc)
 
             writer = threading.Thread(target=write_request, name="starhelp-planner-stdin", daemon=True)
