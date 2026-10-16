@@ -8,10 +8,16 @@ def main() -> int:
         from PySide6.QtWidgets import QApplication, QMessageBox
         from .gui import create_window
     except ImportError as exc:
-        sys.stderr.write(
+        message = (
             f"Desktop dependencies could not be loaded ({type(exc).__name__}: {exc}). "
             "Install this component with the [desktop] extra.\n"
         )
+        if sys.stderr is not None:
+            sys.stderr.write(message)
+        elif sys.platform == "win32":
+            import ctypes
+
+            ctypes.windll.user32.MessageBoxW(None, message, "StarHelp could not start", 0x10)
         return 2
     try:
         app = QApplication(sys.argv)

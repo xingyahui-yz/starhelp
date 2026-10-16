@@ -37,6 +37,7 @@ from .models import ImportProposal
 from .profiles import ProfileRepository, ProfileSummary
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
 from .storage import EncryptedPrivateStore
+from .tasks import AnalysisTaskDraft, TaskRepository
 
 
 class _Signals(QObject):
@@ -104,9 +105,11 @@ class _Page(QWidget):
 
 
 class TaskPage(_Page):
-    def __init__(self, profiles: ProfileRepository, progress_bus: _ProgressBus) -> None:
-        super().__init__("任务", "选择公开关卡和本地档案。规划器尚未连接时不会生成模拟推荐。")
+    def __init__(self, profiles: ProfileRepository, tasks: TaskRepository,
+                 progress_bus: _ProgressBus) -> None:
+        super().__init__("任务", "选择公开关卡和本地档案。目标记忆按档案加密保存；规划器未连接时不会生成推荐。")
         self.profiles = profiles
+        self.tasks = tasks
         self.progress_bus = progress_bus
         form = QFormLayout()
         self.mode = QComboBox()
@@ -145,6 +148,7 @@ class TaskPage(_Page):
         self.content.addLayout(row)
         self.refresh_profiles.clicked.connect(self.reload_profiles)
         self.analyze.clicked.connect(self.create_task)
+        self.profile.currentIndexChanged.connect(self.restore_last_task)
         self.reload_profiles()
 
     def reload_profiles(self) -> None:
@@ -163,12 +167,82 @@ class TaskPage(_Page):
         if self.profile.currentIndex() < 0:
             QMessageBox.information(self, "需要本地档案", "请先创建并授权一个本地档案。")
             return
-        self.progress.setRange(0, 1)
+        profile_id = self.profile.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == profile_id), None)
+        if profile is None:
+            QMessageBox.warning(self, "档案不可用", "所选档案已撤权或不存在，请刷新档案列表。")
+            self.reload_profiles()
+            return
+        try:
+            task = AnalysisTaskDraft.create(
+                profile_id=profile.profile_id,
+                authorization_generation=profile.generation,
+                mode_label=self.mode.currentText(),
+                cycle_id=self.cycle.text(),
+                stage_id=self.stage.text(),
+                goal_label=self.goal.currentText(),
+                fixed_character_ids=self.fixed.text(),
+                excluded_character_ids=self.excluded.text(),
+                locked_equipment_instance_ids=self.locked.text(),
+            )
+            self.tasks.save_last(task)
+        except (PermissionError, ValueError) as exc:
+            QMessageBox.warning(self, "无法创建任务", str(exc))
+            return
+        self._show_waiting_task(task)
+
+    def restore_last_task(self, *_args: object) -> None:
+        profile_id = self.profile.currentData()
+        if profile_id is None:
+            self._clear_task_selection("先选择一个已授权档案，任务目标会按档案分别记忆。")
+            return
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == profile_id), None)
+        if profile is None:
+            self._clear_task_selection("所选档案不可用，请刷新档案列表。")
+            return
+        try:
+            task = self.tasks.load_last(profile.profile_id, profile.generation)
+        except (PermissionError, ValueError) as exc:
+            self._clear_task_selection(f"无法恢复上次任务：{exc}")
+            return
+        if task is None:
+            self._clear_task_selection("此档案还没有记忆的任务目标。规划器尚未接入。")
+            return
+        mode_index = self.mode.findText(task.mode_label)
+        goal_index = self.goal.findText(task.goal_label)
+        if mode_index >= 0:
+            self.mode.setCurrentIndex(mode_index)
+        if goal_index >= 0:
+            self.goal.setCurrentIndex(goal_index)
+        self.cycle.setText(task.cycle_id)
+        self.stage.setText(task.stage_id)
+        self.fixed.setText(", ".join(task.fixed_character_ids))
+        self.excluded.setText(", ".join(task.excluded_character_ids))
+        self.locked.setText(", ".join(task.locked_equipment_instance_ids))
+        self._show_waiting_task(task)
+
+    def _clear_task_selection(self, status: str) -> None:
+        self.mode.setCurrentIndex(0)
+        self.goal.setCurrentIndex(0)
+        self.cycle.clear()
+        self.stage.clear()
+        self.fixed.clear()
+        self.excluded.clear()
+        self.locked.clear()
+        self.progress.setRange(0, 100)
         self.progress.setValue(0)
+        self.status.setText(status)
+
+    def _show_waiting_task(self, task: AnalysisTaskDraft) -> None:
+        self.progress.setRange(0, 100)
+        self.progress.setValue(task.progress)
         self.status.setText(
-            "任务已构建，但本地规划组件尚未接入。未发送账号字段，也未生成推荐；请等待明确版本的规划器产物。"
+            f"目标已按本地档案加密记忆（任务 {str(task.task_id)[:8]}）。"
+            "规划器尚未接入；账号数据未发送，也没有生成推荐。"
         )
-        self.progress_bus.updated.emit("分析任务等待本地规划器接入；没有生成推荐。", 0)
+        self.progress_bus.updated.emit("本地任务已记录，等待规划器接入；没有生成推荐。", task.progress)
 
 
 class AccountsPage(_Page):
@@ -590,6 +664,7 @@ class StarHelpWindow(QMainWindow):
         self.lifecycle = ProfileLifecycle(store, temp_root)
         self.profiles = ProfileRepository(store, self.lifecycle)
         self.progress_bus = _ProgressBus()
+        self.tasks = TaskRepository(store, self.lifecycle)
 
         shell = QWidget()
         layout = QHBoxLayout(shell)
@@ -597,7 +672,7 @@ class StarHelpWindow(QMainWindow):
         self.navigation.addItems(["任务", "公共资料", "账号与导入", "进度", "报告", "设置与维护"])
         self.navigation.setFixedWidth(180)
         self.pages = QStackedWidget()
-        self.task_page = TaskPage(self.profiles, self.progress_bus)
+        self.task_page = TaskPage(self.profiles, self.tasks, self.progress_bus)
         self.accounts_page = AccountsPage(self.profiles, self.lifecycle, self.progress_bus)
         self.progress_page = _ProgressPage(self.progress_bus)
         self.pages.addWidget(self.task_page)

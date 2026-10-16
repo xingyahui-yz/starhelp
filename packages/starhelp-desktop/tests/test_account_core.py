@@ -46,6 +46,7 @@ from starhelp_desktop.public_profile import (
 from starhelp_desktop.profiles import ProfileRepository
 from starhelp_desktop.reports import ReportLifecycle, ReportValidity
 from starhelp_desktop.storage import EncryptedPrivateStore
+from starhelp_desktop.tasks import AnalysisTaskDraft, TaskRepository
 
 
 class TestProtector:
@@ -318,6 +319,59 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertEqual(restored.list_profiles(), ())
             with self.assertRaises(FileNotFoundError):
                 store.load(f"profile-{profile.profile_id.hex}-snapshot")
+
+    def test_last_task_is_encrypted_restored_after_restart_and_removed_on_revoke(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="Synthetic profile", provider_id="local-import", server_label="fixture-region"
+            )
+            tasks = TaskRepository(store, lifecycle)
+            task = AnalysisTaskDraft.create(
+                profile_id=profile.profile_id,
+                authorization_generation=profile.generation,
+                mode_label="fixture-mode",
+                cycle_id="fixture-cycle",
+                stage_id="fixture-stage",
+                goal_label="fixture-goal",
+                fixed_character_ids="fixture-character-a",
+                excluded_character_ids="fixture-character-b",
+                locked_equipment_instance_ids="fixture-local-equipment-a",
+            )
+            tasks.save_last(task)
+            task_path = root / "private" / f"profile-{profile.profile_id.hex}-last-task.bin"
+            self.assertNotIn(b"fixture-stage", task_path.read_bytes())
+
+            restarted_lifecycle = ProfileLifecycle(store, root / "temp")
+            restarted_profiles = ProfileRepository(store, restarted_lifecycle)
+            restarted_tasks = TaskRepository(store, restarted_lifecycle)
+            restored = restarted_tasks.load_last(profile.profile_id, profile.generation)
+            self.assertEqual(restored, task)
+
+            restarted_profiles.revoke(profile.profile_id)
+            self.assertFalse(task_path.exists())
+            with self.assertRaises(PermissionError):
+                restarted_tasks.load_last(profile.profile_id, profile.generation)
+
+    def test_task_rejects_conflicting_or_malformed_constraints(self) -> None:
+        base = {
+            "profile_id": uuid4(),
+            "authorization_generation": 1,
+            "mode_label": "fixture-mode",
+            "cycle_id": "fixture-cycle",
+            "stage_id": "fixture-stage",
+            "goal_label": "fixture-goal",
+        }
+        with self.assertRaisesRegex(ValueError, "both fixed and excluded"):
+            AnalysisTaskDraft.create(**base, fixed_character_ids="fixture-a",
+                                     excluded_character_ids="fixture-a")
+        with self.assertRaisesRegex(ValueError, "empty identifier"):
+            AnalysisTaskDraft.create(**base, locked_equipment_instance_ids="fixture-a,")
+        with self.assertRaisesRegex(ValueError, "duplicate identifier"):
+            AnalysisTaskDraft.create(**base, fixed_character_ids="fixture-a,fixture-a")
 
 
 class BundleTests(unittest.TestCase):

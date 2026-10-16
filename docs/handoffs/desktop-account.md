@@ -37,7 +37,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 - Isolated PySide6 shell with task, account/import, progress, public cache, reports, and maintenance
   pages; planner, production public transport, service lifecycle, and admin flows are visibly marked
-  unavailable.
+  unavailable. The task form persists the last target and local constraints per profile in the
+  encrypted store, restores them after restart, and removes them with profile revocation; until the
+  planner is present, created tasks stay in an explicit waiting state.
 - Isolated package configuration with optional PySide6 Essentials, PyInstaller, local OCR, and
   Ed25519 verification extras;
   no root dependency changes.
@@ -63,15 +65,21 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-16: 16 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-16: 18 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
-  recognized a synthetic screenshot. No real UID was queried.
-- The Windows candidate built successfully with PyInstaller 6.10.0 and includes a SHA-256 manifest
-  plus per-user install/rollback script. The actual candidate was installed under a component-local
-  temporary directory, launched for four seconds, upgraded, and rolled back; a synthetic v1/v2 flow
-  also verified install, backup preservation, rollback, and rejection of a tampered file. These runs
-  do not count as target-user install acceptance. The candidate is unsigned and folder-style; no
+  recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
+  save/restore and the explicit planner-unavailable status. No real UID was queried.
+- The Windows candidate builds with PyInstaller 6.22.3 and includes a SHA-256 manifest plus
+  per-user install/rollback script. Installer install/upgrade/rollback and tamper rejection passed
+  with synthetic v1/v2 fixtures; the actual candidate was copied and upgraded in a component-local
+  temporary directory. Startup rechecks with both PyInstaller 6.10.0 and 6.22.3 showed an exception
+  dialog: `ImportError: DLL load failed while importing QtWidgets`. A process-lifetime-only smoke was
+  insufficient; the current diagnostic dialog shows the error, and no Qt DLLs are loaded in the
+  failing process. A console probe narrows this to loading `QtCore.pyd`; the same collected Qt DLLs
+  load from normal Python. A `pyside6-deploy`/Nuitka 2.7.11 fallback was also attempted; its
+  MinGW backend failed on the repository's non-ASCII path, and a minimal follow-up build stalled in
+  Scons. No Nuitka artifact is accepted. The candidate is unsigned and folder-style; no
   signed update metadata or publisher identity is present. A prior PySide6 6.12.0 wheel hash mismatch
   was not bypassed; the component uses the verified 6.10.3 wheel instead.
 - The API adapter uses the documented `version=v2` response shape. It only imports displayed

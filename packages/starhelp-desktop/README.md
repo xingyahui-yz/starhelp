@@ -2,7 +2,8 @@
 
 The component is isolated from the legacy `src/abyss_ai` tree and root dependencies. It currently
 implements local account facts, source-aware partial merge, import preview, DPAPI-backed private
-storage, revocation, public-query allowlisting, bundle validation/cache, and report lifecycle.
+storage, revocation, encrypted per-profile task memory, public-query allowlisting, bundle
+validation/cache, and report lifecycle.
 
 ## Development
 
@@ -24,9 +25,13 @@ requires Windows; the encryption contract is injected in platform-independent un
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: contract adapters only; no cross-branch source or
   runtime is loaded here.
+- The task form saves the latest target and local constraints under the selected encrypted profile,
+  restores that profile's values, and clears them on profile revocation. It records a waiting state;
+  it does not call a planner or present a recommendation.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
-- An unsigned folder-style candidate builds and starts with PyInstaller 6.10.0. Its per-user
-  installer verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can
-  roll back. Publisher signing, update metadata, and target-Windows install/upgrade/recovery
-  validation remain release work.
+- An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
+  verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
+  The frozen executable currently fails in the `PySide6.QtWidgets` import chain at startup on this
+  build machine; do not treat this candidate as runnable. Publisher signing, update metadata, and
+  target-Windows install/upgrade/recovery validation remain release work.

@@ -9,6 +9,7 @@ from .models import (
     ProfileAuthorization,
     SourceKind,
 )
+from .tasks import AnalysisTaskDraft, TaskRepository, TaskState
 
 __all__ = [
     "AccountSnapshot",
@@ -18,4 +19,7 @@ __all__ = [
     "Ownership",
     "ProfileAuthorization",
     "SourceKind",
+    "AnalysisTaskDraft",
+    "TaskRepository",
+    "TaskState",
 ]
