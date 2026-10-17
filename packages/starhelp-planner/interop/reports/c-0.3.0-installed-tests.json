@@ -1,0 +1,20 @@
+{
+  "consumer_source_commit": "b87e963c195acb236918b579d76d74a2853cc623",
+  "component_version": "0.3.0",
+  "native_rule_version": "0.2.0",
+  "tests": 62,
+  "skipped": 0,
+  "all_passed": true,
+  "source_wheel_module_bytes_match": true,
+  "import_from_isolated_install_verified": true,
+  "cryptography_version": "46.0.7",
+  "wheel_sha256": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+  "native_baseline_commit": "3133eda8ce571e4a58d217e52e28d6e3d3aa6bff",
+  "native_implementation_files_unchanged": {
+    "api.py": "4a46f64b70093dcdfebd37c6b7f16bd754ec22ea62872ab8a4f6aa4197442740",
+    "engine.py": "32fce3062fb6e4832e908dbaedd357bb603b5ef51460040550efaf5c2df029d0",
+    "conditions.py": "1cce8498ca32f6c1b1a4ad0ad14dc1267d13c029ca2469ff8d3a9e17e34a1ea2",
+    "cultivation.py": "ebb22080fc211117336577f1eee63ab7327b8066afe573ff8ce7c009473f55e7",
+    "validation.py": "be88dbc986c6fb125aad15c69d66123871b385c34be79cb44859131faea53c65"
+  }
+}

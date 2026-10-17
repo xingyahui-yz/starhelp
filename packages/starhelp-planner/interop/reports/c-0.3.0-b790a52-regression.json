@@ -1,0 +1,504 @@
+{
+  "synthetic_only": true,
+  "consumer_component_version": "0.3.0",
+  "native_rule_version": "0.2.0",
+  "consumer_source_commit": "b87e963c195acb236918b579d76d74a2853cc623",
+  "consumer_wheel_sha256": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+  "consumer_import_verified": true,
+  "cryptography_version": "46.0.7",
+  "a_producer_commit": "b790a52aea4fabdb362d35c37d9b511b737e1fe4",
+  "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+  "release_id": "rel_fixture_0001",
+  "a_delivery_artifact_commit": null,
+  "b_producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "cases": [
+    {
+      "name": "normal:fixture:stage:one",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "complete-alternative:fixture:stage:one",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "no-match:fixture:stage:one",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "no_reviewed_template",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "missing-fields",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "62715aea4275a2d605bd0f9125abef0d6f2c96638ded40388582800a85c96ce4",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "missing-unit-context",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "175a516052436b2a125427f12586f1b09d55990a6236a162f6605e077e37d019",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_unit",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [
+                  "characters/fixture:character:a/fields/fixture:attack"
+                ],
+                "field_basis": {
+                  "state": "confirmed",
+                  "observed_at": "2026-10-16T00:00:00+00:00",
+                  "confirmed_at": "2026-10-16T00:00:00+00:00",
+                  "sources": [
+                    {
+                      "source_kind": "manual",
+                      "local_source_id": "fixture:C-synthetic-model-input",
+                      "producer_path": "character:fixture:character:a.fixture:attack"
+                    }
+                  ]
+                },
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": [
+          {
+            "path": "character:fixture:character:a.fixture:attack",
+            "reason": "producer_unit_and_measurement_context_unavailable"
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown-ownership",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "259a5b856038be92fb8baf8d9a21544f653a13bc320718cb1a5b881b6abd1e66",
+      "result": {
+        "status": "confirmation_required",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [
+          "fixture:variant:main"
+        ],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "confirmed-not-owned",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "8a9072fd4b75285b07431a53918db2c7fbfe81294c81e1e6f3a2351ffc26f9b4",
+      "result": {
+        "status": "no_feasible_variant",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "cross-release",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "error",
+        "adapter_error": "producer_release_mismatch",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "tampered-transport",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "error",
+        "adapter_error": "producer_digest_mismatch",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "unknown-signing-key",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "error",
+        "adapter_error": "unknown_signing_key",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "wrong-public-key",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "error",
+        "adapter_error": "invalid_signature",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "withdrawn-evidence",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "a_raw_sha256": "145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00",
+      "b_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "result": {
+        "status": "error",
+        "adapter_error": null,
+        "native_error": "withdrawn_public_object",
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      }
+    },
+    {
+      "name": "equipment-lock",
+      "outcome": "not_exercised",
+      "needed": "A must export a complete approved variant with explicit equipment type/slot requirements and public equipment entities"
+    },
+    {
+      "name": "ambiguous-equipment",
+      "outcome": "not_exercised",
+      "needed": "A must export a complete approved variant with explicit equipment type/slot requirements and public equipment entities"
+    },
+    {
+      "name": "three-mode-coverage",
+      "outcome": "not_exercised",
+      "needed": "three actual producer-generated synthetic mode samples",
+      "actual_modes": [
+        "fixture:mode:duo"
+      ]
+    }
+  ],
+  "technical_interoperability_accepted": false,
+  "production_content_or_mvp_accepted": false
+}
