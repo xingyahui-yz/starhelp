@@ -1200,6 +1200,8 @@ class SettingsPage(_Page):
 
 
 class _ProgressPage(_Page):
+    MAX_HISTORY = 50
+
     def __init__(self, progress_bus: _ProgressBus) -> None:
         super().__init__("进度", "耗时任务在后台运行；撤权会取消任务并拒收迟到结果。")
         self.status = QLabel("当前没有后台任务。")
@@ -1209,15 +1211,25 @@ class _ProgressPage(_Page):
         self.bar.setValue(0)
         self.content.addWidget(self.status)
         self.content.addWidget(self.bar)
+        self.content.addWidget(QLabel("最近活动（仅保留在当前会话）"))
+        self.history = QListWidget()
+        self.history.setAccessibleName("最近进度活动")
+        self.content.addWidget(self.history, 1)
         progress_bus.updated.connect(self._update)
 
     def _update(self, message: str, value: int) -> None:
         self.status.setText(message)
         if value < 0:
             self.bar.setRange(0, 0)
+            progress_text = "进行中"
         else:
             self.bar.setRange(0, 100)
             self.bar.setValue(value)
+            progress_text = f"{value}%"
+        timestamp = datetime.now().astimezone().strftime("%H:%M:%S")
+        self.history.insertItem(0, f"{timestamp} · {progress_text} · {message}")
+        while self.history.count() > self.MAX_HISTORY:
+            self.history.takeItem(self.history.count() - 1)
 
 
 class StarHelpWindow(QMainWindow):

@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import sys
 import threading
 import tempfile
@@ -12,6 +13,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
+from PySide6.QtWidgets import QApplication
 
 from starhelp_desktop.bundles import (
     BundleRejected,
@@ -20,6 +22,7 @@ from starhelp_desktop.bundles import (
     PublicBundleSynchronizer,
 )
 from starhelp_desktop.equipment import EquipmentIdentityService, EquipmentMergeConflictError
+from starhelp_desktop.gui import _ProgressBus, _ProgressPage
 from starhelp_desktop.imports import (
     OcrDraft,
     OcrTextLine,
@@ -216,6 +219,27 @@ class MergeTests(unittest.TestCase):
                 snapshot, imported_instance_id=duplicate.local_instance_id,
                 existing_instance_id=one.local_instance_id, player_confirmed_same_copy=True,
             )
+
+
+class ProgressPageTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        cls.app = QApplication.instance() or QApplication([])
+
+    def test_progress_page_keeps_only_bounded_session_history(self) -> None:
+        bus = _ProgressBus()
+        page = _ProgressPage(bus)
+        for index in range(_ProgressPage.MAX_HISTORY + 2):
+            bus.updated.emit(f"synthetic operation {index}", -1 if index == 51 else index % 101)
+
+        self.assertEqual(page.history.count(), _ProgressPage.MAX_HISTORY)
+        self.assertIn("synthetic operation 51", page.history.item(0).text())
+        self.assertNotIn("synthetic operation 0", [
+            page.history.item(index).text() for index in range(page.history.count())
+        ])
+        self.assertIn("进行中", page.history.item(0).text())
+        page.close()
 
 
 class ImportAndPrivacyTests(unittest.TestCase):
