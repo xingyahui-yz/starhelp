@@ -77,10 +77,16 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   with profile lifecycle so revoke kills it and rejects a late result. It also verifies that returned
   request ID, snapshot revision, and authorization generation match the submitted request.
   Synthetic child-process checks cover a compatible result, missing required capability,
-  oversized output, and timeout.
-  This bridge is not yet used by TaskPage: no planner executable, production capability list,
-  complete request builder from profile/bundle/task repositories, or end-to-end report emission is
-  available. It does not count as C integration.
+  oversized output, and timeout. B now vendors C's `starhelp_planner` 0.3.0 wheel as a black-box
+  artifact pinned by SHA-256 `f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`.
+  A separate stdio worker calls `analyze_producers` under `starhelp.producers.v0.1`; it checks
+  profile/generation/request consistency, retains C's adapter metadata/citations, and emits a bounded
+  response consumed by the existing bridge. A signed synthetic A bundle and the current B snapshot
+  serializer passed through B's signature validator, the subprocess bridge, and C 0.3.0, returning
+  two fixture plans. The Windows candidate now includes `planner-worker/StarHelpPlannerWorker.exe`.
+  This is black-box synthetic interoperability evidence only. TaskPage still does not construct or
+  submit production analysis requests: no production A signing trust, complete request builder, or
+  agreed M0 field/task mapping is available. No real account data was used.
 - A verify-before-activate public bundle synchronizer interface and two-version atomic local cache.
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
@@ -91,7 +97,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-17: 30 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-17: 31 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
@@ -102,6 +108,12 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   resurrect the profile and that successful cleanup removes its tombstone.
 - After adding crash-safe revocation, all 677 entries in a fresh PyInstaller 6.22.3 candidate
   manifest validated, and an 8-second isolated startup smoke confirmed Qt Core and Widgets loaded.
+- After adding the pinned C artifact and packaged stdio worker, all 31 standard-library tests passed;
+  the exact signed A/B fixture replay passed through the current B validator/serializer and C worker.
+  All 827 files in the new candidate manifest validated, the packaged worker passed the same fixture
+  replay, and an 8-second isolated application startup loaded Qt Core and Widgets. The installer smoke
+  passed install, upgrade, two-way rollback, and tamper rejection with a synthetic candidate in a
+  unique temporary directory.
 - Duplicate equipment linking was exercised in an offscreen AccountsPage with synthetic records:
   only same-type/slot candidates appeared; the flow required player confirmation and two explicit
   source choices, then persisted one merged instance to the encrypted snapshot.

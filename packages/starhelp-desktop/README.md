@@ -23,15 +23,18 @@ requires Windows; the encryption contract is injected in platform-independent un
   including malformed optional arrays. No real UID has been requested; UID-to-region routing remains
   an M0 decision.
 - Enka HSR fields and region mapping: not verified from its public API documentation.
-- Planner and public knowledge components: contract adapters only; no cross-branch source or
-  runtime is loaded here.
-- A local planner process bridge is available for an explicitly configured executable. It sends one
+- Planner and public knowledge components: no source code is imported from their worktrees. The
+  desktop package vendors the pinned C 0.3.0 wheel as a black-box artifact and launches its worker
+  through the bounded local process bridge. A signed A fixture and the current B snapshot serializer
+  have passed the full synthetic bridge replay; the fixture key and bundle are test-only.
+- The local planner process bridge sends one
   complete `AnalysisRequest` as UTF-8 JSON on stdin and accepts one versioned result envelope on
   stdout, checks declared capabilities, bounds payload sizes and runtime, discards stderr, and kills
   the process when profile authorization is revoked. It binds returned results to request ID,
-  snapshot revision, and authorization generation. This is an integration seam only: no C planner
-  executable, production capability set, complete request builder, or GUI task-to-result flow is
-  currently wired.
+  snapshot revision, and authorization generation. The frozen candidate includes a separate stdio
+  worker executable. The GUI still does not construct a production request or call the worker:
+  there is no production-signed A bundle/trust key, shared M0 field and task mapping, or complete
+  bundle/snapshot/task request builder. TaskPage correctly remains in the explicit waiting state.
 - The task form saves the latest target and local constraints under the selected encrypted profile,
   restores that profile's values, and clears them on profile revocation. It records a waiting state;
   it does not call a planner or present a recommendation.

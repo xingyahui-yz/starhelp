@@ -18,6 +18,15 @@ if ($LASTEXITCODE -ne 0) {
 }
 $pythonCommand = Get-Command $python -ErrorAction Stop
 $python = $pythonCommand.Source
+$plannerWheel = Join-Path $component 'packaging\vendor\starhelp_planner-0.3.0-py3-none-any.whl'
+$expectedPlannerHash = 'f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca'
+if (-not (Test-Path -LiteralPath $plannerWheel)) { throw 'Pinned planner artifact is missing' }
+$actualPlannerHash = (Get-FileHash -LiteralPath $plannerWheel -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualPlannerHash -ne $expectedPlannerHash) { throw 'Pinned planner artifact hash mismatch' }
+& $python -m pip install --no-index --no-deps --force-reinstall $plannerWheel
+if ($LASTEXITCODE -ne 0) { throw 'Pinned local planner wheel installation failed' }
+& $python -c "from starhelp_planner import COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE; assert (COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE) == ('0.3.0', 'starhelp.producers.v0.1')"
+if ($LASTEXITCODE -ne 0) { throw 'Installed local planner artifact is incompatible' }
 $originalPath = $env:PATH
 try {
     # Do not let unrelated installations contribute same-named DLLs (for example,
@@ -28,6 +37,10 @@ try {
         & $python -m PyInstaller --clean --noconfirm --distpath (Join-Path $component 'dist') `
             --workpath (Join-Path $component 'build') (Join-Path $PSScriptRoot 'StarHelp.spec')
         if ($LASTEXITCODE -ne 0) { throw 'PyInstaller candidate build failed' }
+        & $python -m PyInstaller --clean --noconfirm --distpath (Join-Path $component 'dist') `
+            --workpath (Join-Path $component 'build\StarHelpPlannerWorker') `
+            (Join-Path $PSScriptRoot 'StarHelpPlannerWorker.spec')
+        if ($LASTEXITCODE -ne 0) { throw 'PyInstaller planner worker build failed' }
     } finally {
         Pop-Location
     }
@@ -36,6 +49,12 @@ try {
 }
 
 $candidate = Join-Path $component 'dist\StarHelp'
+$workerBuild = Join-Path $component 'dist\StarHelpPlannerWorker'
+$workerDestination = Join-Path $candidate 'planner-worker'
+if (-not (Test-Path -LiteralPath (Join-Path $workerBuild 'StarHelpPlannerWorker.exe'))) {
+    throw 'Planner worker build output is incomplete'
+}
+Copy-Item -LiteralPath $workerBuild -Destination $workerDestination -Recurse
 $manifest = Join-Path $candidate 'candidate-manifest.sha256'
 $manifestRows = Get-ChildItem -LiteralPath $candidate -File -Recurse | ForEach-Object {
     $relative = $_.FullName.Substring($candidate.TrimEnd('\').Length + 1)

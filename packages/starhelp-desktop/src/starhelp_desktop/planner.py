@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -16,6 +17,20 @@ PROTOCOL_ID = "starhelp-local-planner"
 PROTOCOL_VERSION = "0.1-draft"
 MAX_REQUEST_BYTES = 8 * 1024 * 1024
 MAX_RESPONSE_BYTES = 16 * 1024 * 1024
+
+
+def bundled_planner_command() -> tuple[str, ...]:
+    """Return the fixed local worker command for source or frozen desktop builds."""
+    if getattr(sys, "frozen", False):
+        worker = (
+            Path(sys.executable).resolve().parent
+            / "planner-worker"
+            / "StarHelpPlannerWorker.exe"
+        )
+        if not worker.is_file():
+            raise PlannerUnavailable("the bundled local planner worker is unavailable")
+        return (str(worker),)
+    return (sys.executable, "-m", "starhelp_desktop.planner_worker")
 
 
 class PlannerUnavailable(RuntimeError):
