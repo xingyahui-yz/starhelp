@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import math
 import os
 import re
 import tempfile
@@ -45,15 +46,81 @@ def _reject_json_constant(_value: str) -> None:
     raise ValueError("non-finite JSON constant")
 
 
-def _decode_bundle_json(raw: bytes) -> dict[str, Any]:
-    value = json.loads(
-        raw.decode("utf-8"),
-        object_pairs_hook=_unique_json_object,
-        parse_constant=_reject_json_constant,
-    )
+def _decode_bundle_json(raw: bytes, *, max_bytes: int = 64 * 1024 * 1024) -> dict[str, Any]:
+    if len(raw) > max_bytes:
+        raise ValueError("bundle exceeds the 64 MiB size limit")
+    value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object,
+                       parse_constant=_reject_json_constant)
     if not isinstance(value, dict):
         raise ValueError("bundle JSON root must be an object")
     return value
+
+
+def _validate_bundle_tree(root: object, *, max_bytes: int, max_depth: int, max_nodes: int) -> None:
+    pending: list[tuple[object, int, bool]] = [(root, 0, False)]
+    active_containers: set[int] = set()
+    nodes = 0
+    encoded_size = 0
+
+    def add_size(amount: int) -> None:
+        nonlocal encoded_size
+        encoded_size += amount
+        if encoded_size > max_bytes:
+            raise BundleRejected("bundle exceeds the 64 MiB serialized size limit")
+
+    def json_string_size(value: str) -> int:
+        if len(value) > 1_000_000:
+            raise BundleRejected("bundle string exceeds the 1,000,000-character limit")
+        try:
+            return len(json.dumps(value, ensure_ascii=False).encode("utf-8"))
+        except (UnicodeEncodeError, ValueError):
+            raise BundleRejected("bundle contains an invalid JSON string") from None
+
+    while pending:
+        value, depth, leaving = pending.pop()
+        if leaving:
+            active_containers.remove(id(value))
+            continue
+        nodes += 1
+        if nodes > max_nodes:
+            raise BundleRejected("bundle exceeds the JSON node limit")
+        if depth > max_depth:
+            raise BundleRejected("bundle exceeds the JSON nesting limit")
+        if isinstance(value, dict):
+            identity = id(value)
+            if identity in active_containers:
+                raise BundleRejected("bundle contains a circular object reference")
+            active_containers.add(identity)
+            add_size(2)
+            pending.append((value, depth, True))
+            for key, item in value.items():
+                if not isinstance(key, str):
+                    raise BundleRejected("bundle object keys must be strings")
+                add_size(json_string_size(key) + 2)
+                pending.append((item, depth + 1, False))
+                add_size(1)
+        elif isinstance(value, list):
+            identity = id(value)
+            if identity in active_containers:
+                raise BundleRejected("bundle contains a circular object reference")
+            active_containers.add(identity)
+            add_size(2 + len(value))
+            pending.append((value, depth, True))
+            pending.extend((item, depth + 1, False) for item in reversed(value))
+        elif isinstance(value, str):
+            add_size(json_string_size(value))
+        elif isinstance(value, int) and not isinstance(value, bool):
+            if value.bit_length() > 256:
+                raise BundleRejected("bundle integer exceeds the 256-bit limit")
+            add_size(len(str(value)))
+        elif isinstance(value, float):
+            if not math.isfinite(value):
+                raise BundleRejected("bundle contains a non-finite number")
+            add_size(len(repr(value)))
+        elif value is None or isinstance(value, bool):
+            add_size(5 if value is None else (4 if value else 5))
+        else:
+            raise BundleRejected("bundle contains a non-JSON value")
 
 
 class Ed25519Keyring:
@@ -88,7 +155,7 @@ class ValidatedBundle:
     def payload(self) -> dict[str, Any]:
         try:
             return _decode_bundle_json(self.payload_json)
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
             raise BundleRejected("cached bundle JSON is invalid") from exc
 
 
@@ -96,6 +163,9 @@ class BundleValidator:
     """Validates the local v0.1-draft transfer envelope before it can be enabled."""
 
     SUPPORTED_SCHEMA_VERSIONS = frozenset({"0.1-draft"})
+    MAX_BUNDLE_BYTES = 64 * 1024 * 1024
+    MAX_JSON_DEPTH = 64
+    MAX_JSON_NODES = 500_000
 
     @staticmethod
     def _canonical(value: object) -> bytes:
@@ -115,14 +185,27 @@ class BundleValidator:
         if isinstance(envelope, bytes):
             original_bytes = envelope
         elif isinstance(envelope, str):
-            original_bytes = envelope.encode("utf-8")
-        if original_bytes is not None:
+            if len(envelope) > self.MAX_BUNDLE_BYTES:
+                raise BundleRejected("bundle exceeds the 64 MiB size limit")
             try:
-                envelope = _decode_bundle_json(original_bytes)
-            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                original_bytes = envelope.encode("utf-8")
+            except UnicodeEncodeError:
+                raise BundleRejected("bundle JSON is not valid UTF-8") from None
+        if original_bytes is not None:
+            if len(original_bytes) > self.MAX_BUNDLE_BYTES:
+                raise BundleRejected("bundle exceeds the 64 MiB size limit")
+            try:
+                envelope = _decode_bundle_json(original_bytes, max_bytes=self.MAX_BUNDLE_BYTES)
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError) as exc:
                 raise BundleRejected("bundle JSON is invalid") from exc
         if not isinstance(envelope, dict):
             raise BundleRejected("bundle root must be an object")
+        _validate_bundle_tree(
+            envelope,
+            max_bytes=self.MAX_BUNDLE_BYTES,
+            max_depth=self.MAX_JSON_DEPTH,
+            max_nodes=self.MAX_JSON_NODES,
+        )
         manifest = envelope.get("manifest")
         if not isinstance(manifest, dict):
             raise BundleRejected("manifest is required")
@@ -177,6 +260,8 @@ class BundleValidator:
                                           separators=(",", ":"), allow_nan=False).encode("utf-8")
             except (TypeError, ValueError):
                 raise BundleRejected("bundle contains a non-JSON value") from None
+        if len(payload_json) > self.MAX_BUNDLE_BYTES:
+            raise BundleRejected("bundle exceeds the 64 MiB size limit")
         return ValidatedBundle(
             release_id=release_id,
             schema_version=schema_version,

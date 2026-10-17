@@ -778,6 +778,37 @@ class StorageLifecycleTests(unittest.TestCase):
 
 
 class BundleTests(unittest.TestCase):
+    def test_rejects_oversized_deep_and_excessively_large_bundle_objects(self) -> None:
+        validator = BundleValidator()
+        validator.MAX_BUNDLE_BYTES = 8
+        with self.assertRaisesRegex(BundleRejected, "64 MiB size limit"):
+            validator.validate(b" " * 9, supported_capabilities=frozenset())
+        with self.assertRaisesRegex(BundleRejected, "64 MiB"):
+            validator.validate({"payload": "x" * 32}, supported_capabilities=frozenset())
+
+        validator.MAX_BUNDLE_BYTES = 64 * 1024 * 1024
+        validator.MAX_JSON_DEPTH = 4
+        nested: object = "fixture"
+        for _ in range(5):
+            nested = {"nested": nested}
+        with self.assertRaisesRegex(BundleRejected, "nesting limit"):
+            validator.validate({"payload": nested}, supported_capabilities=frozenset())
+
+        validator.MAX_JSON_DEPTH = 64
+        validator.MAX_JSON_NODES = 3
+        with self.assertRaisesRegex(BundleRejected, "node limit"):
+            validator.validate({"payload": [1, 2, 3]}, supported_capabilities=frozenset())
+
+        validator.MAX_JSON_NODES = 500_000
+        cyclic: dict[str, object] = {}
+        cyclic["self"] = cyclic
+        with self.assertRaisesRegex(BundleRejected, "circular"):
+            validator.validate(cyclic, supported_capabilities=frozenset())
+        with self.assertRaisesRegex(BundleRejected, "non-finite"):
+            validator.validate({"value": float("nan")}, supported_capabilities=frozenset())
+        with self.assertRaisesRegex(BundleRejected, "256-bit"):
+            validator.validate({"value": 1 << 256}, supported_capabilities=frozenset())
+
     def test_validates_hash_and_dependencies_before_activation(self) -> None:
         validator = BundleValidator()
         object_a = {"kind": "entity", "refs": []}
