@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from .bundles import PublicBundleCache
+from .equipment import EquipmentMergeConflictError
 from .imports import (
     ManualImportAdapter,
     OcrDraft,
@@ -303,6 +304,8 @@ class AccountsPage(_Page):
         self.revoke_button = QPushButton("撤权并删除本地档案")
         self.equipment_list = QComboBox()
         self.confirm_equipment_button = QPushButton("确认所选装备实例")
+        self.equipment_link_target = QComboBox()
+        self.link_equipment_button = QPushButton("确认合并为同一件")
         self.progress = QProgressBar()
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
@@ -331,6 +334,11 @@ class AccountsPage(_Page):
         equipment_row.addWidget(self.equipment_list, 1)
         equipment_row.addWidget(self.confirm_equipment_button)
         self.content.addLayout(equipment_row)
+        link_row = QHBoxLayout()
+        link_row.addWidget(QLabel("将所选装备记录并入"))
+        link_row.addWidget(self.equipment_link_target, 1)
+        link_row.addWidget(self.link_equipment_button)
+        self.content.addLayout(link_row)
         self.content.addWidget(self.progress)
         self.content.addWidget(self.preview, 1)
         self.fetch_button.clicked.connect(self.fetch_public)
@@ -342,9 +350,12 @@ class AccountsPage(_Page):
         self.save_button.clicked.connect(self.save_preview)
         self.revoke_button.clicked.connect(self.revoke_selected)
         self.confirm_equipment_button.clicked.connect(self.confirm_equipment_identity)
+        self.link_equipment_button.clicked.connect(self.link_equipment_identity)
         self.save_auto_refresh_button.clicked.connect(self.save_auto_refresh_setting)
         self.uid.textChanged.connect(self._auto_refresh_uid_edited)
         self.equipment_list.currentIndexChanged.connect(self._update_equipment_confirmation_enabled)
+        self.equipment_list.currentIndexChanged.connect(self._reload_equipment_link_targets)
+        self.equipment_link_target.currentIndexChanged.connect(self._update_equipment_link_enabled)
         self.profile_list.currentIndexChanged.connect(self._selection_changed)
         self._reload_profiles()
         self._selection_changed()
@@ -477,6 +488,9 @@ class AccountsPage(_Page):
         if profile is None:
             self.equipment_list.addItem("选择已有档案查看装备实例", None)
             self.confirm_equipment_button.setEnabled(False)
+            self.equipment_link_target.clear()
+            self.equipment_link_target.addItem("先选择待合并记录", None)
+            self.link_equipment_button.setEnabled(False)
             return
         try:
             snapshot = self.repository.load_snapshot(profile.profile_id, profile.generation)
@@ -485,19 +499,26 @@ class AccountsPage(_Page):
         except Exception as exc:
             self.equipment_list.addItem(f"无法读取档案：{exc}", None)
             self.confirm_equipment_button.setEnabled(False)
+            self.equipment_link_target.clear()
+            self.equipment_link_target.addItem("装备资料不可用", None)
+            self.link_equipment_button.setEnabled(False)
             return
         if snapshot is None or not snapshot.equipment:
             self.equipment_list.addItem("此档案没有已导入的装备实例", None)
             self.confirm_equipment_button.setEnabled(False)
+            self.equipment_link_target.clear()
+            self.equipment_link_target.addItem("没有可合并记录", None)
+            self.link_equipment_button.setEnabled(False)
             return
         for item in snapshot.equipment:
             owner = f"角色 {item.owner_character_id}" if item.owner_character_id else "未识别角色"
             identity = item.identity.value
             self.equipment_list.addItem(
                 f"{item.slot} · 类型 {item.public_type_id} · {owner} · 身份 {identity}",
-                (str(item.local_instance_id), identity),
+                (str(item.local_instance_id), identity, item.public_type_id, item.slot),
             )
         self._update_equipment_confirmation_enabled()
+        self._reload_equipment_link_targets()
 
     def _update_equipment_confirmation_enabled(self, *_args: object) -> None:
         selected = self.equipment_list.currentData()
@@ -507,6 +528,44 @@ class AccountsPage(_Page):
                 EquipmentIdentity.SOURCE_CONFIRMED.value,
                 EquipmentIdentity.PLAYER_CONFIRMED.value,
             }
+        )
+
+    def _reload_equipment_link_targets(self, *_args: object) -> None:
+        self.equipment_link_target.clear()
+        selected = self.equipment_list.currentData()
+        profile = self._selected_profile()
+        if selected is None or profile is None:
+            self.equipment_link_target.addItem("先选择待合并记录", None)
+            self.link_equipment_button.setEnabled(False)
+            return
+        try:
+            snapshot = self.repository.load_snapshot(profile.profile_id, profile.generation)
+        except Exception:
+            snapshot = None
+            self.equipment_link_target.addItem("装备目标不可用；请刷新档案列表", None)
+            self.link_equipment_button.setEnabled(False)
+            return
+        candidates = tuple(
+            item for item in snapshot.equipment
+            if str(item.local_instance_id) != selected[0]
+            and item.public_type_id == selected[2]
+            and item.slot == selected[3]
+        )
+        for item in candidates:
+            owner = f"角色 {item.owner_character_id}" if item.owner_character_id else "未识别角色"
+            self.equipment_link_target.addItem(
+                f"{item.slot} · {owner} · 身份 {item.identity.value}",
+                str(item.local_instance_id),
+            )
+        if not candidates:
+            self.equipment_link_target.addItem("没有相同类型和槽位的其他记录", None)
+        self._update_equipment_link_enabled()
+
+    def _update_equipment_link_enabled(self, *_args: object) -> None:
+        selected = self.equipment_list.currentData()
+        target_id = self.equipment_link_target.currentData()
+        self.link_equipment_button.setEnabled(
+            selected is not None and target_id is not None and selected[0] != target_id
         )
 
     def confirm_equipment_identity(self) -> None:
@@ -533,6 +592,61 @@ class AccountsPage(_Page):
             return
         self._reload_equipment()
         self.preview.setPlainText("玩家已逐件确认装备实例身份；确认结果已加密保存到当前档案。")
+
+    def link_equipment_identity(self) -> None:
+        profile = self._selected_profile()
+        selected = self.equipment_list.currentData()
+        existing_id = self.equipment_link_target.currentData()
+        if profile is None or selected is None or existing_id is None:
+            return
+        answer = QMessageBox.question(
+            self,
+            "确认这是同一件装备",
+            f"请确认所选记录与目标记录对应玩家存档中的同一件实体装备。"
+            f"两者的公共类型相同（{selected[2]}）并不足以证明身份相同。\n\n"
+            "确认后会保留目标记录的本地身份，并移除所选重复记录。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        link_args = {
+            "profile_id": profile.profile_id,
+            "generation": profile.generation,
+            "imported_instance_id": UUID(selected[0]),
+            "existing_instance_id": UUID(existing_id),
+            "player_confirmed_same_copy": True,
+        }
+        try:
+            try:
+                self.repository.link_equipment_instances(**link_args)
+            except EquipmentMergeConflictError as conflict_error:
+                choices: dict[str, str] = {}
+                for conflict in conflict_error.conflicts:
+                    old_value = getattr(conflict.existing, "value", conflict.existing)
+                    new_value = getattr(conflict.incoming, "value", conflict.incoming)
+                    choice = QMessageBox.question(
+                        self,
+                        "装备字段来源冲突",
+                        f"{conflict.path}\n\n已有记录：{old_value!r}\n导入记录：{new_value!r}\n\n"
+                        "是：采用导入记录；否：保留已有记录；取消：停止合并。",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No |
+                        QMessageBox.StandardButton.Cancel,
+                        QMessageBox.StandardButton.Cancel,
+                    )
+                    if choice == QMessageBox.StandardButton.Cancel:
+                        return
+                    choices[conflict.path] = (
+                        "incoming" if choice == QMessageBox.StandardButton.Yes else "existing"
+                    )
+                self.repository.link_equipment_instances(**link_args, conflict_choices=choices)
+        except Exception as exc:
+            QMessageBox.warning(self, "装备记录未合并", str(exc))
+            return
+        self._reload_equipment()
+        self.preview.setPlainText(
+            "玩家确认的重复装备记录已合并；冲突字段按逐项选择的来源保存。"
+        )
 
     def fetch_public(self) -> None:
         if not self.confirm_consent.isChecked():

@@ -1,5 +1,10 @@
 """StarHelp Windows desktop and local account component."""
 
+from .equipment import (
+    EquipmentIdentityService,
+    EquipmentMergeConflict,
+    EquipmentMergeConflictError,
+)
 from .models import (
     AccountSnapshot,
     EquipmentInstance,
@@ -23,6 +28,9 @@ __all__ = [
     "AnalysisTaskDraft",
     "TaskRepository",
     "TaskState",
+    "EquipmentIdentityService",
+    "EquipmentMergeConflict",
+    "EquipmentMergeConflictError",
     "LocalPlannerProcess",
     "PlannerCancelled",
     "PlannerResult",

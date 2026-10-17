@@ -19,7 +19,7 @@ from starhelp_desktop.bundles import (
     PublicBundleCache,
     PublicBundleSynchronizer,
 )
-from starhelp_desktop.equipment import EquipmentIdentityService
+from starhelp_desktop.equipment import EquipmentIdentityService, EquipmentMergeConflictError
 from starhelp_desktop.imports import (
     OcrDraft,
     OcrTextLine,
@@ -164,6 +164,58 @@ class MergeTests(unittest.TestCase):
         )
         self.assertEqual(len(linked.equipment), 1)
         self.assertEqual(linked.equipment[0].local_instance_id, one.local_instance_id)
+
+    def test_duplicate_equipment_link_requires_per_field_conflict_choices(self) -> None:
+        one = EquipmentInstance(
+            uuid4(), "relic-type-9", "head", EquipmentIdentity.PLAYER_CONFIRMED,
+            "101", {"crit": fact(0.1, "existing"), "speed": fact(4, "existing")},
+        )
+        duplicate = EquipmentInstance(
+            uuid4(), "relic-type-9", "head", EquipmentIdentity.UNCONFIRMED,
+            "102", {"crit": fact(0.2, "incoming"), "speed": fact(4, "incoming")},
+        )
+        snapshot = replace(self.snapshot, equipment=(one, duplicate))
+        identity = EquipmentIdentityService()
+        with self.assertRaises(EquipmentMergeConflictError) as raised:
+            identity.link_import_to_existing(
+                snapshot, imported_instance_id=duplicate.local_instance_id,
+                existing_instance_id=one.local_instance_id, player_confirmed_same_copy=True,
+            )
+        self.assertEqual({item.path for item in raised.exception.conflicts},
+                         {"crit", "owner_character_id"})
+        self.assertEqual(len(snapshot.equipment), 2)
+
+        linked = identity.link_import_to_existing(
+            snapshot, imported_instance_id=duplicate.local_instance_id,
+            existing_instance_id=one.local_instance_id, player_confirmed_same_copy=True,
+            conflict_choices={"crit": "incoming", "owner_character_id": "existing"},
+        )
+        self.assertEqual(len(linked.equipment), 1)
+        result = linked.equipment[0]
+        self.assertEqual(result.local_instance_id, one.local_instance_id)
+        self.assertEqual(result.owner_character_id, "101")
+        self.assertEqual(result.facts["crit"].value, 0.2)
+        self.assertEqual(result.facts["crit"].source_id, "incoming")
+        self.assertEqual(result.facts["crit"].status, FieldStatus.CONFIRMED)
+        self.assertEqual(result.facts["speed"].source_id, "existing")
+
+    def test_duplicate_equipment_link_needs_player_confirmation_and_matching_type(self) -> None:
+        one = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.AMBIGUOUS,
+                                "101", {})
+        duplicate = EquipmentInstance(uuid4(), "relic-type-8", "head", EquipmentIdentity.UNCONFIRMED,
+                                      "101", {})
+        snapshot = replace(self.snapshot, equipment=(one, duplicate))
+        identity = EquipmentIdentityService()
+        with self.assertRaises(PermissionError):
+            identity.link_import_to_existing(
+                snapshot, imported_instance_id=duplicate.local_instance_id,
+                existing_instance_id=one.local_instance_id, player_confirmed_same_copy=False,
+            )
+        with self.assertRaisesRegex(ValueError, "type mismatch"):
+            identity.link_import_to_existing(
+                snapshot, imported_instance_id=duplicate.local_instance_id,
+                existing_instance_id=one.local_instance_id, player_confirmed_same_copy=True,
+            )
 
 
 class ImportAndPrivacyTests(unittest.TestCase):
@@ -446,6 +498,43 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertFalse(task_path.exists())
             with self.assertRaises(PermissionError):
                 restarted_tasks.load_last(profile.profile_id, profile.generation)
+
+    def test_player_confirmed_equipment_link_persists_in_encrypted_snapshot(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            first = EquipmentInstance(
+                uuid4(), "fixture:relic-type:1", "head", EquipmentIdentity.PLAYER_CONFIRMED,
+                "fixture:character:1", {},
+            )
+            duplicate = EquipmentInstance(
+                uuid4(), "fixture:relic-type:1", "head", EquipmentIdentity.UNCONFIRMED,
+                "fixture:character:1", {},
+            )
+            proposal = confirm_import(ImportProposal.create(
+                source_kind=SourceKind.STRUCTURED_IMPORT,
+                source_id="synthetic-duplicate-import",
+                observed_at=datetime.now(UTC),
+                fields={},
+                equipment=(first, duplicate),
+                coverage=frozenset({"equipment:displayed"}),
+            ))
+            profile = profiles.create_from_confirmed_import(
+                label="Synthetic equipment profile", provider_id="local-import",
+                server_label="fixture-region", proposal=proposal,
+            )
+            saved = profiles.link_equipment_instances(
+                profile.profile_id, profile.generation,
+                imported_instance_id=duplicate.local_instance_id,
+                existing_instance_id=first.local_instance_id,
+                player_confirmed_same_copy=True,
+            )
+            restored = profiles.load_snapshot(profile.profile_id, profile.generation)
+            self.assertEqual(saved, restored)
+            self.assertEqual(len(restored.equipment), 1)
+            self.assertEqual(restored.equipment[0].local_instance_id, first.local_instance_id)
 
     def test_auto_refresh_uid_requires_separate_consent_is_encrypted_and_cleared(self) -> None:
         with temporary_directory() as directory:

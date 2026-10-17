@@ -42,6 +42,9 @@ requires Windows; the encryption contract is injected in platform-independent un
   is off by default. Per-profile opt-in stores the UID in current-user DPAPI storage, runs while the
   app is open (immediately on opt-in, then at most once every 24 hours), and leaves every result in
   preview until the player confirms import. Revoking or disabling the opt-in deletes the saved UID.
+- Duplicate equipment records can be linked only after the player confirms they are the same
+  physical copy. The UI lists candidates with matching type and slot; conflicting owner or stat
+  values require individual source choices before the encrypted snapshot is updated.
 - The report page lists only explicitly saved reports, reloads them under the active profile, and
   persists snapshot-expired or evidence-withdrawn status. A temporary planner result can be staged
   from TaskPage and requires the visible save action before DPAPI persistence. Online withdrawal

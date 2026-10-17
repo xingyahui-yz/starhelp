@@ -257,6 +257,29 @@ class ProfileRepository:
                 self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(confirmed))
             return confirmed
 
+    def link_equipment_instances(
+        self,
+        profile_id: UUID,
+        generation: int,
+        *,
+        imported_instance_id: UUID,
+        existing_instance_id: UUID,
+        player_confirmed_same_copy: bool,
+        conflict_choices: dict[str, str] | None = None,
+    ) -> AccountSnapshot:
+        """Persist a player-confirmed duplicate link with explicit field conflict choices."""
+        with self._lock:
+            snapshot = self.load_snapshot(profile_id, generation)
+            linked = EquipmentIdentityService().link_import_to_existing(
+                snapshot,
+                imported_instance_id=imported_instance_id,
+                existing_instance_id=existing_instance_id,
+                player_confirmed_same_copy=player_confirmed_same_copy,
+                conflict_choices=conflict_choices,
+            )
+            self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(linked))
+            return linked
+
     def set_auto_refresh(
         self,
         profile_id: UUID,

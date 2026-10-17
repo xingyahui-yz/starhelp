@@ -53,7 +53,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Imported equipment is listed per profile with its current identity. A player can explicitly
   confirm an individual equipment instance; the decision is written to the encrypted snapshot and
   only then becomes eligible for reassignment. The UI does not infer copy identity from a public
-  equipment type ID.
+  equipment type ID. Same-type duplicate candidates can be linked only after the player confirms
+  they are the same physical copy. Conflicting owner/stat values require per-field source choices;
+  the existing local identity is retained and the duplicate record is removed from the merged snapshot.
 - Public-profile refresh stays manual by default. A separate per-profile opt-in stores the UID only
   in current-user DPAPI storage, queries directly while the app is running (immediately on opt-in,
   then at most once per 24 hours), and keeps results in preview until the player confirms import.
@@ -89,11 +91,14 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-16: 25 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-17: 28 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
   save/restore and the explicit planner-unavailable status. No real UID was queried.
+- Duplicate equipment linking was exercised in an offscreen AccountsPage with synthetic records:
+  only same-type/slot candidates appeared; the flow required player confirmation and two explicit
+  source choices, then persisted one merged instance to the encrypted snapshot.
 - The equipment confirmation UI and separately opted-in automatic refresh both compile. The
   automatic refresh test uses only synthetic UID data and verifies consent gating, encrypted
   persistence, restart recovery, attempt timestamps, opt-out deletion, and revoke cleanup. An
@@ -109,6 +114,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   6.22.3. All 677 file-manifest entries revalidated, and an 8-second smoke using a fresh isolated
   `LOCALAPPDATA` confirmed the app remained open and loaded `Qt6Core.dll` and `Qt6Widgets.dll`.
   This packaging smoke does not exercise a planner executable, which is not available.
+- After adding the duplicate-equipment confirmation flow, the candidate was rebuilt again with
+  PyInstaller 6.22.3. All 677 manifest hashes passed, and the app passed another 8-second isolated
+  startup smoke with Qt Core and Widgets loaded.
 - The Windows candidate builds with PyInstaller 6.22.3 and includes a SHA-256 manifest plus
   per-user install/rollback script. Installer install/upgrade/rollback and tamper rejection passed
   with synthetic v1/v2 fixtures; the actual candidate was copied and upgraded in a component-local
@@ -136,6 +144,6 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   documentation does not define UID-to-region routing, so the selected server label stays local and
   region correctness remains an M0 decision.
 - Cross-component planner/backend integration is not performed; no sibling source is imported.
-- Equipment identity confirmation is now wired through the desktop UI and encrypted snapshot
-  repository; no duplicate-link UI is provided, so matching two records as the same physical copy
-  remains unsupported.
+- Equipment identity confirmation and duplicate linking are wired through the desktop UI and
+  encrypted snapshot repository. Same-type candidates are never linked automatically, and field
+  conflicts stop until the player chooses a source for each value.
