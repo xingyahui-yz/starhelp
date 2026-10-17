@@ -10,7 +10,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Current implementation is isolated from the legacy offline simulation. The planner and knowledge
   service are not connected; local adapters must display that state.
 
-## M0 source and contract findings (checked 2026-10-15)
+## M0 source and contract findings (checked 2026-10-17)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
    `version` query parameters. Its example shows `player` and a `characters` showcase list. The
@@ -18,13 +18,16 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
    while `player.space_info` includes aggregate counts. Aggregate counts are not item inventories.
    The component normalizes only listed showcase records and treats every unlisted character or
    item as unknown. It does not retain the returned player UID, nickname, signature, or raw body.
-   The documented request has no region parameter; the UI says so explicitly and stores the player's
+   The documented request has no region parameter; its optional `is_force_update` query flag bypasses
+   the service cache, so the component does not use it for routine refresh. The UI stores the player's
    selected region label locally. Whether UID routing covers the selected server still needs M0
-   confirmation. Sources: [parsed API](https://march7th.xyz/zh/api/parsed.html),
+   confirmation. The documentation page says it was last updated 2025-02-15. Sources:
+   [parsed API](https://march7th.xyz/zh/api/parsed.html),
    [Mihomo Python client](https://github.com/Mar-7th/mihomo.py/blob/master/mihomo/client.py).
 2. Enka's public documentation describes UID lookup, showcase data, dynamic rate limits and a TTL
-   that clients should honor. Its current API document does not establish an HSR-specific schema or
-   UID-to-region mapping for this component, so Enka is not enabled as an adapter. Source:
+   that clients should honor; it also asks clients to send a custom User-Agent and not enumerate UIDs.
+   Its current API document does not establish an HSR-specific schema or UID-to-region mapping for
+   this component, so Enka is not enabled as an adapter. Source:
    [Enka API documentation](https://github.com/EnkaNetwork/API-docs/blob/master/api_chs.md).
 3. No source inspected proves stable public IDs are unique equipment-copy identities. The component
    leaves imported equipment identity unconfirmed/ambiguous; only player-confirmed or subsequently
@@ -118,7 +121,8 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   All 827 files in the new candidate manifest validated, the packaged worker passed the same fixture
   replay, and an 8-second isolated application startup loaded Qt Core and Widgets. The installer smoke
   passed install, upgrade, two-way rollback, and tamper rejection with a synthetic candidate in a
-  unique temporary directory.
+  unique temporary directory; this installer smoke was rerun on 2026-10-17 after rebuilding the
+  byte-preserving cache candidate and passed again.
 - Duplicate equipment linking was exercised in an offscreen AccountsPage with synthetic records:
   only same-type/slot candidates appeared; the flow required player confirmation and two explicit
   source choices, then persisted one merged instance to the encrypted snapshot.
