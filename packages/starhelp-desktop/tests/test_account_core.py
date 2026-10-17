@@ -283,6 +283,7 @@ class ImportAndPrivacyTests(unittest.TestCase):
         for raw in (
             b'{"characters": [], "characters": []}',
             b'{"characters": [{"id": "fixture", "attributes": [{"field": "spd", "value": NaN}]}]}',
+            b'{"characters":' + b'[' * 5000 + b']' * 5000 + b'}',
         ):
             with self.assertRaises(ProfileRequestError):
                 client._decode_response(raw)

@@ -104,7 +104,7 @@ class MihomoPublicProfileClient:
                 object_pairs_hook=_unique_json_object,
                 parse_constant=_reject_json_constant,
             )
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
             raise ProfileRequestError("public profile response was not valid JSON") from None
         if not isinstance(payload, dict):
             raise ProfileRequestError("public profile response has an unsupported shape")
