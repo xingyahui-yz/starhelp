@@ -1,0 +1,675 @@
+{
+  "synthetic_only": true,
+  "b_host_commit": "86fafdddb9183c42408d8c6e71d8ce5de65c4ff3",
+  "b_host_source_proof": {
+    "commit": "86fafdddb9183c42408d8c6e71d8ce5de65c4ff3",
+    "package_subdir": "packages/starhelp-desktop",
+    "git_tree": "13e7218b54e4242f5927dd9d66cd0d9883047550",
+    "all_files_verified": true,
+    "file_sha256": {
+      "README.md": "2980b0882c110a0515cbcbdb207c6a24b215c67699576f277ee83aab43eba857",
+      "packaging/README.md": "98665fa4cc0d0bc25981a761982bce6a4d3a892a94af1d676e43e94d31298685",
+      "packaging/StarHelp.spec": "11f02cfa5a1452f2e7a753acc9312fc23e9b8c7f76213aa2fb276009034f883e",
+      "packaging/StarHelpPlannerWorker.spec": "d222266ceeed655a32d34679c510cd8ba132da59d13df4afb9d282aaa7124a74",
+      "packaging/build-candidate.ps1": "4b540b930029851d8b84e2338601c189c753407b6e4f1214110c40f26f2dfbf1",
+      "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+      "packaging/install-candidate.ps1": "27f983035d8518b82e131c55c53fc52d85c61113b753b54f8051089678b34697",
+      "packaging/planner_worker_entrypoint.py": "b3e275b2303a457db7c80bbf7241f4a9dec4839b8db2cee1bb984bf963873e57",
+      "packaging/vendor/PLANNER-ARTIFACT.md": "4b375fd4cc2f413b14dc1661e849969fd16b41d096c4361741a739531728701c",
+      "packaging/vendor/starhelp_planner-0.3.0-py3-none-any.whl": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+      "pyproject.toml": "6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3",
+      "src/starhelp_desktop/__init__.py": "a0cc22d4747efda624ad9fc94e19695a34bfe70d6f1f074f8cbe5ce92f4ec2bd",
+      "src/starhelp_desktop/__main__.py": "d21de9364b84039d30d4e397c712a49e6f1c6798819aff0f19b90849695aeff2",
+      "src/starhelp_desktop/bundles.py": "082ec35c21e5454122311a3ba0c7038ecf1fd5713a7e5ca3637dedd4c38e61b3",
+      "src/starhelp_desktop/equipment.py": "72a5bff218cce068dd1e79cbfa769177682f0f984847aa1bbf2d27299ea28365",
+      "src/starhelp_desktop/gui.py": "9898cff696c5ddda35dd78039414eda8a4366a7f475c28f3ddb36a3d26f5a962",
+      "src/starhelp_desktop/imports.py": "5e82433da96705f1032b7621b069071438bb6675dde2a0ceed1879f90d4a7f6b",
+      "src/starhelp_desktop/lifecycle.py": "41a6631985edd62112a139b885c90e506b6b0dfb6ecd6cbffddfe82426165510",
+      "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+      "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+      "src/starhelp_desktop/planner.py": "04568aa7791e796e6b5328cc4a8b90edcd5342150604ed059e95d7fc07597663",
+      "src/starhelp_desktop/planner_worker.py": "1bf656b8c52bcc5b6c66786abfa525631e437f3d8ca7f5b2e5cfb78f42e87e1d",
+      "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+      "src/starhelp_desktop/profiles.py": "9c6f309ddb11382174a17e65f74ca70c863d3df2abeed1e47df7d9ccf96127b9",
+      "src/starhelp_desktop/public_profile.py": "5e0e47dc0d8ef75706adb0de62420ab6149b5d119ba09cc554070ec4fd46b22a",
+      "src/starhelp_desktop/reports.py": "f5b8620823d3bd17f652198fb7c69ffdd2e8353e14a3962c04f4ece9bff93ff3",
+      "src/starhelp_desktop/storage.py": "2c2af045a2fd7869887d8f59aca00977971187c4ad2a961263db332a3147b142",
+      "src/starhelp_desktop/tasks.py": "84d8d3fbe854b9bc7fa0a405584f1b68330efe703e9897f206bafa3546abf332",
+      "tests/Install-Candidate.Smoke.ps1": "09aa9d1faaffd7af1118e9250f4c1e8ac3b7931bc6351934a9de18991b1b8f32",
+      "tests/fixtures/producer-interop-v1/README.md": "59ae0fd5ac71d9d29a87f8319f5094e774c9ff92d88f510fc5cf4d52f3c7fcab",
+      "tests/fixtures/producer-interop-v1/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+      "tests/fixtures/producer-interop-v1/knowledge-planner-fixture-v1.bpublic.json": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "tests/test_account_core.py": "f5f8e6d51c781c634fc886615162da3d975610fd26a1c1b4ee6d3bb8b5cf5c80",
+      "tests/test_planner_interop.py": "cf4b76cb10eb28465e3f78dcb9d9102bc22283ad61683617f33b5cf7a77f8d74"
+    }
+  },
+  "b_host_source_unchanged": true,
+  "b_snapshot_producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "b_snapshot_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+  "a_producer_commit": "00d4a5844e74050359227c274de712878bf9187c",
+  "a_delivery_artifact_commit": "31e2665cfb9ce1100856d72ebca086b39a603ee8",
+  "a_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "c_wheel_sha256": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+  "c_component_version": "0.3.0",
+  "c_native_rule_version": "0.2.0",
+  "b_vendor_wheel_bytes_match": true,
+  "b_cache_retains_original_bytes": true,
+  "account_persistence_calls": 0,
+  "candidate": {
+    "manifest_sha256": "1ebed967500a0caf065c66fab46024b76786ab44ac64011d36ebe1a718878729",
+    "verified_files": 827,
+    "worker_sha256": "357b4073f7d303248a281f01e7ca03496e718e717c136d3f4a495cc93c1b7d84",
+    "build_source_commit_attested": false,
+    "publisher_trust_established": false
+  },
+  "cases": [
+    {
+      "transport": "fixed-source-worker",
+      "name": "normal",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "complete-alternative",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "no-match",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "no_reviewed_template",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "missing-fields",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "withdrawn-evidence",
+      "outcome": "failed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner result belongs to a different account snapshot",
+      "rejected_worker_response_diagnostic": {
+        "worker_exit_code": 0,
+        "worker_status": "error",
+        "native_error": "withdrawn_public_object",
+        "request_id_matches": true,
+        "snapshot_revision_present": false,
+        "authorization_generation_present": false,
+        "available_plan_count": 0
+      }
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "transport-tamper",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "error",
+        "adapter_error": "producer_digest_mismatch",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-request-id",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-snapshot-revision",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-authorization-generation",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "normal",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "complete-alternative",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "no-match",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "no_reviewed_template",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "missing-fields",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "withdrawn-evidence",
+      "outcome": "failed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner result belongs to a different account snapshot",
+      "rejected_worker_response_diagnostic": {
+        "worker_exit_code": 0,
+        "worker_status": "error",
+        "native_error": "withdrawn_public_object",
+        "request_id_matches": true,
+        "snapshot_revision_present": false,
+        "authorization_generation_present": false,
+        "available_plan_count": 0
+      }
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "transport-tamper",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "error",
+        "adapter_error": "producer_digest_mismatch",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "mismatched-request-id",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "mismatched-snapshot-revision",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "delivered-windows-worker",
+      "name": "mismatched-authorization-generation",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    }
+  ],
+  "full_round2_acceptance": false,
+  "m0_or_production_acceptance": false,
+  "remaining": [
+    "three-mode samples",
+    "nontrivial equipment lock/ambiguity samples",
+    "B must preserve validated correlation context for native error responses",
+    "agreed M0 semantics and real source/content approval",
+    "production TaskPage request construction"
+  ]
+}

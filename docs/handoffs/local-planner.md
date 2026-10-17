@@ -29,6 +29,16 @@ Reproduction commands: [producer-replay-commands.md](../../packages/starhelp-pla
 
 Full round-2 technical acceptance remains **false** until A supplies the additional explicitly versioned mode/equipment fixtures and the missing cases are replayed. Current available plans retain unknown soft statistical conditions as warnings; no missing panel metadata is promoted to satisfaction. The old Goal's M0/production-source/real-account/full-MVP requirements remain uncompleted and are not redefined as this technical round.
 
+### Supplemental B bridge validation (2026-10-17)
+
+B has now delivered a real stdio worker consuming C's pinned 0.3.0 wheel. C independently replayed the immutable B host code at `86fafdddb9183c42408d8c6e71d8ce5de65c4ff3`, separately from the unchanged `045965b` snapshot producer. B's actual signature verifier, byte-preserving public cache, lifecycle gate, process bridge and worker were exercised with original synthetic A/B bytes. No B checkout or private account data was modified/read.
+
+Fixed-source result: **8 passed, 1 failed**. Normal, full alternate, no match, missing-field unknowns, transport tamper and three wrapper-context mismatches behaved as expected. On evidence withdrawal, C correctly returns `withdrawn_public_object` with no plans, but B's worker omits snapshot/generation correlation fields from that native error response, so B's bridge discards the domain error as a snapshot mismatch. B must retain its already validated correlation context for error responses while keeping mismatch/generation rejection intact. This is not counted as a passing withdrawal integration case.
+
+An earlier delivered executable gave the same 8/1 outcome with 827 manifest entries verified. Its exact manifest/worker hashes are retained; B later replaced that candidate, and the replay refused its changed manifest under the old pin. Current reproduction uses the immutable source copy, without assuming executable build provenance.
+
+Details and commands: [desktop-bridge-evidence-v0.1.md](../../packages/starhelp-planner/docs/desktop-bridge-evidence-v0.1.md). Reports: `interop/reports/c-0.3.0-b-86fafdd-source-bridge.json` and the separate earlier executable observations in `c-0.3.0-b-86fafdd-bridge.json`. C's runtime/wheel and the prior producer acceptance inputs/results are unchanged. Synthetic B subprocess loading now has direct evidence; production TaskPage integration, the newly found structured-error gap, M0 and the missing A fixtures remain unaccepted.
+
 ## Round 1 handoff (retained)
 
 Status: component 0.2.0 under the **proposed** `starhelp.local.v0.2` adapter profile. The shared `mvp-v0.1` contract is still `0.1-draft`. Local behavior has been checked with synthetic data; this is not real-game integration, human approval of guides, or MVP completion.
