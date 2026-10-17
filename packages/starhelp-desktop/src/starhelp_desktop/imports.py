@@ -28,6 +28,44 @@ _CREDENTIAL_KEYS = {
 }
 _FIELD_PATH = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$")
 _UID_LIKE = re.compile(r"(?<!\d)\d{8,12}(?!\d)")
+_MAX_IMPORT_BYTES = 16 * 1024 * 1024
+_MAX_JSON_DEPTH = 64
+_MAX_JSON_NODES = 250_000
+_MAX_JSON_STRING_LENGTH = 1_000_000
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("structured import contains a duplicate JSON key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"structured import contains non-standard JSON number {value}")
+
+
+def _validate_json_complexity(root: object) -> None:
+    pending = [(root, 0)]
+    nodes = 0
+    while pending:
+        value, depth = pending.pop()
+        nodes += 1
+        if nodes > _MAX_JSON_NODES:
+            raise ValueError("structured import exceeds the JSON node limit")
+        if depth > _MAX_JSON_DEPTH:
+            raise ValueError("structured import exceeds the JSON nesting limit")
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if not isinstance(key, str) or len(key) > _MAX_JSON_STRING_LENGTH:
+                    raise ValueError("structured import contains an invalid or oversized key")
+                pending.append((item, depth + 1))
+        elif isinstance(value, list):
+            pending.extend((item, depth + 1) for item in value)
+        elif isinstance(value, str) and len(value) > _MAX_JSON_STRING_LENGTH:
+            raise ValueError("structured import contains an oversized string")
 
 
 def reject_credentials(value: object, path: str = "$") -> None:
@@ -168,10 +206,22 @@ class StructuredImportAdapter:
 
     def preview_file(self, path: Path) -> ImportPreview:
         # The file remains user-owned. It is read once and never copied by this adapter.
-        data = json.loads(path.read_text(encoding="utf-8"))
+        with path.open("rb") as source:
+            raw = source.read(_MAX_IMPORT_BYTES + 1)
+        if len(raw) > _MAX_IMPORT_BYTES:
+            raise ValueError("structured import exceeds the 16 MiB file limit")
+        try:
+            data = json.loads(
+                raw.decode("utf-8"),
+                object_pairs_hook=_unique_json_object,
+                parse_constant=_reject_json_constant,
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
+            raise ValueError(f"structured import JSON is invalid: {type(exc).__name__}") from None
         return self.preview_object(data, source_name=path.name)
 
     def preview_object(self, data: object, *, source_name: str = "in-memory import") -> ImportPreview:
+        _validate_json_complexity(data)
         if not isinstance(data, dict):
             raise ValueError("import root must be an object")
         reject_credentials(data)

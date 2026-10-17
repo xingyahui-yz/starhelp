@@ -244,6 +244,34 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(preview.proposal.fields["character:fixture.level"].value, 80)
         self.assertFalse(preview.proposal.confirmed)
 
+    def test_structured_import_rejects_excessive_json_complexity(self) -> None:
+        adapter = StructuredImportAdapter()
+        base: object = {"schema_id": adapter.SCHEMA_ID,
+                        "schema_version": adapter.SCHEMA_VERSION,
+                        "observed_at": "2026-10-15T00:00:00Z", "fields": {}}
+        nested = base
+        for _ in range(65):
+            nested = {"nested": nested}
+        with self.assertRaisesRegex(ValueError, "nesting limit"):
+            adapter.preview_object(nested)
+
+        with temporary_directory() as directory:
+            path = Path(directory) / "duplicate.json"
+            path.write_text(
+                '{"schema_id":"starhelp.account-import","schema_id":"starhelp.account-import"}',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "duplicate JSON key"):
+                adapter.preview_file(path)
+
+            path.write_bytes(b'{"schema_id":"starhelp.account-import","x":NaN}')
+            with self.assertRaisesRegex(ValueError, "non-standard JSON number"):
+                adapter.preview_file(path)
+
+            path.write_bytes(b" " * (16 * 1024 * 1024 + 1))
+            with self.assertRaisesRegex(ValueError, "16 MiB file limit"):
+                adapter.preview_file(path)
+
     def test_public_profile_fetch_requires_explicit_confirmation(self) -> None:
         client = MihomoPublicProfileClient()
         with self.assertRaises(PermissionError):
