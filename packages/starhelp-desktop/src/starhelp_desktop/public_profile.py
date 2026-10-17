@@ -146,7 +146,17 @@ class MihomoPublicProfileClient:
             raise ProfileRequestError("public profile service is unavailable") from None
         if len(raw) > 4 * 1024 * 1024:
             raise ProfileRequestError("public profile response exceeded the size limit")
-        return self.to_preview(self._decode_response(raw))
+        payload = self._decode_response(raw)
+        self._validate_returned_uid(payload, selection.uid)
+        return self.to_preview(payload)
+
+    @staticmethod
+    def _validate_returned_uid(payload: dict[str, object], expected_uid: str) -> None:
+        """Fail closed if the service cannot confirm the queried public profile."""
+        player = payload.get("player")
+        returned_uid = _public_identifier(player.get("uid")) if isinstance(player, dict) else None
+        if returned_uid != expected_uid:
+            raise ProfileRequestError("public profile response UID did not match request")
 
     def to_preview(self, payload: object) -> ImportProposal:
         """Normalize only a small allowlist; absent showcase fields never mean not-owned."""

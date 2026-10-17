@@ -76,7 +76,10 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   after cleanup.
 - The Mihomo response parser rejects duplicate JSON keys, non-finite constants, invalid UTF-8,
   excessive nesting, and non-object roots. Numeric preview fields exclude booleans, NaN, infinities,
-  and overflowing integers so malformed service values cannot enter the encrypted snapshot.
+  and overflowing integers so malformed service values cannot enter the encrypted snapshot. The
+  network path also requires the response's documented `player.uid` to match the requested UID;
+  missing or mismatched identity is rejected before an import preview is created, and the UID is
+  never included in the error message or normalized proposal.
 - The report page lists saved reports per profile, persists snapshot-expired/evidence-withdrawn
   validity, and displays when online withdrawal state is unknown. It does not manufacture a report
   without a planner result. TaskPage exposes a temporary-report signal; the report page previews it
@@ -203,3 +206,4 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - 2026-10-18 public-bundle bounds: bundle validation now applies 64 MiB, 64-level, 500,000-node and 1,000,000-character limits to transport bytes and in-memory objects; it rejects cycles, non-finite numbers, oversized integers, and invalid UTF-8/JSON before activation. Regression cases passed; all 35 package tests and `compileall` passed. Planner interop passed. The rebuilt candidate has 827 verified manifest hashes, completed an isolated 8-second startup, and passed install/upgrade/two-way-rollback/tamper smoke.
 - 2026-10-18 Windows DPAPI integration: added and ran a Windows-only test using the real current-user DPAPI protector and synthetic data. It verifies the on-disk envelope excludes the plaintext marker and a newly constructed store/protector can restore the value. All 36 tests (including the Windows integration case), `compileall`, and `git diff --check` passed. The candidate executable source is unchanged by this test-only addition.
 - 2026-10-18 progress UI: the progress page now keeps a bounded in-session activity history (latest 50 events), while retaining the current status and progress indicator; it writes no activity log to disk. An offscreen Qt regression verified ordering and trimming. All 37 tests and `compileall` passed. Rebuilt the candidate; all 827 manifest hashes matched, planner interop passed, isolated startup remained alive for 8 seconds, and synthetic install/upgrade/two-way-rollback/tamper checks passed.
+- 2026-10-18 public UID response binding: the direct network fetch now checks the documented `player.uid` against the explicitly confirmed requested UID and rejects absent/mismatched identities before preview normalization, without echoing either UID. A mocked transport regression covers matching, absent, and mismatched responses; all 38 component tests and `compileall` passed. Rebuilt the Windows candidate; all 827 manifest hashes matched, an isolated 8-second launch loaded Qt Core and Widgets, and synthetic install/upgrade/two-way-rollback/tamper checks passed from a component-local temporary directory after the system temp path denied a rename. No real UID was queried.

@@ -12,6 +12,7 @@ import urllib.request
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 from PySide6.QtWidgets import QApplication
 
@@ -300,6 +301,50 @@ class ImportAndPrivacyTests(unittest.TestCase):
         client = MihomoPublicProfileClient()
         with self.assertRaises(PermissionError):
             client.fetch(PublicProfileSelection("100000999", "CN", client.PROVIDER_ID, False))
+
+    def test_public_profile_fetch_requires_returned_uid_match(self) -> None:
+        client = MihomoPublicProfileClient()
+        selection = PublicProfileSelection("100000999", "CN", client.PROVIDER_ID, True)
+
+        class Response:
+            status = 200
+
+            def __init__(self, body: bytes) -> None:
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _limit: int) -> bytes:
+                return self.body
+
+        class Opener:
+            def __init__(self, body: bytes) -> None:
+                self.response = Response(body)
+
+            def open(self, _request, timeout: float):
+                if not 1 <= timeout <= 60:
+                    raise AssertionError("public profile request timeout is out of range")
+                return self.response
+
+        matching = json.dumps({"player": {"uid": selection.uid}, "characters": []}).encode()
+        with patch("urllib.request.build_opener", return_value=Opener(matching)):
+            self.assertEqual(client.fetch(selection).ownership, {})
+
+        for payload in (
+            {"player": {"uid": "100000998"}, "characters": []},
+            {"characters": []},
+        ):
+            with self.subTest(payload=payload):
+                body = json.dumps(payload).encode()
+                with patch("urllib.request.build_opener", return_value=Opener(body)):
+                    with self.assertRaisesRegex(ProfileRequestError, "UID did not match") as raised:
+                        client.fetch(selection)
+                    self.assertNotIn("100000999", str(raised.exception))
+                    self.assertNotIn("100000998", str(raised.exception))
 
     def test_mihomo_fixture_only_marks_displayed_character_owned(self) -> None:
         client = MihomoPublicProfileClient()
