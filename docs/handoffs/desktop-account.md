@@ -10,7 +10,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Current implementation is isolated from the legacy offline simulation. The planner and knowledge
   service are not connected; local adapters must display that state.
 
-## M0 source and contract findings (checked 2026-10-17)
+## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
    `version` query parameters. Its example shows `player` and a `characters` showcase list. The
@@ -20,14 +20,20 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
    item as unknown. It does not retain the returned player UID, nickname, signature, or raw body.
    The documented request has no region parameter; its optional `is_force_update` query flag bypasses
    the service cache, so the component does not use it for routine refresh. The UI stores the player's
-   selected region label locally. Whether UID routing covers the selected server still needs M0
-   confirmation. The documentation page says it was last updated 2025-02-15. Sources:
+   selected region label locally. A fresh check confirms the documented request still has no region
+   parameter. The Python client constructs the endpoint URL from UID, language, and optional API
+   version; this client behavior does not establish how the service routes a UID to a server. Region
+   correctness for each of the three supported choices still needs M0 confirmation. The response
+   example includes `space_info.memory_data` summary fields such as `chaos_id`, `chaos_level`, and
+   `chaos_star_count`; it is not a full inventory. The documentation page says it was last updated
+   2025-02-15, so this example does not establish current mode/cycle coverage. Sources:
    [parsed API](https://march7th.xyz/zh/api/parsed.html),
    [Mihomo Python client](https://github.com/Mar-7th/mihomo.py/blob/master/mihomo/client.py).
 2. Enka's public documentation describes UID lookup, showcase data, dynamic rate limits and a TTL
    that clients should honor; it also asks clients to send a custom User-Agent and not enumerate UIDs.
-   Its current API document does not establish an HSR-specific schema or UID-to-region mapping for
-   this component, so Enka is not enabled as an adapter. Source:
+   The current top-level API documentation lists Genshin Impact and Zenless Zone Zero, and does not
+   establish an HSR-specific schema or UID-to-region mapping for this component, so Enka is not
+   enabled as an adapter. Source:
    [Enka API documentation](https://github.com/EnkaNetwork/API-docs/blob/master/api_chs.md).
 3. No source inspected proves stable public IDs are unique equipment-copy identities. The component
    leaves imported equipment identity unconfirmed/ambiguous; only player-confirmed or subsequently
