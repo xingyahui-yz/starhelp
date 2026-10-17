@@ -65,9 +65,14 @@ class ReportLifecycle:
         report: AnalysisReport,
         *,
         current_snapshot_revision: int | None,
+        current_public_release_id: str | None = None,
     ) -> Path:
         key = f"profile-{report.profile_id.hex}-report-{report.report_id.hex}"
-        assessed = self._assess_snapshot(report, current_snapshot_revision)
+        assessed = self._assess_snapshot(
+            report,
+            current_snapshot_revision,
+            current_public_release_id=current_public_release_id,
+        )
         return self._lifecycle.run_authorized(
             report.profile_id,
             report.authorization_generation,
@@ -79,6 +84,7 @@ class ReportLifecycle:
         report: AnalysisReport,
         current_snapshot_revision: int | None,
         *,
+        current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
     ) -> AnalysisReport:
         if report.validity is ReportValidity.EVIDENCE_WITHDRAWN:
@@ -91,12 +97,18 @@ class ReportLifecycle:
         if current_snapshot_revision is None:
             return replace(report, validity=ReportValidity.NEEDS_REVIEW,
                            validity_reason="当前账号快照不可用，无法核验报告依据")
-        return self.mark_stale(
+        assessed = self.mark_stale(
             report,
             current_snapshot_revision=current_snapshot_revision,
             withdrawn_refs=withdrawn_refs,
             report_refs=report.public_refs,
         )
+        if (assessed.validity in {ReportValidity.CURRENT, ReportValidity.NEEDS_REVIEW}
+                and current_public_release_id is not None
+                and current_public_release_id != assessed.public_release_id):
+            return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
+                           validity_reason="本机当前公共资料版本已变化；旧报告保留原版本依据")
+        return assessed
 
     def mark_stale(
         self,
@@ -122,6 +134,7 @@ class ReportLifecycle:
         profile_id: UUID,
         generation: int,
         current_snapshot_revision: int | None,
+        current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
     ) -> tuple[AnalysisReport, ...]:
         return self._lifecycle.run_authorized(
@@ -131,6 +144,7 @@ class ReportLifecycle:
                 profile_id=profile_id,
                 generation=generation,
                 current_snapshot_revision=current_snapshot_revision,
+                current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
             ),
         )
@@ -141,6 +155,7 @@ class ReportLifecycle:
         profile_id: UUID,
         generation: int,
         current_snapshot_revision: int | None,
+        current_public_release_id: str | None,
         withdrawn_refs: frozenset[str],
     ) -> tuple[AnalysisReport, ...]:
         reports: list[AnalysisReport] = []
@@ -154,6 +169,7 @@ class ReportLifecycle:
             updated = self._assess_snapshot(
                 report,
                 current_snapshot_revision,
+                current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
             )
             if updated != report:

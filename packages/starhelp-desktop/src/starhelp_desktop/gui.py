@@ -973,10 +973,11 @@ class AccountsPage(_Page):
 
 class ReportsPage(_Page):
     def __init__(self, profiles: ProfileRepository, lifecycle: ProfileLifecycle,
-                 store: EncryptedPrivateStore) -> None:
+                 store: EncryptedPrivateStore, public_cache: PublicBundleCache) -> None:
         super().__init__("报告", "仅显示用户主动保存的加密报告；快照变化会使旧报告失效。")
         self.profiles = profiles
         self.lifecycle = lifecycle
+        self.public_cache = public_cache
         self.reports = ReportLifecycle(store, lifecycle)
         self.saved_reports: dict[str, AnalysisReport] = {}
         self.pending_report: AnalysisReport | None = None
@@ -1046,6 +1047,7 @@ class ReportsPage(_Page):
                 profile_id=profile.profile_id,
                 generation=profile.generation,
                 current_snapshot_revision=revision,
+                current_public_release_id=self.public_cache.current_release_id(),
             )
         except Exception as exc:
             self.status.setText(f"无法读取报告：{exc}")
@@ -1057,7 +1059,8 @@ class ReportsPage(_Page):
             self._render_pending_report(selected)
             return
         self.status.setText(
-            f"已加载 {len(reports)} 份用户主动保存的报告。证据撤回清单当前不可用，在线撤回状态未核实。"
+            f"已加载 {len(reports)} 份用户主动保存的报告。本机缓存版本："
+            f"{self.public_cache.current_release_id() or '未知'}；在线撤回状态未核实。"
         )
         labels = {
             "current": "当前",
@@ -1158,7 +1161,9 @@ class ReportsPage(_Page):
             except FileNotFoundError:
                 revision = None
             self.reports.save_explicitly(
-                report, current_snapshot_revision=revision
+                report,
+                current_snapshot_revision=revision,
+                current_public_release_id=self.public_cache.current_release_id(),
             )
         except Exception as exc:
             self.status.setText(f"报告未保存：{exc}")
@@ -1239,7 +1244,7 @@ class StarHelpWindow(QMainWindow):
         self.pages.addWidget(PublicKnowledgePage(public_cache))
         self.pages.addWidget(self.accounts_page)
         self.pages.addWidget(self.progress_page)
-        self.reports_page = ReportsPage(self.profiles, self.lifecycle, store)
+        self.reports_page = ReportsPage(self.profiles, self.lifecycle, store, public_cache)
         self.task_page.temporary_report_ready.connect(self.reports_page.stage_temporary_report)
         self.pages.addWidget(self.reports_page)
         self.pages.addWidget(SettingsPage())

@@ -538,6 +538,25 @@ class StorageLifecycleTests(unittest.TestCase):
                 profile_id=profile_id, generation=1, current_snapshot_revision=None
             )
             self.assertEqual(unavailable_snapshot[0].validity, ReportValidity.EVIDENCE_WITHDRAWN)
+            bundle_bound = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "bundle-bound"},
+                result={"fixture": "result"}, snapshot_revision=1,
+                public_release_id="fixture-release", planner_version="fixture",
+            )
+            reports.save_explicitly(
+                bundle_bound,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release",
+            )
+            release_changed = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release-2",
+            )
+            by_id = {item.report_id: item for item in release_changed}
+            self.assertEqual(by_id[bundle_bound.report_id].validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("公共资料版本已变化", by_id[bundle_bound.report_id].validity_reason)
             snapshot_bound = reports.make_temporary(
                 profile_id=profile_id, generation=1, task={"fixture": "second"},
                 result={"fixture": "result"}, snapshot_revision=1,
