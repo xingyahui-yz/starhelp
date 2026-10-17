@@ -1150,7 +1150,16 @@ class ReportsPage(_Page):
             self.status.setText("先切回此结果所属档案，再保存。")
             return
         try:
-            self.reports.save_explicitly(report)
+            try:
+                snapshot = self.profiles.load_snapshot(
+                    report.profile_id, report.authorization_generation
+                )
+                revision: int | None = snapshot.revision
+            except FileNotFoundError:
+                revision = None
+            self.reports.save_explicitly(
+                report, current_snapshot_revision=revision
+            )
         except Exception as exc:
             self.status.setText(f"报告未保存：{exc}")
             return

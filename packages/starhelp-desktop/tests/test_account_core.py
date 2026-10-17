@@ -471,7 +471,11 @@ class StorageLifecycleTests(unittest.TestCase):
                 return original_save(key, value)
 
             store.save = slow_save
-            saver = threading.Thread(target=reports.save_explicitly, args=(report,))
+            saver = threading.Thread(
+                target=reports.save_explicitly,
+                args=(report,),
+                kwargs={"current_snapshot_revision": 1},
+            )
 
             def revoke() -> None:
                 revoke_started.set()
@@ -511,8 +515,14 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertEqual(list((root / "private").glob("*.bin")), [])
             self.assertEqual(reports.mark_stale(report, current_snapshot_revision=2).validity,
                              ReportValidity.EXPIRED)
-            saved = reports.save_explicitly(report)
+            saved = reports.save_explicitly(report, current_snapshot_revision=2)
             self.assertTrue(saved.exists())
+            saved_after_change = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=2,
+            )
+            self.assertEqual(saved_after_change[0].validity, ReportValidity.EXPIRED)
             withdrawn = reports.list_saved(
                 profile_id=profile_id,
                 generation=1,
@@ -524,12 +534,27 @@ class StorageLifecycleTests(unittest.TestCase):
                 profile_id=profile_id, generation=1, current_snapshot_revision=2
             )
             self.assertEqual(still_withdrawn[0].validity, ReportValidity.EVIDENCE_WITHDRAWN)
+            unavailable_snapshot = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=None
+            )
+            self.assertEqual(unavailable_snapshot[0].validity, ReportValidity.EVIDENCE_WITHDRAWN)
             snapshot_bound = reports.make_temporary(
                 profile_id=profile_id, generation=1, task={"fixture": "second"},
                 result={"fixture": "result"}, snapshot_revision=1,
                 public_release_id="fixture-release", planner_version="fixture",
             )
-            reports.save_explicitly(snapshot_bound)
+            reports.save_explicitly(snapshot_bound, current_snapshot_revision=1)
+            unbound_report = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "missing-snapshot"},
+                result={"fixture": "result"}, snapshot_revision=9,
+                public_release_id="fixture-release", planner_version="fixture",
+            )
+            reports.save_explicitly(unbound_report, current_snapshot_revision=None)
+            needs_review = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=None
+            )
+            by_id = {item.report_id: item for item in needs_review}
+            self.assertEqual(by_id[unbound_report.report_id].validity, ReportValidity.NEEDS_REVIEW)
             expired = reports.list_saved(
                 profile_id=profile_id, generation=1, current_snapshot_revision=2
             )
@@ -537,7 +562,7 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertEqual(by_id[snapshot_bound.report_id].validity, ReportValidity.EXPIRED)
             lifecycle.revoke(profile_id)
             with self.assertRaises(PermissionError):
-                reports.save_explicitly(snapshot_bound)
+                reports.save_explicitly(snapshot_bound, current_snapshot_revision=1)
 
     def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
         with temporary_directory() as directory:

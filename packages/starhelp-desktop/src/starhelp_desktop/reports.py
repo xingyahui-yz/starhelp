@@ -60,12 +60,42 @@ class ReportLifecycle:
             planner_version=planner_version, public_refs=public_refs,
         )
 
-    def save_explicitly(self, report: AnalysisReport) -> Path:
+    def save_explicitly(
+        self,
+        report: AnalysisReport,
+        *,
+        current_snapshot_revision: int | None,
+    ) -> Path:
         key = f"profile-{report.profile_id.hex}-report-{report.report_id.hex}"
+        assessed = self._assess_snapshot(report, current_snapshot_revision)
         return self._lifecycle.run_authorized(
             report.profile_id,
             report.authorization_generation,
-            lambda: self._store.save(key, self._to_dict(report)),
+            lambda: self._store.save(key, self._to_dict(assessed)),
+        )
+
+    def _assess_snapshot(
+        self,
+        report: AnalysisReport,
+        current_snapshot_revision: int | None,
+        *,
+        withdrawn_refs: frozenset[str] = frozenset(),
+    ) -> AnalysisReport:
+        if report.validity is ReportValidity.EVIDENCE_WITHDRAWN:
+            return report
+        if withdrawn_refs & report.public_refs:
+            return replace(report, validity=ReportValidity.EVIDENCE_WITHDRAWN,
+                           validity_reason="引用证据已知撤回")
+        if report.validity is ReportValidity.EXPIRED:
+            return report
+        if current_snapshot_revision is None:
+            return replace(report, validity=ReportValidity.NEEDS_REVIEW,
+                           validity_reason="当前账号快照不可用，无法核验报告依据")
+        return self.mark_stale(
+            report,
+            current_snapshot_revision=current_snapshot_revision,
+            withdrawn_refs=withdrawn_refs,
+            report_refs=report.public_refs,
         )
 
     def mark_stale(
@@ -121,20 +151,11 @@ class ReportLifecycle:
                 raise ValueError("saved report belongs to a different profile")
             if report.authorization_generation != generation:
                 raise ValueError("saved report belongs to an older authorization generation")
-            current_revision = current_snapshot_revision
-            if current_revision is None:
-                updated = replace(
-                    report,
-                    validity=ReportValidity.NEEDS_REVIEW,
-                    validity_reason="当前账号快照不可用，无法核验报告依据",
-                )
-            else:
-                updated = self.mark_stale(
-                    report,
-                    current_snapshot_revision=current_revision,
-                    withdrawn_refs=withdrawn_refs,
-                    report_refs=report.public_refs,
-                )
+            updated = self._assess_snapshot(
+                report,
+                current_snapshot_revision,
+                withdrawn_refs=withdrawn_refs,
+            )
             if updated != report:
                 self._store.save(key, self._to_dict(updated))
             reports.append(updated)
