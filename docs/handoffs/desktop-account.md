@@ -91,7 +91,7 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-17: 28 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-17: 29 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
@@ -99,6 +99,12 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Duplicate equipment linking was exercised in an offscreen AccountsPage with synthetic records:
   only same-type/slot candidates appeared; the flow required player confirmation and two explicit
   source choices, then persisted one merged instance to the encrypted snapshot.
+- Public-profile request callbacks now unregister completed lifecycle tasks on success and failure;
+  revoke still cancels requests that remain active. Synthetic lifecycle coverage verifies that a
+  finished request is forgotten without dropping cancellation for concurrent active work.
+- After this callback cleanup, the candidate was rebuilt with PyInstaller 6.22.3; all 677 manifest
+  hashes passed and an 8-second isolated startup smoke loaded Qt Core and Widgets. Offscreen
+  AccountsPage callbacks for synthetic success and failure both left no completed task registered.
 - The equipment confirmation UI and separately opted-in automatic refresh both compile. The
   automatic refresh test uses only synthetic UID data and verifies consent gating, encrypted
   persistence, restart recovery, attempt timestamps, opt-out deletion, and revoke cleanup. An

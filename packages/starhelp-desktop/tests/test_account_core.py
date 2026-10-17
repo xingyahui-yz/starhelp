@@ -338,6 +338,23 @@ class StorageLifecycleTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 lifecycle.require_active(profile_id, 1)
 
+    def test_finished_task_is_unregistered_without_losing_active_cancellation(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            profile_id = uuid4()
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"display"}),
+                datetime.now(UTC),
+            ))
+            finished = lifecycle.register_task(profile_id, 1)
+            active = lifecycle.register_task(profile_id, 1)
+            lifecycle.unregister_task(profile_id, 1, finished)
+            lifecycle.revoke(profile_id)
+            self.assertFalse(finished.is_set())
+            self.assertTrue(active.is_set())
+
     def test_revoke_serializes_with_in_flight_explicit_report_save(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

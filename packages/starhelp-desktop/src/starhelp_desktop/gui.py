@@ -729,11 +729,16 @@ class AccountsPage(_Page):
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.fetch_button.setEnabled(True)
+        fetched_profile = self.fetch_profile
+        completed_cancel = self.pending_cancel
         self.pending_cancel = None
         self.auto_refresh_running = False
         self.progress_bus.updated.emit("公开档案已到达本机，等待玩家确认导入。", 100)
-        fetched_profile = self.fetch_profile
         self.fetch_profile = None
+        if fetched_profile is not None and completed_cancel is not None:
+            self.lifecycle.unregister_task(
+                fetched_profile.profile_id, fetched_profile.generation, completed_cancel
+            )
         if not fetched_profile or not self.lifecycle.accepts_result(
             fetched_profile.profile_id, fetched_profile.generation
         ):
@@ -757,13 +762,18 @@ class AccountsPage(_Page):
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.fetch_button.setEnabled(True)
+        failed_profile = self.fetch_profile
+        failed_cancel = self.pending_cancel
         self.pending_cancel = None
         self.auto_refresh_running = False
         self.pending_auto_refresh = False
         self.progress_bus.updated.emit("公开档案读取失败；未导入数据。", 0)
         self.pending = None
-        failed_profile = self.fetch_profile
         self.fetch_profile = None
+        if failed_profile is not None and failed_cancel is not None:
+            self.lifecycle.unregister_task(
+                failed_profile.profile_id, failed_profile.generation, failed_cancel
+            )
         if not failed_profile or not self.lifecycle.accepts_result(
             failed_profile.profile_id, failed_profile.generation
         ):
