@@ -116,6 +116,7 @@ class ProfileRepository:
     """Stores authorization metadata and the single current snapshot as DPAPI objects."""
 
     CATALOG_KEY = "profile-catalog"
+    REVOCATIONS_KEY = "profile-revocation-tombstones"
 
     def __init__(self, store: EncryptedPrivateStore, lifecycle: ProfileLifecycle) -> None:
         self._store = store
@@ -125,10 +126,12 @@ class ProfileRepository:
         self._load_catalog()
 
     def _load_catalog(self) -> None:
+        revoked = self._load_revocations()
         try:
             raw = self._store.load(self.CATALOG_KEY)
         except FileNotFoundError:
-            return
+            raw = {"profiles": []}
+        removed_from_catalog = False
         for item in raw.get("profiles", []):
             summary = ProfileSummary(
                 profile_id=UUID(item["profile_id"]),
@@ -139,6 +142,10 @@ class ProfileRepository:
                 created_at=datetime.fromisoformat(item["created_at"]),
                 auto_refresh=bool(item.get("auto_refresh", False)),
             )
+            if summary.profile_id in revoked:
+                self._lifecycle.invalidate(summary.profile_id)
+                removed_from_catalog = True
+                continue
             self._catalog[summary.profile_id] = summary
             self._lifecycle.authorize(ProfileAuthorization(
                 profile_id=summary.profile_id,
@@ -148,6 +155,49 @@ class ProfileRepository:
                 scopes=frozenset({"local_snapshot", "analysis", "reports"}),
                 confirmed_at=summary.created_at,
             ))
+        if removed_from_catalog:
+            self._save_catalog()
+        for profile_id in revoked:
+            try:
+                self._lifecycle.erase_private_data(profile_id)
+                self._remove_revocation(profile_id)
+            except OSError:
+                # Keep the encrypted tombstone so a later launch can retry cleanup.
+                continue
+
+    def _load_revocations(self) -> set[UUID]:
+        try:
+            raw = self._store.load(self.REVOCATIONS_KEY)
+        except FileNotFoundError:
+            return set()
+        if raw.get("schema_id") != "ProfileRevocationTombstones" or raw.get("schema_version") != "0.1-draft":
+            raise ValueError("unsupported profile revocation tombstone schema")
+        profile_ids = raw.get("profile_ids")
+        if not isinstance(profile_ids, list) or any(not isinstance(item, str) for item in profile_ids):
+            raise ValueError("invalid profile revocation tombstones")
+        return {UUID(item) for item in profile_ids}
+
+    def _save_revocations(self, profile_ids: set[UUID]) -> None:
+        self._store.save(self.REVOCATIONS_KEY, {
+            "schema_id": "ProfileRevocationTombstones",
+            "schema_version": "0.1-draft",
+            "profile_ids": sorted(str(profile_id) for profile_id in profile_ids),
+        })
+
+    def _add_revocation(self, profile_id: UUID) -> None:
+        revoked = self._load_revocations()
+        revoked.add(profile_id)
+        self._save_revocations(revoked)
+
+    def _remove_revocation(self, profile_id: UUID) -> None:
+        revoked = self._load_revocations()
+        if profile_id not in revoked:
+            return
+        revoked.remove(profile_id)
+        if revoked:
+            self._save_revocations(revoked)
+        else:
+            self._store.delete_key(self.REVOCATIONS_KEY)
 
     def list_profiles(self) -> tuple[ProfileSummary, ...]:
         return tuple(sorted(self._catalog.values(), key=lambda item: item.created_at))
@@ -371,14 +421,15 @@ class ProfileRepository:
             self._store.save(self._refresh_key(profile_id), raw)
 
     def revoke(self, profile_id: UUID) -> None:
-        # Disable in memory first, then durably remove the catalog reference before erasing blobs.
-        # If catalog persistence fails, the profile stays disabled for this process and the error
-        # reaches the caller; data is not deleted until a restart can no longer re-authorize it.
+        # Persist a deny marker before changing the catalog so a failed catalog write cannot
+        # resurrect authorization after restart. Keep the marker until every cleanup step succeeds.
         with self._lock:
             self._lifecycle.invalidate(profile_id)
             self._catalog.pop(profile_id, None)
+            self._add_revocation(profile_id)
             self._save_catalog()
             self._lifecycle.erase_private_data(profile_id)
+            self._remove_revocation(profile_id)
 
     def _save_catalog(self) -> None:
         profiles = [

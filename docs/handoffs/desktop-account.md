@@ -91,11 +91,17 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-17: 29 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-17: 30 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
   save/restore and the explicit planner-unavailable status. No real UID was queried.
+- Profile revocation now writes an encrypted tombstone before removing its catalog entry. Startup
+  filters tombstoned profiles before restoring authorization, then retries deletion of their
+  private blobs and temporary data. A synthetic catalog-write failure test verifies restart cannot
+  resurrect the profile and that successful cleanup removes its tombstone.
+- After adding crash-safe revocation, all 677 entries in a fresh PyInstaller 6.22.3 candidate
+  manifest validated, and an 8-second isolated startup smoke confirmed Qt Core and Widgets loaded.
 - Duplicate equipment linking was exercised in an offscreen AccountsPage with synthetic records:
   only same-type/slot candidates appeared; the flow required player confirmation and two explicit
   source choices, then persisted one merged instance to the encrypted snapshot.

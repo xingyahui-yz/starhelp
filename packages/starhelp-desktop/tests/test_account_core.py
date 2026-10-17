@@ -480,6 +480,41 @@ class StorageLifecycleTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 store.load(f"profile-{profile.profile_id.hex}-snapshot")
 
+    def test_revoke_tombstone_prevents_catalog_write_failure_from_resurrecting_profile(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            profile = repository.begin_profile(
+                label="Synthetic profile", provider_id="local-import", server_label="fixture-region"
+            )
+            store.save(f"profile-{profile.profile_id.hex}-snapshot", {
+                "schema_id": "synthetic-private-fixture",
+            })
+            original_save = store.save
+
+            def fail_catalog_save(key: str, value: dict[str, object]) -> Path:
+                if key == ProfileRepository.CATALOG_KEY:
+                    raise OSError("synthetic catalog write failure")
+                return original_save(key, value)
+
+            store.save = fail_catalog_save  # type: ignore[method-assign]
+            with self.assertRaisesRegex(OSError, "synthetic catalog write failure"):
+                repository.revoke(profile.profile_id)
+            self.assertFalse(lifecycle.is_active(profile.profile_id))
+            self.assertEqual(repository.list_profiles(), ())
+
+            store.save = original_save  # type: ignore[method-assign]
+            restarted_lifecycle = ProfileLifecycle(store, root / "temp")
+            restarted = ProfileRepository(store, restarted_lifecycle)
+            self.assertEqual(restarted.list_profiles(), ())
+            self.assertFalse(restarted_lifecycle.is_active(profile.profile_id))
+            with self.assertRaises(FileNotFoundError):
+                store.load(f"profile-{profile.profile_id.hex}-snapshot")
+            with self.assertRaises(FileNotFoundError):
+                store.load(ProfileRepository.REVOCATIONS_KEY)
+
     def test_last_task_is_encrypted_restored_after_restart_and_removed_on_revoke(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)
