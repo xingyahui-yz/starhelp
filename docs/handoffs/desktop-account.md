@@ -87,6 +87,10 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   This is black-box synthetic interoperability evidence only. TaskPage still does not construct or
   submit production analysis requests: no production A signing trust, complete request builder, or
   agreed M0 field/task mapping is available. No real account data was used.
+- Public bundle activation now retains the exact incoming bytes when a source returns a byte payload.
+  Reloading a cached current/previous release re-runs strict JSON, manifest signature, member hash,
+  capability, and dependency checks before returning it. The C fixture replay verifies that the
+  signed A export bytes survive B validation, cache activation, restart reload, and worker handoff.
 - A verify-before-activate public bundle synchronizer interface and two-version atomic local cache.
   Failed signature verification leaves the current release active. No production transport, trust
   key, or final A-side bundle format is available yet.
@@ -109,7 +113,8 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - After adding crash-safe revocation, all 677 entries in a fresh PyInstaller 6.22.3 candidate
   manifest validated, and an 8-second isolated startup smoke confirmed Qt Core and Widgets loaded.
 - After adding the pinned C artifact and packaged stdio worker, all 31 standard-library tests passed;
-  the exact signed A/B fixture replay passed through the current B validator/serializer and C worker.
+  the exact signed A/B fixture replay passed through the current B validator/serializer, cache
+  activation/revalidation, and C worker.
   All 827 files in the new candidate manifest validated, the packaged worker passed the same fixture
   replay, and an 8-second isolated application startup loaded Qt Core and Widgets. The installer smoke
   passed install, upgrade, two-way rollback, and tamper rejection with a synthetic candidate in a

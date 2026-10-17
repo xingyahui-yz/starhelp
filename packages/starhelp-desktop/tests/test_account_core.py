@@ -761,6 +761,18 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(second.previous_release_id, "fixture-release-1")
             self.assertEqual(cache.available_release_ids(),
                              ("fixture-release-1", "fixture-release-2"))
+            self.assertEqual(sync.load_current().release_id, "fixture-release-2")
+            self.assertEqual(sync.load_release("fixture-release-1").release_id, "fixture-release-1")
+
+            current_path = cache.root / cache._filename("fixture-release-2")
+            original_bytes = current_path.read_bytes()
+            tampered = json.loads(original_bytes.decode("utf-8"))
+            tampered["objects"]["fixture:object"]["tampered"] = True
+            current_path.write_text(json.dumps(tampered), encoding="utf-8")
+            with self.assertRaisesRegex(BundleRejected, "member hash mismatch"):
+                sync.load_current()
+            current_path.write_bytes(original_bytes)
+            self.assertEqual(sync.load_current().release_id, "fixture-release-2")
 
             current_source = FixtureSource(make_release("fixture-release-2"), "fixture-release-2")
             current = sync.sync(current_source)

@@ -53,6 +53,9 @@ requires Windows; the encryption contract is injected in platform-independent un
   from TaskPage and requires the visible save action before DPAPI persistence. Online withdrawal
   state is reported as unknown until A's signed withdrawal feed is available. No report is generated
   without a planner result.
+- The two-release public cache revalidates signed bytes every time a cached release is loaded.
+  Byte-oriented sources retain the exact UTF-8 release bytes across activation and restart so the
+  producer adapter can verify its recorded digest; test object sources use canonical JSON bytes.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated

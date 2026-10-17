@@ -14,7 +14,12 @@ try:
 except ImportError:  # The desktop crypto extra is optional for source-only installs.
     serialization = None
 
-from starhelp_desktop.bundles import BundleValidator, Ed25519Keyring
+from starhelp_desktop.bundles import (
+    BundleValidator,
+    Ed25519Keyring,
+    PublicBundleCache,
+    PublicBundleSynchronizer,
+)
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
 from starhelp_desktop.models import ProfileAuthorization
@@ -53,18 +58,33 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             hashlib.sha256(key_bytes).hexdigest(),
             "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
         )
-        bundle = json.loads(bundle_bytes.decode("utf-8"))
         public_key = serialization.load_pem_public_key(key_bytes).public_bytes(
             serialization.Encoding.Raw, serialization.PublicFormat.Raw
         )
+        verifier = Ed25519Keyring({"starhelp-fixture-ed25519-v1": public_key})
         validated = BundleValidator().validate(
-            bundle,
+            bundle_bytes,
             supported_capabilities=frozenset({
                 "starhelp.knowledge-distribution.v1", "starhelp.local-profile.v0.2",
             }),
-            signature_verifier=Ed25519Keyring({"starhelp-fixture-ed25519-v1": public_key}),
+            signature_verifier=verifier,
         )
         self.assertEqual(validated.release_id, "rel_fixture_0001")
+        self.assertEqual(validated.payload_json, bundle_bytes)
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as cache_directory:
+            cache = PublicBundleCache(Path(cache_directory))
+            cache.activate(validated)
+            reloader = PublicBundleSynchronizer(
+                cache,
+                signature_verifier=verifier,
+                supported_capabilities=frozenset({
+                    "starhelp.knowledge-distribution.v1", "starhelp.local-profile.v0.2",
+                }),
+            )
+            cached = reloader.load_current()
+            self.assertIsNotNone(cached)
+            self.assertEqual(cached.payload_json, bundle_bytes)
+            bundle = cached.payload()
 
         snapshot = _snapshot_from_dict(json.loads(snapshot_fixture_bytes.decode("utf-8")))
         snapshot_bytes = json.dumps(

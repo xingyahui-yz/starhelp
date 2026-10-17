@@ -21,11 +21,39 @@ class SignatureVerifier(Protocol):
 
 
 class PublicBundleSource(Protocol):
-    """Public-only transport. Implementations receive no account/profile object."""
+    """Public-only transport. Implementations receive no account/profile object.
+
+    Byte-returning transports preserve the producer's exact serialized release through validation
+    and cache activation; object-returning fixture sources use canonical JSON serialization.
+    """
 
     def discover_release(self, current_release_id: str | None) -> str | None: ...
 
     def fetch_release(self, release_id: str) -> object: ...
+
+
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(_value: str) -> None:
+    raise ValueError("non-finite JSON constant")
+
+
+def _decode_bundle_json(raw: bytes) -> dict[str, Any]:
+    value = json.loads(
+        raw.decode("utf-8"),
+        object_pairs_hook=_unique_json_object,
+        parse_constant=_reject_json_constant,
+    )
+    if not isinstance(value, dict):
+        raise ValueError("bundle JSON root must be an object")
+    return value
 
 
 class Ed25519Keyring:
@@ -58,10 +86,10 @@ class ValidatedBundle:
     verified_at: datetime
 
     def payload(self) -> dict[str, Any]:
-        value = json.loads(self.payload_json)
-        if not isinstance(value, dict):
-            raise BundleRejected("cached bundle root is not an object")
-        return value
+        try:
+            return _decode_bundle_json(self.payload_json)
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            raise BundleRejected("cached bundle JSON is invalid") from exc
 
 
 class BundleValidator:
@@ -82,6 +110,17 @@ class BundleValidator:
         expected_release_id: str | None = None,
         signature_verifier: SignatureVerifier | None = None,
     ) -> ValidatedBundle:
+        """Validate an envelope, preserving exact UTF-8 bytes when the caller supplies them."""
+        original_bytes: bytes | None = None
+        if isinstance(envelope, bytes):
+            original_bytes = envelope
+        elif isinstance(envelope, str):
+            original_bytes = envelope.encode("utf-8")
+        if original_bytes is not None:
+            try:
+                envelope = _decode_bundle_json(original_bytes)
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                raise BundleRejected("bundle JSON is invalid") from exc
         if not isinstance(envelope, dict):
             raise BundleRejected("bundle root must be an object")
         manifest = envelope.get("manifest")
@@ -130,11 +169,14 @@ class BundleValidator:
         coverage = manifest.get("coverage")
         if not isinstance(coverage, dict):
             raise BundleRejected("coverage summary is required")
-        try:
-            payload_json = json.dumps(envelope, ensure_ascii=False, sort_keys=True,
-                                      separators=(",", ":"), allow_nan=False).encode("utf-8")
-        except (TypeError, ValueError):
-            raise BundleRejected("bundle contains a non-JSON value") from None
+        if original_bytes is not None:
+            payload_json = original_bytes
+        else:
+            try:
+                payload_json = json.dumps(envelope, ensure_ascii=False, sort_keys=True,
+                                          separators=(",", ":"), allow_nan=False).encode("utf-8")
+            except (TypeError, ValueError):
+                raise BundleRejected("bundle contains a non-JSON value") from None
         return ValidatedBundle(
             release_id=release_id,
             schema_version=schema_version,
@@ -195,6 +237,10 @@ class PublicBundleCache:
     def available_release_ids(self) -> tuple[str, ...]:
         return tuple(sorted(path.stem.removeprefix("release-") for path in self.root.glob("release-*.json")))
 
+    def read_release(self, release_id: str) -> bytes:
+        """Read a cached release by its validated identifier; callers must revalidate it."""
+        return (self.root / self._filename(release_id)).read_bytes()
+
     @staticmethod
     def _atomic_write(destination: Path, data: bytes) -> None:
         descriptor, name = tempfile.mkstemp(prefix=".bundle.", suffix=".tmp", dir=destination.parent)
@@ -251,3 +297,23 @@ class PublicBundleSynchronizer:
         )
         self._cache.activate(validated)
         return BundleSyncResult(previous, validated.release_id, True)
+
+    def load_current(self) -> ValidatedBundle | None:
+        """Reload and cryptographically revalidate the selected cached release."""
+        release_id = self._cache.current_release_id()
+        if release_id is None:
+            return None
+        return self.load_release(release_id)
+
+    def load_release(self, release_id: str) -> ValidatedBundle:
+        """Validate cached bytes again before any consumer uses their public objects."""
+        try:
+            raw = self._cache.read_release(release_id)
+        except FileNotFoundError:
+            raise
+        return self._validator.validate(
+            raw,
+            supported_capabilities=self._supported_capabilities,
+            expected_release_id=release_id,
+            signature_verifier=self._signature_verifier,
+        )
