@@ -189,3 +189,4 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Equipment identity confirmation and duplicate linking are wired through the desktop UI and
   encrypted snapshot repository. Same-type candidates are never linked automatically, and field
   conflicts stop until the player chooses a source for each value.
+- 2026-10-18 parser hardening: public IDs and profile field names are capped at 160 characters and reject control characters; invalid affix identifiers are skipped, and relic slot types must be finite non-boolean integers. All 33 standard-library tests and `compileall` passed. The planner interop fixture passed. A fresh PyInstaller 6.22.3 candidate was built; all 827 manifest hashes matched, required Qt/worker binaries were present, and an 8-second launch in an isolated `LOCALAPPDATA` loaded Qt Core and Widgets. Push remains pending because automatic approval review rejected the previous push attempts; no workaround was used.

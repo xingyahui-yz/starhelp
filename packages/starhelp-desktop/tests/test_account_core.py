@@ -316,6 +316,27 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(len(proposal.equipment), 1)
         self.assertEqual(proposal.equipment[0].facts, {})
 
+    def test_mihomo_skips_oversized_public_ids_and_field_names(self) -> None:
+        oversized = "x" * 161
+        proposal = MihomoPublicProfileClient().to_preview({"characters": [
+            {"id": oversized, "level": 80},
+            {
+                "id": "fixture",
+                "attributes": [
+                    {"field": oversized, "value": 100},
+                    {"field": "speed\ninvalid", "value": 100},
+                    {"field": "spd", "value": 100},
+                ],
+                "light_cone": {"id": oversized, "level": 80},
+                "relics": [{"id": "relic-type", "type": {"untrusted": True},
+                            "main_affix": {"field": oversized, "value": 20}}],
+            },
+        ]})
+        self.assertEqual(proposal.ownership, {"fixture": Ownership.OWNED})
+        self.assertEqual(set(proposal.fields), {"character:fixture.stat:spd"})
+        self.assertEqual(proposal.equipment[0].slot, "relic:unknown")
+        self.assertEqual(proposal.equipment[0].facts, {})
+
     def test_public_query_is_allowlisted_and_uid_like_input_is_rejected(self) -> None:
         builder = PublicQueryBuilder()
         request = builder.build(PublicScope("fixture-version", "live", "fixture-mode",

@@ -49,11 +49,19 @@ def _finite_integer(value: object) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and _finite_number(value)
 
 
+def _public_text(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    result = value.strip()
+    if not result or len(result) > 160 or any(ord(char) < 32 for char in result):
+        return None
+    return result
+
+
 def _public_identifier(value: object) -> str | None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         return None
-    result = str(value).strip()
-    return result or None
+    return _public_text(str(value))
 
 
 class UserConfirmation(Protocol):
@@ -182,9 +190,9 @@ class MihomoPublicProfileClient:
             for attribute in attributes:
                 if not isinstance(attribute, dict):
                     continue
-                field_name = attribute.get("field")
+                field_name = _public_text(attribute.get("field"))
                 value = attribute.get("value")
-                if isinstance(field_name, str) and field_name and _finite_number(value):
+                if field_name is not None and _finite_number(value):
                     path = f"character:{character_id}.stat:{field_name}"
                     fields[path] = FieldFact(
                         value=value, status=FieldStatus.NEEDS_REVIEW,
@@ -245,7 +253,7 @@ class MihomoPublicProfileClient:
                 EquipmentInstance(
                     local_instance_id=uuid4(),
                     public_type_id=type_id,
-                    slot=(f"relic:{raw.get('type', 'unknown')}" if slot == "relic" else slot),
+                    slot=(self._relic_slot(raw) if slot == "relic" else slot),
                     identity=EquipmentIdentity.AMBIGUOUS,
                     owner_character_id=character_id,
                     facts=self._equipment_facts(raw, slot, observed),
@@ -288,6 +296,13 @@ class MihomoPublicProfileClient:
                     self._append_affix_facts(facts, f"sub_affix:{index}", affix, observed, slot)
         return facts
 
+    @staticmethod
+    def _relic_slot(item: dict[str, object]) -> str:
+        slot_type = item.get("type")
+        if not _finite_integer(slot_type):
+            return "relic:unknown"
+        return f"relic:{slot_type}"
+
     def _append_affix_facts(
         self,
         facts: dict[str, FieldFact],
@@ -296,10 +311,15 @@ class MihomoPublicProfileClient:
         observed: datetime,
         slot: str,
     ) -> None:
+        if any(
+            key in affix and _public_text(affix[key]) is None
+            for key in ("field", "type")
+        ):
+            return
         for key in ("field", "type", "value", "percent", "count", "step"):
             value = affix.get(key)
             valid_value = (
-                isinstance(value, str) and bool(value)
+                _public_text(value) is not None
                 if key in {"field", "type"}
                 else isinstance(value, bool)
                 if key == "percent"
