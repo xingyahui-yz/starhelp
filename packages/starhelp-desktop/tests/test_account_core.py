@@ -50,7 +50,7 @@ from starhelp_desktop.public_profile import (
 )
 from starhelp_desktop.profiles import ProfileRepository
 from starhelp_desktop.reports import ReportLifecycle, ReportValidity
-from starhelp_desktop.storage import EncryptedPrivateStore
+from starhelp_desktop.storage import EncryptedPrivateStore, WindowsDpapiProtector
 from starhelp_desktop.tasks import AnalysisTaskDraft, TaskRepository
 
 
@@ -395,6 +395,20 @@ class ImportAndPrivacyTests(unittest.TestCase):
 
 
 class StorageLifecycleTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "win32", "Windows DPAPI integration check")
+    def test_windows_dpapi_round_trips_synthetic_private_object(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory) / "dpapi-store"
+            value = {"fixture": f"synthetic-only-{uuid4().hex}"}
+            store = EncryptedPrivateStore(root, WindowsDpapiProtector())
+            encrypted_path = store.save("synthetic-profile", value)
+            encrypted_bytes = encrypted_path.read_bytes()
+
+            self.assertTrue(encrypted_bytes.startswith(b"SHDPAPI1"))
+            self.assertNotIn(value["fixture"].encode("ascii"), encrypted_bytes)
+            restarted_store = EncryptedPrivateStore(root, WindowsDpapiProtector())
+            self.assertEqual(restarted_store.load("synthetic-profile"), value)
+
     def test_encrypted_store_never_writes_plain_json(self) -> None:
         with temporary_directory() as directory:
             store = EncryptedPrivateStore(Path(directory), TestProtector())
