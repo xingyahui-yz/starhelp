@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import urllib.error
 import urllib.parse
@@ -20,6 +21,39 @@ from .models import (
     Ownership,
     SourceKind,
 )
+
+
+def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _reject_json_constant(_value: str) -> None:
+    raise ValueError("non-finite JSON constant")
+
+
+def _finite_number(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def _finite_integer(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and _finite_number(value)
+
+
+def _public_identifier(value: object) -> str | None:
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        return None
+    result = str(value).strip()
+    return result or None
 
 
 class UserConfirmation(Protocol):
@@ -62,6 +96,20 @@ class MihomoPublicProfileClient:
         self._timeout = timeout_seconds
         self._language = language
 
+    @staticmethod
+    def _decode_response(raw: bytes) -> dict[str, object]:
+        try:
+            payload = json.loads(
+                raw.decode("utf-8"),
+                object_pairs_hook=_unique_json_object,
+                parse_constant=_reject_json_constant,
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+            raise ProfileRequestError("public profile response was not valid JSON") from None
+        if not isinstance(payload, dict):
+            raise ProfileRequestError("public profile response has an unsupported shape")
+        return payload
+
     def fetch(self, selection: PublicProfileSelection) -> ImportProposal:
         if not selection.confirmed_by_user:
             raise PermissionError("player confirmation is required before a UID request")
@@ -90,11 +138,7 @@ class MihomoPublicProfileClient:
             raise ProfileRequestError("public profile service is unavailable") from None
         if len(raw) > 4 * 1024 * 1024:
             raise ProfileRequestError("public profile response exceeded the size limit")
-        try:
-            payload = json.loads(raw)
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            raise ProfileRequestError("public profile response was not valid JSON") from None
-        return self.to_preview(payload)
+        return self.to_preview(self._decode_response(raw))
 
     def to_preview(self, payload: object) -> ImportProposal:
         """Normalize only a small allowlist; absent showcase fields never mean not-owned."""
@@ -116,16 +160,15 @@ class MihomoPublicProfileClient:
         for character in characters:
             if not isinstance(character, dict):
                 continue
-            entity_id = character.get("id")
-            if not isinstance(entity_id, (str, int)):
+            character_id = _public_identifier(character.get("id"))
+            if character_id is None:
                 continue
-            character_id = str(entity_id)
             ownership[character_id] = Ownership.OWNED
             ownership_path = f"ownership:{character_id}"
             covered.add(ownership_path)
             for public_key, local_name in (("level", "level"), ("rank", "eidolon")):
                 value = character.get(public_key)
-                if isinstance(value, (str, int, float)):
+                if _finite_integer(value):
                     path = f"character:{character_id}.{local_name}"
                     fields[path] = FieldFact(
                         value=value, status=FieldStatus.NEEDS_REVIEW,
@@ -141,7 +184,7 @@ class MihomoPublicProfileClient:
                     continue
                 field_name = attribute.get("field")
                 value = attribute.get("value")
-                if isinstance(field_name, str) and isinstance(value, (int, float)):
+                if isinstance(field_name, str) and field_name and _finite_number(value):
                     path = f"character:{character_id}.stat:{field_name}"
                     fields[path] = FieldFact(
                         value=value, status=FieldStatus.NEEDS_REVIEW,
@@ -156,8 +199,9 @@ class MihomoPublicProfileClient:
                 if not isinstance(skill, dict):
                     continue
                 skill_id, level = skill.get("id"), skill.get("level")
-                if isinstance(skill_id, (str, int)) and isinstance(level, int):
-                    path = f"character:{character_id}.skill:{skill_id}"
+                public_skill_id = _public_identifier(skill_id)
+                if public_skill_id is not None and _finite_integer(level):
+                    path = f"character:{character_id}.skill:{public_skill_id}"
                     fields[path] = FieldFact(
                         value=level, status=FieldStatus.NEEDS_REVIEW,
                         source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,
@@ -193,14 +237,14 @@ class MihomoPublicProfileClient:
         for slot, raw in candidates:
             if not isinstance(raw, dict):
                 continue
-            type_id = raw.get("id") or raw.get("type_id")
+            type_id = _public_identifier(raw.get("id") or raw.get("type_id"))
             if type_id is None:
                 continue
             # Do not interpret an API item/type ID, identical stats, or a hash as a copy ID.
             result.append(
                 EquipmentInstance(
                     local_instance_id=uuid4(),
-                    public_type_id=str(type_id),
+                    public_type_id=type_id,
                     slot=(f"relic:{raw.get('type', 'unknown')}" if slot == "relic" else slot),
                     identity=EquipmentIdentity.AMBIGUOUS,
                     owner_character_id=character_id,
@@ -215,7 +259,12 @@ class MihomoPublicProfileClient:
         facts: dict[str, FieldFact] = {}
         for key in ("level", "rank", "promotion", "rarity", "set_id"):
             value = item.get(key)
-            if isinstance(value, (str, int, float)):
+            valid_value = (
+                _finite_integer(value)
+                if key != "set_id"
+                else _public_identifier(value) is not None
+            )
+            if valid_value:
                 facts[key] = FieldFact(
                     value=value, status=FieldStatus.NEEDS_REVIEW,
                     source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,
@@ -249,7 +298,14 @@ class MihomoPublicProfileClient:
     ) -> None:
         for key in ("field", "type", "value", "percent", "count", "step"):
             value = affix.get(key)
-            if isinstance(value, (str, int, float, bool)):
+            valid_value = (
+                isinstance(value, str) and bool(value)
+                if key in {"field", "type"}
+                else isinstance(value, bool)
+                if key == "percent"
+                else _finite_number(value)
+            )
+            if valid_value:
                 facts[f"{prefix}.{key}"] = FieldFact(
                     value=value, status=FieldStatus.NEEDS_REVIEW,
                     source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,

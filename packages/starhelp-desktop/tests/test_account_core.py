@@ -278,6 +278,43 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(proposal.ownership, {"fixture": Ownership.OWNED})
         self.assertEqual(proposal.fields, {})
 
+    def test_mihomo_rejects_ambiguous_json_and_filters_invalid_numbers(self) -> None:
+        client = MihomoPublicProfileClient()
+        for raw in (
+            b'{"characters": [], "characters": []}',
+            b'{"characters": [{"id": "fixture", "attributes": [{"field": "spd", "value": NaN}]}]}',
+        ):
+            with self.assertRaises(ProfileRequestError):
+                client._decode_response(raw)
+        with self.assertRaisesRegex(ProfileRequestError, "unsupported shape"):
+            client._decode_response(b'[]')
+
+        proposal = client.to_preview({"characters": [
+            {"id": True, "level": 80},
+            {
+                "id": "fixture",
+                "level": True,
+                "rank": float("inf"),
+                "attributes": [
+                    {"field": "spd", "value": float("nan")},
+                    {"field": "atk", "value": True},
+                    {"field": "def", "value": 15},
+                ],
+                "skills": [
+                    {"id": True, "level": 10},
+                    {"id": "skill", "level": True},
+                    {"id": "overflow", "level": 10**1000},
+                ],
+                "light_cone": {"id": True, "level": 80},
+                "relics": [{"id": "relic-type", "level": True, "set_id": False}],
+            },
+        ]})
+        self.assertEqual(proposal.ownership, {"fixture": Ownership.OWNED})
+        self.assertEqual(set(proposal.fields), {"character:fixture.stat:def"})
+        self.assertEqual(proposal.fields["character:fixture.stat:def"].value, 15)
+        self.assertEqual(len(proposal.equipment), 1)
+        self.assertEqual(proposal.equipment[0].facts, {})
+
     def test_public_query_is_allowlisted_and_uid_like_input_is_rejected(self) -> None:
         builder = PublicQueryBuilder()
         request = builder.build(PublicScope("fixture-version", "live", "fixture-mode",

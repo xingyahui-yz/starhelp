@@ -68,6 +68,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   validator/cache, and explicit-save report service. UID requests reject redirects, so the UID stays
   on the player-selected HTTPS service. Saving and revocation are serialized to prevent a late write
   after cleanup.
+- The Mihomo response parser rejects duplicate JSON keys, non-finite constants, invalid UTF-8, and
+  non-object roots. Numeric preview fields exclude booleans, NaN, infinities, and overflowing integers
+  so malformed service values cannot enter the encrypted snapshot.
 - The report page lists saved reports per profile, persists snapshot-expired/evidence-withdrawn
   validity, and displays when online withdrawal state is unknown. It does not manufacture a report
   without a planner result. TaskPage exposes a temporary-report signal; the report page previews it
@@ -104,11 +107,17 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 
 ## Remaining work / verification limits
 
-- Verification on 2026-10-17: 31 standard-library `unittest` cases pass with synthetic fixtures;
+- Verification on 2026-10-17: 32 standard-library `unittest` cases pass with synthetic fixtures;
   `compileall` passes; current-user Windows DPAPI protect/unprotect round-trip passes with synthetic
   bytes; an offscreen PySide6 window was created; RapidOCR loaded its bundled local models and
   recognized a synthetic screenshot. An offscreen task-form smoke confirmed encrypted per-profile
   save/restore and the explicit planner-unavailable status. No real UID was queried.
+- After strict Mihomo response parsing was added, all 32 tests passed again. The rebuilt candidate's
+  827 manifest hashes matched, the packaged worker replay passed the signed fixture, and the app
+  passed an 8-second isolated startup smoke with Qt Core and Widgets present. Synthetic installer
+  install, upgrade, two-way rollback, and tamper rejection also passed. The actual candidate was
+  installed from `dist/StarHelp` into a unique temporary install and survived an 8-second isolated
+  installed-path startup smoke.
 - Profile revocation now writes an encrypted tombstone before removing its catalog entry. Startup
   filters tombstoned profiles before restoring authorization, then retries deletion of their
   private blobs and temporary data. A synthetic catalog-write failure test verifies restart cannot
