@@ -1,0 +1,3 @@
+cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b  knowledge-planner-fixture-v1.bpublic.json
+7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e  fixture-ed25519-public.pem
+a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5  synthetic-b-snapshot-045965b.json

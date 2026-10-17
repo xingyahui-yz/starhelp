@@ -78,13 +78,22 @@ class ActualDistributionInteropTests(unittest.TestCase):
                 self.assertEqual(request, before)
 
     def test_actual_b_unknown_ownership_and_latest_withdrawal_block_execution(self):
-        request = self.request("actual-unknown", "unknown_ownership")
-        request["task"]["fixed_character_ids"] = ["fixture:character:a"]
-        result = analyze_producers(request)
-        self.assertEqual(result["status"], "confirmation_required")
-        self.assertFalse(result["analysis"]["current_equipment_plans"])
+        for case, expected in (("unknown_ownership", "confirmation_required"), ("not_owned", "no_feasible_variant")):
+            with self.subTest(case=case):
+                request = self.request("actual-ownership", case)
+                request["task"]["fixed_character_ids"] = ["fixture:character:a"]
+                result = analyze_producers(request)
+                self.assertEqual(result["status"], expected)
+                self.assertFalse(result["analysis"]["current_equipment_plans"])
         request = self.request("actual-withdrawal")
         request["latest_known_validity"]["withdrawn_public_refs"] = [{"id": self.data.view["evidence"][0]["id"], "revision": 1}]
         result = analyze_producers(request)
         self.assertEqual(result["analysis"]["error"]["code"], "withdrawn_public_object")
         self.assertFalse(result["analysis"]["current_equipment_plans"])
+
+
+class OfficialDeliveredDistributionInteropTests(ActualDistributionInteropTests):
+    @classmethod
+    def setUpClass(cls):
+        cls.data = CapturedInputs(ROOT / "interop/a-00d4a58", ROOT / "interop/b-045965b-cases")
+        cls.stage = cls.data.view["stages"][0]

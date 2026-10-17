@@ -83,6 +83,9 @@ def main() -> None:
     first_character = next(iter(json.loads(req["account_snapshot"]["raw_json"])["ownership"]))
     req["task"]["fixed_character_ids"] = [first_character]
     run("unknown-ownership", req, lambda result: not available(result) and result["status"] == "confirmation_required")
+    req = data.request(stage, name="confirmed-not-owned", b_case="not_owned")
+    req["task"]["fixed_character_ids"] = [first_character]
+    run("confirmed-not-owned", req, lambda result: not available(result) and result["status"] == "no_feasible_variant")
     req = data.request(stage, name="cross-release")
     req["public_bundle"]["expected_release_id"] = data.release + "-other"
     run("cross-release", req, lambda result: result.get("error", {}).get("code") == "producer_release_mismatch")
@@ -113,6 +116,7 @@ def main() -> None:
         "consumer_source_commit": args.consumer_source_commit, "consumer_wheel_sha256": hashlib.sha256(args.wheel.read_bytes()).hexdigest(),
         "consumer_import_verified": True, "cryptography_version": cryptography.__version__,
         "a_producer_commit": data.locks["a_producer_commit"], "a_raw_sha256": data.locks["a_raw_sha256"], "release_id": data.release,
+        "a_delivery_artifact_commit": data.locks.get("official_delivery_artifact_commit"),
         "b_producer_commit": data.locks["b_snapshot_commit"], "cases": cases,
         "technical_interoperability_accepted": all(case["outcome"] == "passed" for case in cases),
         "production_content_or_mvp_accepted": False,

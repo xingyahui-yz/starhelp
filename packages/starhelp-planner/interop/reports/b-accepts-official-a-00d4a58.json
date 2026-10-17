@@ -1,0 +1,17 @@
+{
+  "synthetic_only": true,
+  "b_producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "validator": "starhelp_desktop.bundles.BundleValidator",
+  "signature_verifier": "starhelp_desktop.bundles.Ed25519Keyring",
+  "a_artifact_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "expected_release": "rel_fixture_0001",
+  "key_id": "starhelp-fixture-ed25519-v1",
+  "public_key_sha256": "84d08a01a9887e22fb279c7ef0043df167218413fd1aeb5b41891b50339908ed",
+  "cryptography_version": "46.0.7",
+  "accepted": true,
+  "release": "rel_fixture_0001",
+  "error": null,
+  "source_git_tree": "e45a302b20aa18cb239653c6a6ccac3ca8d6cc3c",
+  "all_source_files_verified": true,
+  "production_trust_established": false
+}

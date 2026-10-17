@@ -15,7 +15,10 @@ from .projection import check_projection, consumption_view
 DISTRIBUTION_PROFILE = "starhelp.b-publicbundle-envelope.v1"
 DISTRIBUTION_CAPABILITY = "starhelp.knowledge-distribution.v1"
 # Actual export/independent A verification and fixed B Ed25519 validation passed.
-ACCEPTED_A_COMMITS = frozenset({"b790a52aea4fabdb362d35c37d9b511b737e1fe4"})
+ACCEPTED_A_COMMITS = frozenset({
+    "b790a52aea4fabdb362d35c37d9b511b737e1fe4",
+    "00d4a5844e74050359227c274de712878bf9187c",
+})
 
 
 def _identity(item: dict[str, Any]) -> tuple[str, str, int]:

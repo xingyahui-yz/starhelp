@@ -12,20 +12,21 @@ Status: first fixed producer delivery consumed, partial acceptance, 2026-10-16. 
 
 B's working HEAD has advanced; it is not used. Producer sources are read from the specified Git commit and executed only from a temporary copy inside C. A's first new positive export is locked separately below, with its actual commit/profile/release/raw byte SHA-256. Developing A versions cannot be mixed into one acceptance result.
 
-## Accepted first delivery (kept separate from the baseline)
+## Official delivery (kept separate from earlier regression inputs)
 
 | Item | Fixed value |
 |---|---|
-| A executing code commit / package | `b790a52aea4fabdb362d35c37d9b511b737e1fe4` / `0.2.0` |
+| A executing code commit / package | `00d4a5844e74050359227c274de712878bf9187c` / `0.2.0` |
+| A artifact Git commit | `31e2665cfb9ce1100856d72ebca086b39a603ee8` |
 | A profile | `starhelp.b-publicbundle-envelope.v1` |
 | Release | `rel_fixture_0001` |
-| Original raw A SHA-256 | `145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00` |
+| Original raw A SHA-256 | `cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b` |
 | A native content digest | `e34461116bb66071262067a3804acf66652b1907c840a9eb21bb303304086f85` |
-| Original projected manifest digest | `ea436574636cb9094c4e7e53ed1bd75e2e6aa8900ae8bc4f33f995b5a5cc28d8` |
+| Original projected manifest digest | `4e5a3f9d619f9a8fa4edcb52babf580eb462a4d1f21fb2eb62e2e4c94b233041` |
 | B serialized snapshot SHA-256 | `a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5` |
 | Test signing identity | `starhelp-fixture-ed25519-v1`, Ed25519, synthetic purpose only |
 
-The actual producer command was invoked from a detached temporary checkout of that commit. A's own verifier accepted the result; the fixed B `BundleValidator` with its real `Ed25519Keyring` also accepted it. Repeating the actual producer command produced byte-identical bundle, public key and B snapshot. No artifact from another A development revision is used in this acceptance set.
+The actual producer command was invoked from a detached temporary checkout of that commit. A's own verifier accepted the result; the fixed B `BundleValidator` with its real `Ed25519Keyring` also accepted it. The regenerated bundle, public key, B snapshot and checksum list matched the official artifact Git blobs in `31e2665` byte for byte. No artifact from another A development revision is used in this acceptance set.
 
 Current producer data has one mode (`fixture:mode:duo`), two complete reviewed variants, one soft statistical condition per variant, and no equipment requirements or equipment entities. Missing fields/units remain unknown warnings, not satisfied conditions. This supports normal/complete-alternate/no-match and refusal/degradation checks. It does **not** establish three-mode coverage or nontrivial equipment-lock/ambiguity interoperability. Those remain explicit acceptance gaps requiring additional A-produced fixtures.
 
@@ -53,3 +54,5 @@ Current producer data has one mode (`fixture:mode:duo`), two complete reviewed v
 A must deliver one versioned export profile with required stage seats/resources, exact public goals, full reviewed variants, finite conditions/attribute definitions, revisioned evidence, and original digest-bound approval/publication provenance. Public equipment kind/type/slot semantics must be explicit if equipment is required. Existing B scalar fields cannot establish statistical conditions with missing units/context; those cases must remain pending. A structurally valid condition-free complete variant can exercise ownership/equipment interoperability without inventing panel metadata.
 
 The final report must pin actual producer outputs and exercise normal/complete-alternative/no-match, locks, missing fields, ambiguous instances, cross-release references, tampering and withdrawal using the installed C wheel. Pending or refused cases are reported as such. Producer output files are never edited to add approvals/units or repair a deliberately damaged hash.
+
+Earlier committed-code input `b790a52` / raw SHA `145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00` remains a separate regression capture. Its replay is never combined with the official `00d4a58` acceptance report. The artifact delivery commit and the executing producer code commit are distinct identities.

@@ -4,7 +4,7 @@ Run commands from `C:/Users/admin/Documents/ChatGPT/星铁/parallel/local-planne
 
 ## Replay the checked-in producer outputs
 
-`interop/a-b790a52/consumer-capture-locks.json` pins A commit `b790a52aea4fabdb362d35c37d9b511b737e1fe4`, profile, release and byte hashes. B is always `045965bce4fbc38a3baa79b594535c9dd983d776`. These are synthetic data and a test public key, not a production trust configuration.
+`interop/a-00d4a58/consumer-capture-locks.json` pins A commit `00d4a5844e74050359227c274de712878bf9187c`, profile, release and byte hashes. B is always `045965bce4fbc38a3baa79b594535c9dd983d776`. These are synthetic data and a test public key, not a production trust configuration.
 
 The wheel's producer-signature extra declares the same crypto version range as B. The recorded verification environment uses cryptography 46.0.7, cffi 2.1.1 and pycparser 3.11. To reproduce it without changing A/B or the shared runtime:
 
@@ -15,7 +15,7 @@ python -m unittest discover -s tests -p 'test_*.py' -v
 $TaskConsumerCommit = git rev-parse HEAD
 python -m pip wheel . --no-deps --no-build-isolation --wheel-dir dist
 python -m pip install --no-index --no-deps --target .tmp/replay-c dist/starhelp_planner-0.3.0-py3-none-any.whl
-python -I -B tools/replay_distribution.py --capture-dir interop/a-b790a52 --b-cases interop/b-b790a52-cases --installed-root .tmp/replay-c --dependency-root .tmp/interop-deps --wheel dist/starhelp_planner-0.3.0-py3-none-any.whl --consumer-source-commit $TaskConsumerCommit --report interop/reports/reproduced-wheel-replay.json
+python -I -B tools/replay_distribution.py --capture-dir interop/a-00d4a58 --b-cases interop/b-045965b-cases --installed-root .tmp/replay-c --dependency-root .tmp/interop-deps --wheel dist/starhelp_planner-0.3.0-py3-none-any.whl --consumer-source-commit $TaskConsumerCommit --report interop/reports/reproduced-wheel-replay.json
 ```
 
 Build from a clean source checkout and use a fresh installation directory. The tool verifies the actual module import path and compares every installed Python module against the specified wheel. Reports pin the wheel digest and producer input digests. It records failed and **not exercised** requirements separately. With the current A fixture, full technical acceptance is false: it has one mode and no equipment constraints.
@@ -33,12 +33,12 @@ python -m starhelp_planner.demo
 Use a temporary local checkout so A's exporter records the correct immutable Git HEAD. An archive under C's own checkout would otherwise let A's Git metadata lookup see C's HEAD. This temporary checkout is source-only; the original A checkout is not changed.
 
 ```powershell
-git clone --local --no-hardlinks --no-checkout 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/knowledge-backend' .tmp/producer-checkouts/a-b790a52
-git -C .tmp/producer-checkouts/a-b790a52 checkout --detach b790a52aea4fabdb362d35c37d9b511b737e1fe4
-python -I -B tools/capture_a_distribution.py --a-source .tmp/producer-checkouts/a-b790a52/packages/starhelp-knowledge --a-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/knowledge-backend' --a-commit b790a52aea4fabdb362d35c37d9b511b737e1fe4 --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --dependency-root .tmp/interop-deps --output .tmp/reproduced-a-b790a52
+git clone --local --no-hardlinks --no-checkout 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/knowledge-backend' .tmp/producer-checkouts/a-00d4a58
+git -C .tmp/producer-checkouts/a-00d4a58 checkout --detach 00d4a5844e74050359227c274de712878bf9187c
+python -I -B tools/capture_a_distribution.py --a-source .tmp/producer-checkouts/a-00d4a58/packages/starhelp-knowledge --a-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/knowledge-backend' --a-commit 00d4a5844e74050359227c274de712878bf9187c --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --dependency-root .tmp/interop-deps --output .tmp/reproduced-a-00d4a58
 ```
 
-The capture tool compares every producer source file against the fixed Git objects, invokes A's own `build-fixture-distribution` and `verify-distribution`, checks the output's producer commit, then checks the source files again. It refuses to overwrite existing captures. The recorded repeat produced byte-identical A bundle, public key and B snapshot; see `interop/reports/a-b790a52-determinism.json`.
+The capture tool compares every producer source file against the fixed Git objects, invokes A's own `build-fixture-distribution` and `verify-distribution`, checks the output's producer commit, then checks the source files again. It refuses to overwrite existing captures. The regenerated bundle/key/snapshot/checksum bytes matched the official artifacts from Git commit `31e2665cfb9ce1100856d72ebca086b39a603ee8`; see `official_git_blob_bytes_match` in the capture lock.
 
 ## Re-run B's actual verifier
 
@@ -46,7 +46,7 @@ Extract B's fixed source to a new temporary location under C, then invoke its ac
 
 ```powershell
 python -I -B tools/extract_fixed_source.py --repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --commit 045965bce4fbc38a3baa79b594535c9dd983d776 --package-subdir packages/starhelp-desktop --destination .tmp/reproduced-b-045965b
-python -I -B tools/verify_with_fixed_b.py --b-source .tmp/reproduced-b-045965b/packages/starhelp-desktop --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --bundle interop/a-b790a52/knowledge-planner-fixture-v1.bpublic.json --expected-sha256 145b50b64660dd3c51b23590aba9079e5bf9ccf1557ad7e4b141a9318f6baa00 --expected-release rel_fixture_0001 --public-key interop/a-b790a52/fixture-ed25519-public.pem --key-id starhelp-fixture-ed25519-v1 --dependency-root .tmp/interop-deps --report interop/reports/reproduced-b-verification.json
+python -I -B tools/verify_with_fixed_b.py --b-source .tmp/reproduced-b-045965b/packages/starhelp-desktop --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --bundle interop/a-00d4a58/knowledge-planner-fixture-v1.bpublic.json --expected-sha256 cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b --expected-release rel_fixture_0001 --public-key interop/a-00d4a58/fixture-ed25519-public.pem --key-id starhelp-fixture-ed25519-v1 --dependency-root .tmp/interop-deps --report interop/reports/reproduced-b-verification.json
 ```
 
 This loads the actual B `BundleValidator` and `Ed25519Keyring` from fixed source. It does not instantiate B's cache, private store, repository, GUI or account source. No always-true verifier is used. A's old unsigned baseline is separately recorded as rejected by B.
