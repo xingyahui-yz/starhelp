@@ -499,3 +499,9 @@ Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest m
 AccountsPage 的公开档案同意现绑定到当时展示的 UID 与区服：编辑任一字段会立即撤销勾选，并提示重新确认服务来源、查询用途和数据范围，避免把针对旧 UID/区服的同意沿用到新请求。新增合成 Qt 回归覆盖已勾选后分别修改 UID 和区服的情形。
 
 本轮验证：57 项 package unittest、`compileall` 与 `git diff --check` 通过。重建的 unsigned PyInstaller 候选包 919 项 SHA-256 与完整文件集一致；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、双向回滚和篡改拒绝通过。没有查询真实 UID。候选仍未签名；生产 M0 映射/信任、完整三模式和装备 fixture、目标 Windows 与真实账号验收仍未完成。
+
+### Mihomo 响应复杂度限制（2026-10-18）
+
+公开档案响应在 4 MiB 传输上限之外，现在还限制解码 JSON 的最大嵌套深度、节点数和单字符串长度；校验使用迭代遍历，超限统一报告为响应复杂度错误，避免未经约束的服务端 JSON 在本机归一化前造成高内存/CPU 消耗。新增合成回归分别覆盖节点数、深度和字符串长度边界。
+
+本轮验证：58 项 package unittest、`compileall` 与 `git diff --check` 通过。重建 unsigned PyInstaller 候选后，919 项 SHA-256 与完整文件集一致；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets；安装/升级/双向回滚/篡改拒绝 smoke 通过。重建后再次运行固定 A 签名 fixture + B snapshot + 打包 C worker 回放，`plans_available` 与 withdrawal 拒绝路径均通过。未发起真实 UID 请求。生产 M0 映射/信任、完整三模式和装备 fixture、发布者签名、目标 Windows 与真实账号验收仍未完成。

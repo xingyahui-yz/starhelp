@@ -1111,6 +1111,18 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(len(proposal.equipment), 1)
         self.assertEqual(proposal.equipment[0].facts, {})
 
+    def test_mihomo_response_complexity_is_bounded(self) -> None:
+        client = MihomoPublicProfileClient()
+        with patch("starhelp_desktop.public_profile._MAX_RESPONSE_JSON_NODES", 4):
+            with self.assertRaisesRegex(ProfileRequestError, "complexity limits"):
+                client._decode_response(b'{"characters":[1,2,3]}')
+        with patch("starhelp_desktop.public_profile._MAX_RESPONSE_JSON_DEPTH", 1):
+            with self.assertRaisesRegex(ProfileRequestError, "complexity limits"):
+                client._decode_response(b'{"outer":{"inner":0}}')
+        with patch("starhelp_desktop.public_profile._MAX_RESPONSE_JSON_STRING_LENGTH", 3):
+            with self.assertRaisesRegex(ProfileRequestError, "complexity limits"):
+                client._decode_response(b'{"characters":[],"ignored":"too long"}')
+
     def test_mihomo_skips_oversized_public_ids_and_field_names(self) -> None:
         oversized = "x" * 161
         proposal = MihomoPublicProfileClient().to_preview({"characters": [

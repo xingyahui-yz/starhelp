@@ -23,6 +23,11 @@ from .models import (
 )
 
 
+_MAX_RESPONSE_JSON_DEPTH = 64
+_MAX_RESPONSE_JSON_NODES = 250_000
+_MAX_RESPONSE_JSON_STRING_LENGTH = 1_000_000
+
+
 def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     result: dict[str, object] = {}
     for key, value in pairs:
@@ -34,6 +39,27 @@ def _unique_json_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
 
 def _reject_json_constant(_value: str) -> None:
     raise ValueError("non-finite JSON constant")
+
+
+def _validate_response_complexity(root: object) -> None:
+    pending = [(root, 0)]
+    nodes = 0
+    while pending:
+        value, depth = pending.pop()
+        nodes += 1
+        if nodes > _MAX_RESPONSE_JSON_NODES:
+            raise ValueError("JSON node limit exceeded")
+        if depth > _MAX_RESPONSE_JSON_DEPTH:
+            raise ValueError("JSON nesting limit exceeded")
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if len(key) > _MAX_RESPONSE_JSON_STRING_LENGTH:
+                    raise ValueError("JSON key limit exceeded")
+                pending.append((item, depth + 1))
+        elif isinstance(value, list):
+            pending.extend((item, depth + 1) for item in value)
+        elif isinstance(value, str) and len(value) > _MAX_RESPONSE_JSON_STRING_LENGTH:
+            raise ValueError("JSON string limit exceeded")
 
 
 def _finite_number(value: object) -> bool:
@@ -116,6 +142,10 @@ class MihomoPublicProfileClient:
             raise ProfileRequestError("public profile response was not valid JSON") from None
         if not isinstance(payload, dict):
             raise ProfileRequestError("public profile response has an unsupported shape")
+        try:
+            _validate_response_complexity(payload)
+        except (ValueError, RecursionError):
+            raise ProfileRequestError("public profile response exceeded complexity limits") from None
         return payload
 
     def fetch(self, selection: PublicProfileSelection) -> ImportProposal:
