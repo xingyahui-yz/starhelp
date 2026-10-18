@@ -466,6 +466,69 @@ class ProgressPageTests(unittest.TestCase):
             )
             page.close()
 
+    def test_task_character_pickers_show_snapshot_ownership_without_inference(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic character profile",
+                provider_id="synthetic-source",
+                server_label="fixture-server",
+            )
+            owned_id = "fixture-character-owned"
+            not_owned_id = "fixture-character-not-owned"
+            proposal = confirm_import(ImportProposal.create(
+                source_kind=SourceKind.MANUAL,
+                source_id="fixture-character-import",
+                observed_at=datetime.now(UTC),
+                fields={},
+                ownership={owned_id: Ownership.OWNED, not_owned_id: Ownership.NOT_OWNED},
+                coverage=frozenset({f"ownership:{owned_id}", f"ownership:{not_owned_id}"}),
+            ))
+            profiles.save_confirmed_import(profile.profile_id, profile.generation, proposal)
+            tasks = TaskRepository(store, lifecycle)
+            page = TaskPage(profiles, tasks, _ProgressBus(), lifecycle, store)
+
+            def select_character(character_id: str, *, disabled_id: str | None = None):
+                def accept_dialog() -> QDialog.DialogCode:
+                    dialogs = page.findChildren(QDialog)
+                    self.assertTrue(dialogs)
+                    dialog = dialogs[-1]
+                    choices = dialog.findChild(QListWidget, "characterChoices")
+                    self.assertIsNotNone(choices)
+                    found = False
+                    for index in range(choices.count()):
+                        item = choices.item(index)
+                        current_id = item.data(Qt.ItemDataRole.UserRole)
+                        if current_id == disabled_id:
+                            self.assertFalse(bool(item.flags() & Qt.ItemFlag.ItemIsEnabled))
+                        if current_id == character_id:
+                            item.setCheckState(Qt.CheckState.Checked)
+                            found = True
+                    self.assertTrue(found)
+                    return QDialog.DialogCode.Accepted
+
+                return accept_dialog
+
+            with patch.object(
+                QDialog, "exec", side_effect=select_character(owned_id, disabled_id=not_owned_id)
+            ):
+                page.open_character_picker(page.fixed, "固定角色", owned_only=True)
+            with patch.object(QDialog, "exec", side_effect=select_character(not_owned_id)):
+                page.open_character_picker(page.excluded, "排除角色", owned_only=False)
+            self.assertEqual(page.fixed.text(), owned_id)
+            self.assertEqual(page.excluded.text(), not_owned_id)
+
+            page.cycle.setText("fixture-cycle")
+            page.stage.setText("fixture-stage")
+            page.create_task()
+            saved = tasks.load_last(profile.profile_id, profile.generation)
+            self.assertEqual(saved.fixed_character_ids, (owned_id,))
+            self.assertEqual(saved.excluded_character_ids, (not_owned_id,))
+            page.close()
+
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

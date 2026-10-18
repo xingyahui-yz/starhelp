@@ -449,3 +449,18 @@ PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes and file
 for an 8-second startup under isolated `LOCALAPPDATA`, and passed synthetic installer install,
 upgrade, two-way rollback, and tamper rejection. Production M0 mappings/trust, publisher signing,
 target-Windows acceptance, and real-account acceptance remain outstanding.
+
+### Profile-backed character constraints (2026-10-18)
+
+TaskPage now provides snapshot-backed pickers for fixed and excluded characters. The fixed-character
+picker allows selection only for ownership entries explicitly marked `owned`; other recorded states
+are shown disabled, and characters absent from the snapshot are not inferred as unowned. The
+excluded-character picker shows the ownership state for each recorded ID. Both selections remain
+profile-scoped encrypted task preferences. A synthetic Qt regression verifies the owned-only fixed
+choice, explicit not-owned exclusion, and task persistence.
+
+Verification: all 56 package tests pass; `compileall` and `git diff --check` pass. The rebuilt
+unsigned PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes and file set, stayed
+alive for an 8-second startup under isolated `LOCALAPPDATA`, and passed synthetic installer install,
+upgrade, two-way rollback, and tamper rejection. Production M0 mappings/trust, publisher signing,
+target-Windows acceptance, and real-account acceptance remain outstanding.

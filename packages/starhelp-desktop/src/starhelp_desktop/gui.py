@@ -44,7 +44,7 @@ from .imports import (
     read_ocr_image,
 )
 from .lifecycle import ProfileLifecycle
-from .models import EquipmentIdentity, ImportProposal, SourceKind
+from .models import EquipmentIdentity, ImportProposal, Ownership, SourceKind
 from .profiles import ProfileRepository, ProfileSummary
 from .planner import LocalPlannerProcess, bundled_planner_command
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
@@ -209,9 +209,11 @@ class TaskPage(_Page):
         self.goal.addItems(["先通关", "达到奖励档位", "提高成绩"])
         self.profile = QComboBox()
         self.fixed = QLineEdit()
-        self.fixed.setPlaceholderText("公共角色 ID，以逗号分隔")
+        self.fixed.setPlaceholderText("从档案中选择已明确拥有的角色，或输入公共 ID")
+        self.choose_fixed = QPushButton("选择角色…")
         self.excluded = QLineEdit()
-        self.excluded.setPlaceholderText("公共角色 ID，以逗号分隔")
+        self.excluded.setPlaceholderText("从档案中选择已记录的角色，或输入公共 ID")
+        self.choose_excluded = QPushButton("选择角色…")
         self.locked = QLineEdit()
         self.locked.setPlaceholderText("从所选档案的当前装备快照中选择")
         self.choose_locked_equipment = QPushButton("选择装备…")
@@ -220,10 +222,21 @@ class TaskPage(_Page):
         lock_layout.setContentsMargins(0, 0, 0, 0)
         lock_layout.addWidget(self.locked, 1)
         lock_layout.addWidget(self.choose_locked_equipment)
+        fixed_row = QWidget()
+        fixed_layout = QHBoxLayout(fixed_row)
+        fixed_layout.setContentsMargins(0, 0, 0, 0)
+        fixed_layout.addWidget(self.fixed, 1)
+        fixed_layout.addWidget(self.choose_fixed)
+        excluded_row = QWidget()
+        excluded_layout = QHBoxLayout(excluded_row)
+        excluded_layout.setContentsMargins(0, 0, 0, 0)
+        excluded_layout.addWidget(self.excluded, 1)
+        excluded_layout.addWidget(self.choose_excluded)
         for label, widget in (("玩法", self.mode), ("周期", self.cycle), ("关卡", self.stage),
-                              ("目标", self.goal), ("本地档案", self.profile),
-                              ("固定角色", self.fixed), ("排除角色", self.excluded)):
+                              ("目标", self.goal), ("本地档案", self.profile)):
             form.addRow(label, widget)
+        form.addRow("固定角色", fixed_row)
+        form.addRow("排除角色", excluded_row)
         form.addRow("锁定装备", lock_row)
         self.content.addLayout(form)
         self.status = QLabel("尚未创建任务。公共 ID 与条件语义仍需 M0 核验。")
@@ -248,6 +261,12 @@ class TaskPage(_Page):
         self.analyze.clicked.connect(self.create_task)
         self.synthetic_demo.clicked.connect(self.run_synthetic_demo)
         self.choose_locked_equipment.clicked.connect(self.open_equipment_lock_picker)
+        self.choose_fixed.clicked.connect(
+            lambda: self.open_character_picker(self.fixed, "固定角色", owned_only=True)
+        )
+        self.choose_excluded.clicked.connect(
+            lambda: self.open_character_picker(self.excluded, "排除角色", owned_only=False)
+        )
         self.profile.currentIndexChanged.connect(self.restore_last_task)
         self.reload_profiles()
 
@@ -461,6 +480,70 @@ class TaskPage(_Page):
             if choices.item(index).checkState() == Qt.CheckState.Checked
         ]
         self.locked.setText(", ".join(locked_ids))
+
+    def open_character_picker(
+        self, target: QLineEdit, title: str, *, owned_only: bool
+    ) -> None:
+        profile_id = self.profile.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == profile_id), None)
+        if profile is None:
+            QMessageBox.information(self, "需要本地档案", "先选择一个已授权档案。")
+            return
+        try:
+            snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+        except FileNotFoundError:
+            QMessageBox.information(
+                self, "没有角色快照", "此档案尚无已确认的角色所有权记录。"
+            )
+            return
+        except (PermissionError, ValueError) as exc:
+            QMessageBox.warning(self, "角色资料不可用", str(exc))
+            return
+        if not snapshot.ownership:
+            QMessageBox.information(self, "没有角色记录", "此档案当前快照中没有角色所有权记录。")
+            return
+
+        selected_ids = {value.strip() for value in target.text().split(",") if value.strip()}
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"选择{title}")
+        layout = QVBoxLayout(dialog)
+        if owned_only:
+            explanation = (
+                "固定角色选择器只列出当前快照明确标记为 owned 的角色；未展示角色仍保持未知。"
+            )
+        else:
+            explanation = "只列出当前快照已有所有权记录的角色；未展示角色不会被推断为未拥有。"
+        layout.addWidget(QLabel(explanation))
+        choices = QListWidget(dialog)
+        choices.setObjectName("characterChoices")
+        for character_id, ownership in sorted(snapshot.ownership.items()):
+            item = QListWidgetItem(f"{character_id} · 所有权 {ownership.value}", choices)
+            item.setData(Qt.ItemDataRole.UserRole, character_id)
+            if not owned_only or ownership is Ownership.OWNED:
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(
+                    Qt.CheckState.Checked
+                    if character_id in selected_ids else Qt.CheckState.Unchecked
+                )
+            else:
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+        layout.addWidget(choices)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
+            parent=dialog,
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        selected = [
+            choices.item(index).data(Qt.ItemDataRole.UserRole)
+            for index in range(choices.count())
+            if choices.item(index).checkState() == Qt.CheckState.Checked
+        ]
+        target.setText(", ".join(selected))
 
     def restore_last_task(self, *_args: object) -> None:
         profile_id = self.profile.currentData()
