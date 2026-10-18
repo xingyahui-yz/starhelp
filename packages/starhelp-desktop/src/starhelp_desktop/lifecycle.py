@@ -30,6 +30,7 @@ class ProfileLifecycle:
         self._authorizations: dict[UUID, ProfileAuthorization] = {}
         self._tasks: dict[UUID, list[_Task]] = {}
         self._lock = threading.RLock()
+        self._shutting_down = False
 
     def authorize(self, authorization: ProfileAuthorization) -> None:
         if not authorization.active:
@@ -63,6 +64,8 @@ class ProfileLifecycle:
 
     def register_task(self, profile_id: UUID, generation: int) -> threading.Event:
         with self._lock:
+            if self._shutting_down:
+                raise PermissionError("application is shutting down")
             self.require_active(profile_id, generation)
             task = _Task(profile_id, generation, threading.Event())
             self._tasks.setdefault(profile_id, []).append(task)
@@ -82,9 +85,10 @@ class ProfileLifecycle:
             if not self._tasks[profile_id]:
                 self._tasks.pop(profile_id, None)
 
-    def cancel_all_tasks(self) -> int:
-        """Signal all active work to stop without changing profile authorization."""
+    def begin_shutdown(self) -> int:
+        """Stop new task registration and signal active work without revoking profiles."""
         with self._lock:
+            self._shutting_down = True
             tasks = tuple(task for profile_tasks in self._tasks.values() for task in profile_tasks)
             for task in tasks:
                 task.cancel.set()

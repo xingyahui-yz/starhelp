@@ -281,6 +281,8 @@ class ProgressPageTests(unittest.TestCase):
             self.assertTrue(cancel.is_set())
             self.assertFalse(window.accounts_page.auto_refresh_timer.isActive())
             self.assertTrue(window.lifecycle.is_active(profile.profile_id, profile.generation))
+            with self.assertRaisesRegex(PermissionError, "shutting down"):
+                window.lifecycle.register_task(profile.profile_id, profile.generation)
             self.assertEqual(
                 [item.profile_id for item in window.profiles.list_profiles()], [profile.profile_id]
             )

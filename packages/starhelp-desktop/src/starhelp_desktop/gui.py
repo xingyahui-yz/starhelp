@@ -1995,7 +1995,7 @@ class StarHelpWindow(QMainWindow):
 
     def closeEvent(self, event: object) -> None:
         self.accounts_page.auto_refresh_timer.stop()
-        self.lifecycle.cancel_all_tasks()
+        self.lifecycle.begin_shutdown()
         super().closeEvent(event)
 
 
