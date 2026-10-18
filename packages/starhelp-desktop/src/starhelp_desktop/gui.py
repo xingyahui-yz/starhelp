@@ -1617,16 +1617,66 @@ class ReportsPage(_Page):
         report = self.saved_reports.get(str(current.data(Qt.ItemDataRole.UserRole)))
         if report is None:
             return
-        self.detail.setPlainText(json.dumps({
+        self.detail.setPlainText(self._render_report_detail(report, include_created_at=True))
+
+    def _render_report_detail(self, report: AnalysisReport, *, include_created_at: bool) -> str:
+        metadata = {
             "状态": report.validity.value,
             "状态说明": report.validity_reason,
-            "创建时间": report.created_at.isoformat(),
+        }
+        if include_created_at:
+            metadata["创建时间"] = report.created_at.isoformat()
+        metadata.update({
             "快照修订": report.snapshot_revision,
             "公共资料版本": report.public_release_id,
             "规划器版本": report.planner_version,
-            "任务": report.task,
-            "结果": report.result,
-        }, ensure_ascii=False, indent=2))
+        })
+        sections = [
+            "## 报告状态与版本\n" + json.dumps(metadata, ensure_ascii=False, indent=2),
+            "## 分析范围与目标\n" + json.dumps(report.task, ensure_ascii=False, indent=2),
+        ]
+        result = report.result
+        if not isinstance(result, dict):
+            sections.append("## 规划器原始结果\n" + json.dumps(result, ensure_ascii=False, indent=2))
+            return "\n\n".join(sections)
+
+        grouped_fields = (
+            ("当前配装方案", ("current_equipment_plans",)),
+            ("调装方案", ("rearrangement_plans",)),
+            ("待确认候选", ("pending_confirmation_candidates",)),
+            ("未采用方案及原因", ("rejected_variants",)),
+            ("覆盖、时效与降级", ("coverage", "validity", "degradation", "limitations")),
+            ("公共证据引用", ("citations",)),
+            ("排障建议", ("troubleshooting",)),
+        )
+        known_fields = {field for _, fields in grouped_fields for field in fields}
+        for title, fields in grouped_fields:
+            values = {field: result[field] for field in fields if field in result}
+            if values:
+                sections.append(f"## {title}\n" + json.dumps(values, ensure_ascii=False, indent=2))
+
+        cultivation: list[dict[str, object]] = []
+        for plan_field in ("current_equipment_plans", "rearrangement_plans"):
+            plans = result.get(plan_field)
+            if not isinstance(plans, list):
+                continue
+            for index, plan in enumerate(plans):
+                if not isinstance(plan, dict):
+                    continue
+                details = {
+                    key: plan[key]
+                    for key in ("cultivation", "cultivation_cost", "material_gaps")
+                    if key in plan
+                }
+                if details:
+                    cultivation.append({"方案集合": plan_field, "方案序号": index + 1, **details})
+        if cultivation:
+            sections.append("## 培养与材料缺口\n" + json.dumps(cultivation, ensure_ascii=False, indent=2))
+
+        other = {key: value for key, value in result.items() if key not in known_fields}
+        if other:
+            sections.append("## 其他规划器字段\n" + json.dumps(other, ensure_ascii=False, indent=2))
+        return "\n\n".join(sections)
 
     def stage_temporary_report(self, report: AnalysisReport) -> None:
         if not self.lifecycle.is_active(report.profile_id, report.authorization_generation):
@@ -1690,15 +1740,7 @@ class ReportsPage(_Page):
             f"有一份未保存的本地分析结果{demo_label}状态：{validity}。{reason} "
             "点击“主动保存当前分析结果”后才会加密留存。"
         )
-        self.detail.setPlainText(json.dumps({
-            "状态": report.validity.value,
-            "状态说明": report.validity_reason,
-            "快照修订": report.snapshot_revision,
-            "公共资料版本": report.public_release_id,
-            "规划器版本": report.planner_version,
-            "任务": report.task,
-            "结果": report.result,
-        }, ensure_ascii=False, indent=2))
+        self.detail.setPlainText(self._render_report_detail(report, include_created_at=False))
 
     def save_pending_report(self) -> None:
         report = self.pending_report

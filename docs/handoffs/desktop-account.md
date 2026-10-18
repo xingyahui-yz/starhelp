@@ -464,3 +464,9 @@ unsigned PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes
 alive for an 8-second startup under isolated `LOCALAPPDATA`, and passed synthetic installer install,
 upgrade, two-way rollback, and tamper rejection. Production M0 mappings/trust, publisher signing,
 target-Windows acceptance, and real-account acceptance remain outstanding.
+
+### 规划报告分区展示（2026-10-18）
+
+ReportsPage 将 planner result 按分析范围、当前配装、调装、待确认候选、未采用原因、覆盖/时效/降级、公共证据引用和排障建议分区；方案对象保留完整 JSON，并把方案中的培养步骤、成本和材料缺口另行汇总。所有未识别的顶层规划器字段继续显示在“其他规划器字段”，没有返回的章节不臆造。保存报告与未保存预览共用此呈现逻辑；合成 Qt 回归覆盖范围、配装、培养与引用章节。
+
+验证：56 项 package unittest、compileall、diff-check 通过。重建 unsigned PyInstaller 6.22.3 候选包，919 项 SHA-256 与完整文件集合一致；隔离 LOCALAPPDATA 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、连续双向回滚和篡改候选拒绝通过。生产 M0 映射/签名信任、发布者签名、目标 Windows 和真实账号验收仍待完成。

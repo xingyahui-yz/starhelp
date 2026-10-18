@@ -564,6 +564,11 @@ class ProgressPageTests(unittest.TestCase):
             self.assertEqual(store.list_profile_keys(demo_profiles[0].profile_id, "report"), ())
             self.assertIn("合成联调完成", task_page.status.text())
             self.assertIn("仅合成 fixture", reports_page.status.text())
+            report_text = reports_page.detail.toPlainText()
+            self.assertIn("## 分析范围与目标", report_text)
+            self.assertIn("## 当前配装方案", report_text)
+            self.assertIn("## 培养与材料缺口", report_text)
+            self.assertIn("## 公共证据引用", report_text)
 
             reports_page.save_pending_button.click()
             self.assertIsNone(reports_page.pending_report)
