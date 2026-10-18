@@ -312,3 +312,13 @@ publisher signing, target-Windows acceptance, and real-account acceptance remain
 ### Report reference validation follow-up (2026-10-18)
 
 `ProducerAnalysisRunner` now also requires the planner result's release ID to equal the submitted bundle release and every citation `{id, revision}` to resolve to that exact release's evidence catalog before staging a report. A withdrawn-public-object result is routed through the runner and verified to produce no temporary report. All 40 component tests, `compileall`, and `git diff --check` pass. The frozen candidate was rebuilt after this code change: all 916 manifest hashes match, PyInstaller archive contains both integration modules, isolated 8-second Qt startup passes, and the synthetic install/upgrade/two-way-rollback/tamper smoke passes with TEMP/TMP inside the component build directory. This still does not connect TaskPage to production data or remove the M0 blockers.
+
+### Fresh local verification (2026-10-18)
+
+On the current B source, all 47 package tests passed, `compileall` passed, and `git diff --check`
+passed. An additional offline OCR runtime check generated a synthetic PNG in memory, ran the
+packaged RapidOCR models locally, recognized the synthetic label, and redacted its 8-digit
+fixture value as `[UID 已隐藏]`; no user image or network request was used. The existing unsigned
+Windows candidate manifest was independently rechecked: all 919 listed SHA-256 values match and
+the candidate file set is exact. These checks do not resolve production M0 mappings/trust, complete
+three-mode equipment fixtures, publisher signing, or real-account/target-machine acceptance.
