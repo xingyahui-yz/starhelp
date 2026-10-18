@@ -1400,7 +1400,7 @@ class PublicKnowledgePage(_Page):
             f"本机缓存版本：{', '.join(releases) or '无'}",
             "本页离线状态：生产签名信任与 A 撤回清单尚待 M0；当前没有在线同步。",
             "本机最近撤回/禁用状态：未知（未取得在线确认或版本化撤回清单）。",
-            "本机最近成功验证时间：未持久化；文件修改时间不代表签名验证时间。",
+            "本机验签时间来自本地回执；回执未签名，仅与对应缓存字节摘要绑定。",
         ]
         for release_id in releases:
             role = "当前" if release_id == current else "保留旧版"
@@ -1425,10 +1425,19 @@ class PublicKnowledgePage(_Page):
                 if freshness else "未声明"
             )
             lines.append(f"  包内时效声明（未在本页验签）：{freshness_text[:1200]}")
+            receipt = metadata["verification_receipt"]
+            receipt_status = receipt["status"]
+            if receipt_status == "content-matched-local-record":
+                lines.append(
+                    f"  本机最近验签记录（未签名回执）：{receipt['verified_at']}；缓存摘要匹配。"
+                )
+            else:
+                lines.append(f"  本机验签记录：{receipt_status}；不能确认最近验签时间。")
             lines.append(f"  本地缓存文件修改时间：{metadata['cache_file_modified_at']}")
         lines.extend((
             "",
-            "上列包内覆盖/时效仅供离线查看，不是当前有效性证明。分析前必须由配置了生产信任锚的同步器重新验证。",
+            "本地验签回执不提供发布者真实性保证；包内覆盖/时效也不是当前有效性或撤回证明。",
+            "分析前必须由配置了生产信任锚的同步器重新验证签名、成员哈希、能力和依赖。",
         ))
         self.status.setPlainText("\n".join(lines))
 

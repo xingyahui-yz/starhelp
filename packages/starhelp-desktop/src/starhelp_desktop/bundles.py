@@ -299,12 +299,20 @@ class PublicBundleCache:
             raise ValueError("unsafe public release ID")
         return f"release-{safe}.json"
 
+    @classmethod
+    def _receipt_filename(cls, release_id: str) -> str:
+        cls._filename(release_id)
+        return f"verification-{release_id}.json"
+
     def activate(self, bundle: ValidatedBundle) -> None:
         # The validated immutable bytes are written as-is; callers cannot mutate the signed object
         # graph after verification and smuggle changed members into the active cache.
         body = bundle.payload_json
         destination = self.root / self._filename(bundle.release_id)
+        if bundle.verified_at.tzinfo is None:
+            raise ValueError("validated bundle verification time must be timezone aware")
         self._atomic_write(destination, body)
+        self.record_validation(bundle)
         self._atomic_write(self.current_file, bundle.release_id.encode("utf-8"))
         releases = sorted(
             (path for path in self.root.glob("release-*.json")),
@@ -312,7 +320,9 @@ class PublicBundleCache:
             reverse=True,
         )
         for old in releases[2:]:
+            old_release_id = old.stem.removeprefix("release-")
             old.unlink(missing_ok=True)
+            (self.root / self._receipt_filename(old_release_id)).unlink(missing_ok=True)
 
     def current_release_id(self) -> str | None:
         if not self.current_file.exists():
@@ -324,7 +334,33 @@ class PublicBundleCache:
 
     def read_release(self, release_id: str) -> bytes:
         """Read a cached release by its validated identifier; callers must revalidate it."""
-        return (self.root / self._filename(release_id)).read_bytes()
+        path = self.root / self._filename(release_id)
+        with path.open("rb") as stream:
+            raw = stream.read(BundleValidator.MAX_BUNDLE_BYTES + 1)
+        if len(raw) > BundleValidator.MAX_BUNDLE_BYTES:
+            raise BundleRejected("cached bundle exceeds the configured size limit")
+        return raw
+
+    def record_validation(self, bundle: ValidatedBundle) -> None:
+        """Persist a local, unsigned timestamp receipt bound to the exact cached bytes."""
+        if bundle.verified_at.tzinfo is None:
+            raise ValueError("validated bundle verification time must be timezone aware")
+        body = self.read_release(bundle.release_id)
+        if not hmac.compare_digest(hashlib.sha256(body).digest(), hashlib.sha256(
+            bundle.payload_json
+        ).digest()):
+            raise BundleRejected("validated bundle bytes do not match the cached release")
+        receipt = {
+            "schema_id": "LocalBundleVerificationReceipt",
+            "schema_version": "0.1",
+            "release_id": bundle.release_id,
+            "payload_sha256": hashlib.sha256(body).hexdigest(),
+            "verified_at": bundle.verified_at.astimezone(UTC).isoformat(),
+        }
+        encoded = json.dumps(
+            receipt, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
+        self._atomic_write(self.root / self._receipt_filename(bundle.release_id), encoded)
 
     def inspect_cached_metadata(self, release_id: str) -> dict[str, Any]:
         """Return bounded manifest display fields without authenticating or enabling the bundle.
@@ -354,14 +390,46 @@ class PublicBundleCache:
             if key in manifest
             and (isinstance(manifest[key], (str, int, float, bool)) or manifest[key] is None)
         }
+        verification_receipt = self._read_verification_receipt(release_id, raw)
         return {
             "declared_release_id": manifest.get("index_release_id"),
             "coverage": coverage if isinstance(coverage, dict) else None,
             "freshness": freshness,
+            "verification_receipt": verification_receipt,
             "cache_file_modified_at": datetime.fromtimestamp(
                 (self.root / self._filename(release_id)).stat().st_mtime, UTC
             ).isoformat(),
         }
+
+    def _read_verification_receipt(self, release_id: str, payload: bytes) -> dict[str, str | None]:
+        path = self.root / self._receipt_filename(release_id)
+        try:
+            with path.open("rb") as stream:
+                raw = stream.read(4097)
+            if len(raw) > 4096:
+                return {"status": "invalid", "verified_at": None}
+            receipt = _decode_bundle_json(raw, max_bytes=4096)
+        except FileNotFoundError:
+            return {"status": "missing", "verified_at": None}
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
+            return {"status": "invalid", "verified_at": None}
+        verified_at = receipt.get("verified_at")
+        if (
+            receipt.get("schema_id") != "LocalBundleVerificationReceipt"
+            or receipt.get("schema_version") != "0.1"
+            or receipt.get("release_id") != release_id
+            or receipt.get("payload_sha256") != hashlib.sha256(payload).hexdigest()
+            or not isinstance(verified_at, str)
+            or len(verified_at) > 64
+        ):
+            return {"status": "mismatch", "verified_at": None}
+        try:
+            parsed = datetime.fromisoformat(verified_at)
+        except ValueError:
+            return {"status": "invalid", "verified_at": None}
+        if parsed.tzinfo is None:
+            return {"status": "invalid", "verified_at": None}
+        return {"status": "content-matched-local-record", "verified_at": parsed.isoformat()}
 
     @staticmethod
     def _atomic_write(destination: Path, data: bytes) -> None:
@@ -433,9 +501,11 @@ class PublicBundleSynchronizer:
             raw = self._cache.read_release(release_id)
         except FileNotFoundError:
             raise
-        return self._validator.validate(
+        validated = self._validator.validate(
             raw,
             supported_capabilities=self._supported_capabilities,
             expected_release_id=release_id,
             signature_verifier=self._signature_verifier,
         )
+        self._cache.record_validation(validated)
+        return validated

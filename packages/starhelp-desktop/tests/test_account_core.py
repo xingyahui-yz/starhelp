@@ -308,13 +308,14 @@ class ProgressPageTests(unittest.TestCase):
                     "published_at": "2026-10-18T00:00:00Z",
                 },
             }
-            cache.activate(ValidatedBundle(
+            bundle = ValidatedBundle(
                 release_id="fixture-release-offline",
                 schema_version="0.1-draft",
                 payload_json=json.dumps(payload).encode("utf-8"),
                 coverage=payload["manifest"]["coverage"],
                 verified_at=datetime(2026, 10, 18, tzinfo=UTC),
-            ))
+            )
+            cache.activate(bundle)
 
             page = PublicKnowledgePage(cache)
             text = page.status.toPlainText()
@@ -322,7 +323,19 @@ class ProgressPageTests(unittest.TestCase):
             self.assertIn("synthetic", text)
             self.assertIn("未在本页验签", text)
             self.assertIn("最近撤回/禁用状态：未知", text)
-            self.assertIn("文件修改时间不代表签名验证时间", text)
+            self.assertIn("本机最近验签记录（未签名回执）", text)
+            self.assertIn("2026-10-18T00:00:00+00:00", text)
+
+            receipt_file = cache.root / "verification-fixture-release-offline.json"
+            receipt_file.write_bytes(b"{" + b" " * 8192)
+            page.refresh_status()
+            self.assertIn("本机验签记录：invalid", page.status.toPlainText())
+
+            cache.activate(bundle)
+            cached_file = cache.root / "release-fixture-release-offline.json"
+            cached_file.write_bytes(cached_file.read_bytes() + b" ")
+            page.refresh_status()
+            self.assertIn("本机验签记录：mismatch", page.status.toPlainText())
             page.close()
 
     def test_account_page_cancellation_discards_late_public_profile_result(self) -> None:
@@ -1003,6 +1016,15 @@ class StorageLifecycleTests(unittest.TestCase):
 
 
 class BundleTests(unittest.TestCase):
+    def test_cached_release_read_is_bounded_before_json_parsing(self) -> None:
+        with temporary_directory() as directory:
+            cache = PublicBundleCache(Path(directory) / "cache")
+            cached_file = cache.root / cache._filename("fixture-release-bounded")
+            cached_file.write_bytes(b"x" * 9)
+            with patch.object(BundleValidator, "MAX_BUNDLE_BYTES", 8):
+                with self.assertRaisesRegex(BundleRejected, "configured size limit"):
+                    cache.read_release("fixture-release-bounded")
+
     def test_rejects_oversized_deep_and_excessively_large_bundle_objects(self) -> None:
         validator = BundleValidator()
         validator.MAX_BUNDLE_BYTES = 8
@@ -1149,6 +1171,11 @@ class BundleTests(unittest.TestCase):
             self.assertEqual(cache.available_release_ids(),
                              ("fixture-release-1", "fixture-release-2"))
             self.assertEqual(sync.load_current().release_id, "fixture-release-2")
+            verification_receipt = cache.inspect_cached_metadata("fixture-release-2")[
+                "verification_receipt"
+            ]
+            self.assertEqual(verification_receipt["status"], "content-matched-local-record")
+            self.assertIsNotNone(verification_receipt["verified_at"])
             self.assertEqual(sync.load_release("fixture-release-1").release_id, "fixture-release-1")
 
             current_path = cache.root / cache._filename("fixture-release-2")
