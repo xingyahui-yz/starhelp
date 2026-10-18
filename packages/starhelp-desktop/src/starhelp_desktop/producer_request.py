@@ -7,8 +7,8 @@ from typing import Any, Mapping, Sequence
 from uuid import UUID, uuid4
 
 from .bundles import ValidatedBundle
-from .profiles import _snapshot_to_dict
 from .models import AccountSnapshot
+from .profiles import _snapshot_to_dict
 
 
 def select_public_task(

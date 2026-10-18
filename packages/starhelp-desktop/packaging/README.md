@@ -23,7 +23,9 @@ recommendation. Production submission remains unavailable until M0 task mappings
 request contract, and a separately provisioned production trust anchor are frozen. The integration
 test replays request construction, local analysis, temporary report creation, and explicit report
 save using only the synthetic signed fixture under `tests/fixtures/producer-interop-v1/`. The runner
-is not connected to TaskPage yet.
+is exported from the component package and included in the frozen app, but is not connected to
+TaskPage yet. The current candidate build was verified with 916 manifest entries, an isolated Qt
+startup smoke, and the synthetic installer install/upgrade/rollback/tamper flow.
 
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release

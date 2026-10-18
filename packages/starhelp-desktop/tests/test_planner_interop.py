@@ -14,23 +14,23 @@ try:
 except ImportError:  # The desktop crypto extra is optional for source-only installs.
     serialization = None
 
+from starhelp_desktop.analysis import ProducerAnalysisRunner
 from starhelp_desktop.bundles import (
     BundleValidator,
     Ed25519Keyring,
     PublicBundleCache,
     PublicBundleSynchronizer,
 )
-from starhelp_desktop.analysis import ProducerAnalysisRunner
 from starhelp_desktop.lifecycle import ProfileLifecycle
-from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
 from starhelp_desktop.models import ProfileAuthorization
+from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
 from starhelp_desktop.profiles import _snapshot_from_dict
 from starhelp_desktop.producer_request import (
     build_producer_analysis_request,
     select_public_task,
 )
-from starhelp_desktop.storage import EncryptedPrivateStore
 from starhelp_desktop.reports import ReportLifecycle
+from starhelp_desktop.storage import EncryptedPrivateStore
 from test_account_core import TestProtector
 
 
