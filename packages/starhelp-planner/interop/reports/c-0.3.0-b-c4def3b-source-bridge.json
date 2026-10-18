@@ -1,0 +1,457 @@
+{
+  "synthetic_only": true,
+  "b_host_commit": "c4def3ba6f59acb73541eb74c912f84192f5a8a9",
+  "b_host_source_proof": {
+    "commit": "c4def3ba6f59acb73541eb74c912f84192f5a8a9",
+    "package_subdir": "packages/starhelp-desktop",
+    "git_tree": "25f6031cf5fb2b526741cb4e0dec1b70b3fc66ae",
+    "all_files_verified": true,
+    "file_sha256": {
+      "README.md": "fca9ecf770966ce1555e7bd8f4a3b3072ee467895c77f342b39da9598de4a39e",
+      "packaging/README.md": "ded56f4e2670983644817c483d080ba440ae497ad53014dc1235f9efb7772d63",
+      "packaging/StarHelp.spec": "552c7703b7a24e48828780eabb75ae7ff0fe87132eace61f17788beb1e8dbd26",
+      "packaging/StarHelpPlannerWorker.spec": "d222266ceeed655a32d34679c510cd8ba132da59d13df4afb9d282aaa7124a74",
+      "packaging/build-candidate.ps1": "4b540b930029851d8b84e2338601c189c753407b6e4f1214110c40f26f2dfbf1",
+      "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+      "packaging/install-candidate.ps1": "27f983035d8518b82e131c55c53fc52d85c61113b753b54f8051089678b34697",
+      "packaging/planner_worker_entrypoint.py": "b3e275b2303a457db7c80bbf7241f4a9dec4839b8db2cee1bb984bf963873e57",
+      "packaging/vendor/PLANNER-ARTIFACT.md": "4b375fd4cc2f413b14dc1661e849969fd16b41d096c4361741a739531728701c",
+      "packaging/vendor/starhelp_planner-0.3.0-py3-none-any.whl": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+      "pyproject.toml": "6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3",
+      "src/starhelp_desktop/__init__.py": "26761d0531e24e49a3c0dd3e8ac4888e832529a0da33ffcd5bc551e1009d3fc3",
+      "src/starhelp_desktop/__main__.py": "d21de9364b84039d30d4e397c712a49e6f1c6798819aff0f19b90849695aeff2",
+      "src/starhelp_desktop/analysis.py": "26845ba0facf8b73cee5dcbfb0ee2c441a74c84d06e5b0aab611b97c7414aa9a",
+      "src/starhelp_desktop/bundles.py": "dbfc4b6510897f2129ea8a7aa75fea484ced49b47bd8fb413fb89cfd3664d9af",
+      "src/starhelp_desktop/equipment.py": "72a5bff218cce068dd1e79cbfa769177682f0f984847aa1bbf2d27299ea28365",
+      "src/starhelp_desktop/gui.py": "a3e6100e44cf43fb2d9998ae992b763af2fd4c9acae7bef2a6dac1c92cc730b2",
+      "src/starhelp_desktop/imports.py": "9e63a73b69f412d2b2c633f997ac61cdb801a9703a7a3469b814bef909e16175",
+      "src/starhelp_desktop/lifecycle.py": "41a6631985edd62112a139b885c90e506b6b0dfb6ecd6cbffddfe82426165510",
+      "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+      "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+      "src/starhelp_desktop/planner.py": "04568aa7791e796e6b5328cc4a8b90edcd5342150604ed059e95d7fc07597663",
+      "src/starhelp_desktop/planner_worker.py": "4a7053e9ff6db1426d83dbdeb9248b344bf68fe68933cf211e0b88b7d7af5930",
+      "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+      "src/starhelp_desktop/producer_request.py": "ca22caa0afaa3ea1e1ecb2885a2f7bc2830076c62a9bcbb9514320fef304a733",
+      "src/starhelp_desktop/profiles.py": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3",
+      "src/starhelp_desktop/public_profile.py": "db2872cee0dd2937fdd2e6db3187611be17a7889dda279e6aaecc8963f42a952",
+      "src/starhelp_desktop/reports.py": "1f2bb5486d67e475dead9b0ad94ee694f3049544dd3875fd987249b72be89770",
+      "src/starhelp_desktop/storage.py": "02d6fbde5d0e234b9464816b9dc2e6093fb2a3c5dc9f94c3a8a9b01b8e0ea226",
+      "src/starhelp_desktop/synthetic_demo.py": "dbb74e6a0a25821f51c3cc2c4419e548de52363b0e915114ec5c5d2b22dd84d5",
+      "src/starhelp_desktop/tasks.py": "84d8d3fbe854b9bc7fa0a405584f1b68330efe703e9897f206bafa3546abf332",
+      "tests/Install-Candidate.Smoke.ps1": "09aa9d1faaffd7af1118e9250f4c1e8ac3b7931bc6351934a9de18991b1b8f32",
+      "tests/fixtures/producer-interop-v1/README.md": "59ae0fd5ac71d9d29a87f8319f5094e774c9ff92d88f510fc5cf4d52f3c7fcab",
+      "tests/fixtures/producer-interop-v1/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+      "tests/fixtures/producer-interop-v1/knowledge-planner-fixture-v1.bpublic.json": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "tests/test_account_core.py": "991167a3e7145065adae9ac1c9c1f8de443139d75cc8e67fca492aebe1253aab",
+      "tests/test_planner_interop.py": "c8b27d3cdda7a8e83f0e806aeed924fd8dd7016c82a2b571474d6a86dff00c81"
+    }
+  },
+  "b_host_source_unchanged": true,
+  "b_snapshot_producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+  "b_snapshot_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+  "a_producer_commit": "00d4a5844e74050359227c274de712878bf9187c",
+  "a_delivery_artifact_commit": "31e2665cfb9ce1100856d72ebca086b39a603ee8",
+  "a_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "c_wheel_sha256": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+  "c_component_version": "0.3.0",
+  "c_native_rule_version": "0.2.0",
+  "b_vendor_wheel_bytes_match": true,
+  "b_cache_retains_original_bytes": true,
+  "account_persistence_calls": 0,
+  "candidate": null,
+  "cases": [
+    {
+      "transport": "fixed-source-worker",
+      "name": "normal",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "complete-alternative",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "no-match",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "no_reviewed_template",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "missing-fields",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "plans_available",
+        "adapter_error": null,
+        "native_error": null,
+        "available_variants": [
+          "fixture:variant:alternate",
+          "fixture:variant:main"
+        ],
+        "pending_variants": [],
+        "conditions": [
+          {
+            "variant_id": "fixture:variant:alternate",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:alternate",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "variant_id": "fixture:variant:main",
+            "results": [
+              {
+                "condition_id": "fixture:condition:fixture:variant:main",
+                "requirement": "soft",
+                "evidence_status": "confirmed",
+                "match_status": "unknown",
+                "reason_code": "missing_field",
+                "observed": null,
+                "expected": {
+                  "operator": "gte",
+                  "value": 100,
+                  "unit": "points",
+                  "measurement_context": {
+                    "assumptions": [],
+                    "phase": "pre_battle"
+                  }
+                },
+                "local_field_refs": [],
+                "field_basis": {},
+                "evidence_refs": [
+                  {
+                    "id": "ev_fixture_0001",
+                    "revision": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "withdrawn-evidence",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "error",
+        "adapter_error": null,
+        "native_error": "withdrawn_public_object",
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "transport-tamper",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "result",
+      "result": {
+        "status": "error",
+        "adapter_error": "producer_digest_mismatch",
+        "native_error": null,
+        "available_variants": [],
+        "pending_variants": [],
+        "conditions": [],
+        "diagnostics": []
+      },
+      "bridge_error": null,
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-request-id",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-snapshot-revision",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "mismatched-authorization-generation",
+      "outcome": "passed",
+      "inputs_unchanged": true,
+      "observation": "bridge_refused",
+      "result": null,
+      "bridge_error": "local planner exited with an error",
+      "rejected_worker_response_diagnostic": null
+    }
+  ],
+  "report_staging_cases": [
+    {
+      "transport": "fixed-source-worker",
+      "name": "normal-unsaved-report",
+      "outcome": "passed",
+      "a_bytes_and_fixed_compact_snapshot_match": true,
+      "inputs_unchanged": true,
+      "b_snapshot_raw_sha256": "7bf8f156ea711fb7d426c41d1a9fb6970b8d78c5b09afaee75a5b434a27e5135",
+      "observation": {
+        "status": "plans_available",
+        "temporary_report_created": true,
+        "native_error": null,
+        "correlation_tuple_matches": true,
+        "public_refs": [
+          "ev_fixture_0001@1"
+        ]
+      }
+    },
+    {
+      "transport": "fixed-source-worker",
+      "name": "withdrawn-no-report",
+      "outcome": "passed",
+      "a_bytes_and_fixed_compact_snapshot_match": true,
+      "inputs_unchanged": true,
+      "b_snapshot_raw_sha256": "7bf8f156ea711fb7d426c41d1a9fb6970b8d78c5b09afaee75a5b434a27e5135",
+      "observation": {
+        "status": "error",
+        "temporary_report_created": false,
+        "native_error": "withdrawn_public_object",
+        "correlation_tuple_matches": true,
+        "public_refs": []
+      }
+    }
+  ],
+  "builder_snapshot_encoding_proof": {
+    "synthetic_only": true,
+    "producer_commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+    "entry_point": "starhelp_desktop.profiles._snapshot_to_dict",
+    "encoding_profile": "utf8-json-native-order-compact-no-newline-v1",
+    "encoding": {
+      "ensure_ascii": false,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "allow_nan": false,
+      "sort_keys": false,
+      "trailing_newline": false
+    },
+    "original_snapshot_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+    "decoded_json_values_unchanged": true,
+    "file": "b-045965b-compact-v1.json",
+    "raw_sha256": "7bf8f156ea711fb7d426c41d1a9fb6970b8d78c5b09afaee75a5b434a27e5135",
+    "source_proof": {
+      "commit": "045965bce4fbc38a3baa79b594535c9dd983d776",
+      "package_subdir": "packages/starhelp-desktop",
+      "git_tree": "e45a302b20aa18cb239653c6a6ccac3ca8d6cc3c",
+      "all_files_verified": true,
+      "file_sha256": {
+        "README.md": "1a9b7c35de7dab3e7a0d8d72b00103f7a2281b244676f49ec55d4781589e5e16",
+        "packaging/README.md": "e0536c511ea62b9dca760da4122d4ea2f80e6a69c29700eea5bc85e74b978205",
+        "packaging/StarHelp.spec": "11f02cfa5a1452f2e7a753acc9312fc23e9b8c7f76213aa2fb276009034f883e",
+        "packaging/build-candidate.ps1": "c6129b44bbe909d7ad27b5ca77624c05cbaf0e4f3b01d63d8ed60c33832b1431",
+        "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+        "pyproject.toml": "73bdb0a4d9ebcb0bb05417b50949591b9193e7e02d95ed1e0f80d768d63d9e5f",
+        "src/starhelp_desktop/__init__.py": "933d5259b23104c3c25ea918aea9b1751d31ee9ac316f85aebc4718746bf6350",
+        "src/starhelp_desktop/__main__.py": "bd20d56cfab3fc7d65dc315d0cb3b79752de3d1184172072c98380388d168dfb",
+        "src/starhelp_desktop/bundles.py": "7e73093aaea676f9bf889a5d4493818f6f74519581bd45a22d27e74eac2a0711",
+        "src/starhelp_desktop/equipment.py": "062c7d43fbe48e86db0e86caa607a9fbc8ca0980e7bc54103bfda1a2435edfc2",
+        "src/starhelp_desktop/gui.py": "17a59794057256e2092385880522b5bfd4f1b1968bbb6b0d1ddbacd10e492c25",
+        "src/starhelp_desktop/imports.py": "5e82433da96705f1032b7621b069071438bb6675dde2a0ceed1879f90d4a7f6b",
+        "src/starhelp_desktop/lifecycle.py": "4e0f9743247702e14420759cd1a7fc990ba5d7f1982aaecf38b7fffb3b38c6f0",
+        "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+        "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+        "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+        "src/starhelp_desktop/profiles.py": "67ce13ddf53c13e472227b654cc3b078984d617fe55d61d9627eff9a000d30b6",
+        "src/starhelp_desktop/public_profile.py": "9f194d5ceafbddf48dd38d95ab2cb6f8800ee5005a20170fcc71fa7d9eef25f7",
+        "src/starhelp_desktop/reports.py": "2edbedba61ad40755ecac8d58656f5ada4aba10f6d46f41d2b09d4b1886243fd",
+        "src/starhelp_desktop/storage.py": "48d847cae27a0bce754f3cabd49bae390318216b20b0f8b308517708b895e9cb",
+        "tests/test_account_core.py": "647fbe9c91497f6105042df56bd5912159cdf1baf2c78a7e7ffc39dc1562175f"
+      }
+    }
+  },
+  "bridge_cases_all_passed": true,
+  "withdrawn_error_delivery_verified": true,
+  "full_round2_acceptance": false,
+  "m0_or_production_acceptance": false,
+  "remaining": [
+    "three-mode samples",
+    "nontrivial equipment lock/ambiguity samples",
+    "agreed M0 semantics and real source/content approval",
+    "production TaskPage request construction"
+  ]
+}

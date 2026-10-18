@@ -1,9 +1,71 @@
 # Supplemental B desktop bridge evidence
 
-Date: 2026-10-17. Synthetic inputs only. This supplements C's producer replay;
+Updated: 2026-10-18. Synthetic inputs only. This supplements C's producer replay;
 it does not replace the fixed B snapshot producer or establish full M0/MVP acceptance.
 
-## Pinned identities
+## Current fixed-host verification
+
+B fixed the missing error-context fields in `60b7c99`. C independently verified
+host commit `c4def3ba6f59acb73541eb74c912f84192f5a8a9`, including its 38 committed
+files and its exact copy of C's delivered 0.3.0 wheel. The prior `86fafdd` failure
+below remains historical evidence and is resolved for this new host.
+
+- [Source and executable bridge observations](../interop/reports/c-0.3.0-b-c4def3b-bridge.json):
+  **18 passed, 0 failed**, consisting of the same nine cases on each of two transports.
+  Withdrawal now retains `withdrawn_public_object`, request ID, snapshot revision
+  and authorization generation. The three mismatch cases remain refused.
+- [Current reproducible source replay](../interop/reports/c-0.3.0-b-c4def3b-source-bridge.json):
+  **9 bridge cases passed**, plus **2 report-staging cases passed**. B's actual
+  `select_public_task`, `build_producer_analysis_request`, `ProducerAnalysisRunner`
+  and `ReportLifecycle` produce an unsaved report with `ev_fixture_0001@1` for the
+  normal result; a withdrawn-evidence result produces no report. This report
+  staging was exercised on the fixed source worker, not the executable transport.
+- All request objects remain unchanged, the signed A bytes survive the public
+  cache unchanged, and the guarded account store has zero persistence calls.
+
+The executable observation pinned manifest
+`e94806b0188e27e00ffccc71e4989d7a0b10b1e4dc4f3ecf47f9463cb2b31f23` and worker
+`6cfc095a6d1d8117c470f3cb37aa68ba985008f895d4b2e92d67cda6fe865259`;
+all **919** files matched before and after execution. That local candidate later
+lacked its manifest at the same path, so further replay used the immutable source
+copy. The executable's source-build provenance and publisher trust remain unattested.
+
+### Separately captured builder encoding
+
+The nine bridge cases retain the original B snapshot SHA-256
+`a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5`.
+B's request builder emits native dictionary order without a trailing newline;
+the original fixture used sorted keys and a trailing newline. The decoded JSON
+values are identical. The initial byte-identity guard stopped report execution
+until this difference was independently verified.
+
+`capture_b_compact_snapshot.py` ran the actual **045965b** serializer in an isolated
+process, checked its 21 source files against Git before/after, and captured the
+builder-compatible bytes separately in `interop/b-045965b-compact-v1/`. Their SHA-256
+is `7bf8f156ea711fb7d426c41d1a9fb6970b8d78c5b09afaee75a5b434a27e5135`.
+The two report-staging cases require exact equality to that new fixed-producer
+capture and the unchanged original A bytes. Both encodings have separate hashes;
+the original fixture, original hashes and damaged-transport rejection are preserved.
+
+### Reproduce the current source replay
+
+From C's package directory, using its existing isolated crypto dependency target:
+
+```powershell
+$TaskPython = 'C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe'
+& $TaskPython -I -B tools/extract_fixed_source.py --repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --commit c4def3ba6f59acb73541eb74c912f84192f5a8a9 --package-subdir packages/starhelp-desktop --destination .tmp/reproduced-b-c4def3b
+& $TaskPython -I -B tools/replay_b_bridge.py --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --b-source .tmp/reproduced-b-c4def3b/packages/starhelp-desktop --b-host-commit c4def3ba6f59acb73541eb74c912f84192f5a8a9 --dependency-root .tmp/interop-deps --capture-dir interop/a-00d4a58 --b-cases interop/b-045965b-cases --builder-snapshot-capture interop/b-045965b-compact-v1 --wheel artifacts/starhelp_planner-0.3.0-py3-none-any.whl --report interop/reports/reproduced-b-c4def3b-source-bridge.json
+```
+
+To regenerate the compact snapshot independently, extract the immutable 045965b
+source into a fresh C-local directory, then run:
+
+```powershell
+& $TaskPython -I -B tools/extract_fixed_source.py --repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --commit 045965bce4fbc38a3baa79b594535c9dd983d776 --package-subdir packages/starhelp-desktop --destination .tmp/reproduced-b-045965b-builder
+& $TaskPython -I -B tools/capture_b_compact_snapshot.py --b-repository 'C:/Users/admin/Documents/ChatGPT/星铁/parallel/desktop-account' --b-source .tmp/reproduced-b-045965b-builder/packages/starhelp-desktop --base-capture interop/a-00d4a58 --output .tmp/reproduced-b-compact-v1
+```
+
+## Historical 86fafdd identities and failure
 
 | Role | Identity |
 |---|---|
@@ -55,12 +117,13 @@ This does not allow a withdrawn plan to execute. It is a real loss of structured
 error semantics at the desktop boundary. The diagnostic direct-worker call is
 recorded separately and never turns the failing bridge case into a passing one.
 
-Minimal B-side requirement: after its wrapper has validated the producer request,
+The B-side requirement at that revision was: after its wrapper validated the producer request,
 retain that validated request/snapshot/generation context for **all** responses,
 including nested native errors. Preserve the original error code and empty plans.
 Refuse contradictory declared correlation fields; do not weaken the bridge's
 generation checks or fabricate a successful analysis. C's native 0.2 error and
-rule behavior remain unchanged. B owns this wrapper; C has not edited B.
+rule behavior remain unchanged. B owns this wrapper; C has not edited B. The current
+fixed-host verification above confirms that B implemented this requirement.
 
 ### Delivered executable observation
 
@@ -96,8 +159,9 @@ refused before that executable runs.
 
 ## Remaining gates
 
-The B error-context issue, A's missing three-mode/equipment fixtures, agreed M0
-semantics, real source/content approval and production TaskPage request building
-remain open. Positive synthetic subprocess loading is now demonstrated; full
-desktop or producer interoperability is not claimed. The original 62 C component
-tests and 12-pass/3-unexercised producer replay remain separate evidence.
+A's missing three-mode/equipment fixtures, agreed M0 semantics, real source/content
+approval and production TaskPage mapping remain open. The B error-context issue
+is resolved for the pinned current host. Positive synthetic loading and source
+report staging are demonstrated; full desktop or producer interoperability is
+not claimed. The original 62 C component tests and 12-pass/3-unexercised producer
+replay remain separate evidence.

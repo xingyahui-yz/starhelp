@@ -21,6 +21,7 @@ from uuid import UUID
 
 
 B_HOST_COMMIT = "86fafdddb9183c42408d8c6e71d8ce5de65c4ff3"
+B_FIXED_HOST_COMMIT = "c4def3ba6f59acb73541eb74c912f84192f5a8a9"
 C_WHEEL_SHA256 = "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca"
 
 
@@ -69,9 +70,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--b-repository", required=True, type=Path)
     parser.add_argument("--b-source", required=True, type=Path)
+    parser.add_argument("--b-host-commit", choices=(B_HOST_COMMIT, B_FIXED_HOST_COMMIT), default=B_HOST_COMMIT)
     parser.add_argument("--dependency-root", required=True, type=Path)
     parser.add_argument("--capture-dir", required=True, type=Path)
     parser.add_argument("--b-cases", required=True, type=Path)
+    parser.add_argument("--builder-snapshot-capture", type=Path)
     parser.add_argument("--wheel", required=True, type=Path)
     parser.add_argument("--candidate", type=Path)
     parser.add_argument("--candidate-manifest-sha256")
@@ -102,16 +105,33 @@ def main() -> None:
 
     if not str(starhelp_planner.__file__).startswith(str(wheel)):
         raise SystemExit("C must load from the delivered wheel, not its source checkout")
-    proof = check_source(args.b_repository, B_HOST_COMMIT, "packages/starhelp-desktop", source)
+    proof = check_source(args.b_repository, args.b_host_commit, "packages/starhelp-desktop", source)
     vendor = source / "packaging/vendor" / wheel.name
     if vendor.read_bytes() != wheel.read_bytes():
         raise SystemExit("B's vendored C wheel differs from C's delivery")
     data = CapturedInputs(args.capture_dir, args.b_cases)
     stage = data.view["stages"][0]
     raw_snapshot = json.loads(data.b_raw)
+    builder_proof, builder_raw = None, None
+    if args.builder_snapshot_capture:
+        capture = args.builder_snapshot_capture.resolve()
+        if args.b_host_commit != B_FIXED_HOST_COMMIT or not capture.is_relative_to(component):
+            raise SystemExit("the separately pinned builder encoding is supported only for the new fixed host")
+        builder_proof = json.loads((capture / "producer-locks.json").read_bytes())
+        if (
+            builder_proof.get("synthetic_only") is not True
+            or builder_proof.get("producer_commit") != data.locks["b_snapshot_commit"]
+            or builder_proof.get("original_snapshot_sha256") != hashlib.sha256(data.b_raw).hexdigest()
+            or builder_proof.get("encoding_profile") != "utf8-json-native-order-compact-no-newline-v1"
+        ):
+            raise SystemExit("builder encoding capture does not match the fixed B input")
+        builder_raw = data.read(capture, builder_proof["file"], builder_proof["raw_sha256"])
+        if json.loads(builder_raw) != raw_snapshot:
+            raise SystemExit("builder encoding capture changes snapshot values")
     profile_id, generation = UUID(raw_snapshot["profile_id"]), 7
     candidate = verify_candidate(args.candidate, args.candidate_manifest_sha256) if args.candidate else None
     cases = []
+    report_cases = []
 
     class RejectPersistence:
         calls = 0
@@ -263,15 +283,96 @@ def main() -> None:
             wrong_generation = request("generation-mismatch")
             wrong_generation["authorization_context"]["generation"] = generation + 1
             run(transport, command, "mismatched-authorization-generation", wrong_generation, "bridge_refused")
+            if builder_raw is not None:
+                from starhelp_desktop.analysis import ProducerAnalysisRunner
+                from starhelp_desktop.producer_request import build_producer_analysis_request, select_public_task
+                from starhelp_desktop.profiles import _snapshot_from_dict
+                from starhelp_desktop.reports import ReportLifecycle
+
+                template = next(item for item in data.view["templates"] if stage["stage_id"] in item["stage_ids"])
+                selected_task = select_public_task(
+                    cached.payload(), stage_id=stage["stage_id"], template_id=template["id"],
+                    goal_kind=template["public_goals"][0]["kind"], allow_rearrangement=True,
+                )
+                for name, withdrawn_refs in (
+                    ("normal-unsaved-report", []),
+                    ("withdrawn-no-report", [{key: data.view["evidence"][0][key] for key in ("id", "revision")}]),
+                ):
+                    wrapper = build_producer_analysis_request(
+                        validated_bundle=cached, task=selected_task,
+                        snapshot=_snapshot_from_dict(raw_snapshot), authorization_generation=generation,
+                        distribution_trust_purpose="synthetic-test",
+                        distribution_public_keys={data.locks["fixture_key_id"]: bytes.fromhex(data.key_hex)},
+                        bundle_producer_commit=data.locks["a_producer_commit"],
+                        bundle_format_profile=data.locks["distribution_profile"],
+                        snapshot_producer_commit=data.locks["b_snapshot_commit"],
+                        snapshot_format_profile=request("profile")["account_snapshot"]["format_profile"],
+                        evaluation_time=datetime(2026, 10, 16, 0, 10, tzinfo=UTC),
+                        withdrawn_public_refs=withdrawn_refs, request_id="fixture:b-report:" + name,
+                    )
+                    original = deepcopy(wrapper)
+                    producer_request = wrapper["producer_request"]
+                    preserved = (
+                        producer_request["public_bundle"]["raw_json"].encode("utf-8") == data.a_raw
+                        and producer_request["account_snapshot"]["raw_json"].encode("utf-8") == builder_raw
+                    )
+                    observation = {"status": "not_executed", "temporary_report_created": False}
+                    passed = False
+                    if preserved:
+                        bridge = LocalPlannerProcess(
+                            command=command, timeout_seconds=30,
+                            required_capabilities=frozenset({"starhelp.producers.v0.1", "starhelp.local-profile.v0.2"}),
+                        )
+                        execution = ProducerAnalysisRunner(bridge, ReportLifecycle(store, lifecycle)).run(
+                            request=wrapper, profile_id=profile_id,
+                            authorization_generation=generation, lifecycle=lifecycle,
+                        )
+                        result, temporary = execution.planner_result.result, execution.temporary_report
+                        correlated = (
+                            result.get("request_id") == wrapper["request_id"]
+                            and result.get("snapshot_revision") == raw_snapshot["revision"]
+                            and result.get("authorization_generation") == generation
+                        )
+                        if withdrawn_refs:
+                            passed = correlated and result.get("status") == "error" and temporary is None
+                            passed &= (result.get("error") or {}).get("code") == "withdrawn_public_object"
+                        else:
+                            expected_refs = {f"{item['id']}@{item['revision']}" for item in data.view["evidence"]}
+                            passed = correlated and result.get("status") == "plans_available" and temporary is not None
+                            passed &= bool(temporary and temporary.public_refs and temporary.public_refs <= expected_refs)
+                            passed &= bool(temporary and temporary.snapshot_revision == raw_snapshot["revision"]
+                                           and temporary.public_release_id == data.release
+                                           and temporary.authorization_generation == generation)
+                        observation = {
+                            "status": result.get("status"), "temporary_report_created": temporary is not None,
+                            "native_error": (result.get("error") or {}).get("code"),
+                            "correlation_tuple_matches": correlated,
+                            "public_refs": sorted(temporary.public_refs) if temporary else [],
+                        }
+                    unchanged = original == wrapper
+                    report_cases.append({
+                        "transport": transport, "name": name,
+                        "outcome": "passed" if passed and unchanged else "failed",
+                        "a_bytes_and_fixed_compact_snapshot_match": preserved, "inputs_unchanged": unchanged,
+                        "b_snapshot_raw_sha256": producer_request["account_snapshot"]["sha256"],
+                        "observation": observation,
+                    })
         if protector.calls or any(store.root.iterdir()):
             raise SystemExit("replay unexpectedly used account persistence")
-    after = check_source(args.b_repository, B_HOST_COMMIT, "packages/starhelp-desktop", source)
+    after = check_source(args.b_repository, args.b_host_commit, "packages/starhelp-desktop", source)
     if proof != after:
         raise SystemExit("B's extracted source changed during replay")
     if candidate and verify_candidate(args.candidate, args.candidate_manifest_sha256) != candidate:
         raise SystemExit("B's delivered candidate changed during replay")
+    failed = sum(case["outcome"] == "failed" for case in cases)
+    report_failed = sum(case["outcome"] == "failed" for case in report_cases)
+    withdrawal_verified = all(case["outcome"] == "passed" for case in cases if case["name"] == "withdrawn-evidence")
+    remaining = ["three-mode samples", "nontrivial equipment lock/ambiguity samples",
+                 "agreed M0 semantics and real source/content approval", "production TaskPage request construction"]
+    if not withdrawal_verified:
+        remaining.append("B must preserve validated correlation context for native error responses")
     report = {
-        "synthetic_only": True, "b_host_commit": B_HOST_COMMIT,
+        "synthetic_only": True, "b_host_commit": args.b_host_commit,
         "b_host_source_proof": proof, "b_host_source_unchanged": True,
         "b_snapshot_producer_commit": data.locks["b_snapshot_commit"],
         "b_snapshot_raw_sha256": hashlib.sha256(data.b_raw).hexdigest(),
@@ -282,16 +383,16 @@ def main() -> None:
         "c_native_rule_version": "0.2.0", "b_vendor_wheel_bytes_match": True,
         "b_cache_retains_original_bytes": True, "account_persistence_calls": 0,
         "candidate": candidate, "cases": cases,
+        "report_staging_cases": report_cases,
+        "builder_snapshot_encoding_proof": builder_proof,
+        "bridge_cases_all_passed": failed == 0, "withdrawn_error_delivery_verified": withdrawal_verified,
         "full_round2_acceptance": False, "m0_or_production_acceptance": False,
-        "remaining": ["three-mode samples", "nontrivial equipment lock/ambiguity samples",
-                      "B must preserve validated correlation context for native error responses",
-                      "agreed M0 semantics and real source/content approval", "production TaskPage request construction"],
+        "remaining": remaining,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
-    failed = sum(case["outcome"] == "failed" for case in cases)
-    print(json.dumps({"passed": len(cases) - failed, "failed": failed, "transports": len(commands), "source_unchanged": True}))
-    if failed:
+    print(json.dumps({"passed": len(cases) - failed, "failed": failed, "report_staging_passed": len(report_cases) - report_failed, "report_staging_failed": report_failed, "transports": len(commands), "source_unchanged": True}))
+    if failed or report_failed:
         raise SystemExit(1)
 
 

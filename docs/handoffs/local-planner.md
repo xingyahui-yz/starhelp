@@ -29,7 +29,7 @@ Reproduction commands: [producer-replay-commands.md](../../packages/starhelp-pla
 
 Full round-2 technical acceptance remains **false** until A supplies the additional explicitly versioned mode/equipment fixtures and the missing cases are replayed. Current available plans retain unknown soft statistical conditions as warnings; no missing panel metadata is promoted to satisfaction. The old Goal's M0/production-source/real-account/full-MVP requirements remain uncompleted and are not redefined as this technical round.
 
-### Supplemental B bridge validation (2026-10-17)
+### Historical B bridge validation (2026-10-17, host 86fafdd)
 
 B has now delivered a real stdio worker consuming C's pinned 0.3.0 wheel. C independently replayed the immutable B host code at `86fafdddb9183c42408d8c6e71d8ce5de65c4ff3`, separately from the unchanged `045965b` snapshot producer. B's actual signature verifier, byte-preserving public cache, lifecycle gate, process bridge and worker were exercised with original synthetic A/B bytes. No B checkout or private account data was modified/read.
 
@@ -37,7 +37,15 @@ Fixed-source result: **8 passed, 1 failed**. Normal, full alternate, no match, m
 
 An earlier delivered executable gave the same 8/1 outcome with 827 manifest entries verified. Its exact manifest/worker hashes are retained; B later replaced that candidate, and the replay refused its changed manifest under the old pin. Current reproduction uses the immutable source copy, without assuming executable build provenance.
 
-Details and commands: [desktop-bridge-evidence-v0.1.md](../../packages/starhelp-planner/docs/desktop-bridge-evidence-v0.1.md). Reports: `interop/reports/c-0.3.0-b-86fafdd-source-bridge.json` and the separate earlier executable observations in `c-0.3.0-b-86fafdd-bridge.json`. C's runtime/wheel and the prior producer acceptance inputs/results are unchanged. Synthetic B subprocess loading now has direct evidence; production TaskPage integration, the newly found structured-error gap, M0 and the missing A fixtures remain unaccepted.
+Details and commands: [desktop-bridge-evidence-v0.1.md](../../packages/starhelp-planner/docs/desktop-bridge-evidence-v0.1.md). Reports: `interop/reports/c-0.3.0-b-86fafdd-source-bridge.json` and the separate earlier executable observations in `c-0.3.0-b-86fafdd-bridge.json`. These reports describe the historical host, with its error-context gap resolved in the next pinned host below.
+
+### B error-context fix and report staging verified (2026-10-18)
+
+B fixed the wrapper in `60b7c99`. C independently pinned host `c4def3ba6f59acb73541eb74c912f84192f5a8a9`, verified all 38 committed package files, and replayed its actual bridge/worker with the delivered C 0.3.0 wheel. The same nine bridge cases pass on source and on the then-delivered Windows executable: **18 passed, 0 failed**. Withdrawal now delivers `withdrawn_public_object` and the matching request/snapshot/generation tuple; mismatches remain refused. The executable snapshot has a separate manifest/worker hash and 919 verified files; source-build attestation is not claimed, and its subsequently missing local manifest was not bypassed.
+
+The reproducible source replay also exercises B's actual public-task selector, request builder, analysis runner and temporary-report lifecycle: **2 report-staging cases passed**. Normal plans stage an unsaved report with same-release evidence references; withdrawal stages no report. No account persistence was called. The builder's native-order compact encoding is separately captured by the actual fixed `045965b` serializer, SHA-256 `7bf8f156ea711fb7d426c41d1a9fb6970b8d78c5b09afaee75a5b434a27e5135`; decoded values equal the original snapshot. Original sorted/newline fixture bytes and hashes remain intact.
+
+Current reports: `interop/reports/c-0.3.0-b-c4def3b-bridge.json` and `c-0.3.0-b-c4def3b-source-bridge.json`; encoding proof: `interop/b-045965b-compact-v1/producer-locks.json`. Reproduction commands are in the linked bridge evidence document. The old B failure is closed only for this explicit host. A's three-mode/equipment fixtures, M0 and real source/content approval, and production TaskPage mapping remain open; full Goal completion is not claimed.
 
 ## Round 1 handoff (retained)
 
