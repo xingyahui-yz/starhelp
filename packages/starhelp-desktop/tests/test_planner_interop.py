@@ -182,12 +182,14 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             withdrawn_wrapper["producer_request"]["latest_known_validity"][
                 "withdrawn_public_refs"
             ] = [{"id": evidence["id"], "revision": evidence["revision"]}]
-            withdrawn_result = planner.analyze(
+            withdrawn_execution = ProducerAnalysisRunner(planner, reports).run(
                 request=withdrawn_wrapper,
                 profile_id=PROFILE_ID,
                 authorization_generation=AUTHORIZATION_GENERATION,
                 lifecycle=lifecycle,
             )
+            withdrawn_result = withdrawn_execution.planner_result
+            self.assertIsNone(withdrawn_execution.temporary_report)
 
         self.assertEqual(result.planner_version, "0.2.0")
         self.assertEqual(result.result["component_version"], "0.3.0")

@@ -50,8 +50,23 @@ class ProducerAnalysisRunner:
         ):
             raise PlannerUnavailable("analysis request has no public release identity")
         release_id = manifest["index_release_id"]
+        if result.result.get("index_release_id") != release_id:
+            raise PlannerUnavailable("planner result belongs to a different public release")
+        public_objects = bundle.get("objects")
+        if not isinstance(public_objects, dict):
+            raise PlannerUnavailable("analysis request has no complete public object graph")
+        planner_view = public_objects.get(f"planner-view:{release_id}")
+        planner_payload = planner_view.get("bundle") if isinstance(planner_view, dict) else None
+        evidence = planner_payload.get("evidence") if isinstance(planner_payload, dict) else None
+        if not isinstance(evidence, list):
+            raise PlannerUnavailable("analysis request has no public evidence catalog")
+        evidence_by_id = {
+            item["id"]: item
+            for item in evidence
+            if isinstance(item, dict) and isinstance(item.get("id"), str)
+        }
         citations = result.result.get("citations", [])
-        if not isinstance(citations, list):
+        if not isinstance(citations, list) or not citations:
             raise PlannerUnavailable("planner result has malformed public references")
         if any(
             not isinstance(item, dict)
@@ -62,9 +77,13 @@ class ProducerAnalysisRunner:
             or item["revision"] < 1
             or (item.get("index_release_id") is not None
                 and item.get("index_release_id") != release_id)
+            or not isinstance(evidence_by_id.get(item.get("id")), dict)
+            or evidence_by_id[item["id"]].get("revision") != item["revision"]
             for item in citations
         ):
-            raise PlannerUnavailable("planner result has malformed or cross-release references")
+            raise PlannerUnavailable(
+                "planner result has malformed, missing, or cross-release references"
+            )
         public_refs = frozenset(
             f"{item['id']}@{item['revision']}"
             for item in citations
