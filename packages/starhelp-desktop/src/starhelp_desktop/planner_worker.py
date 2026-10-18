@@ -125,6 +125,12 @@ def _run(data: bytes) -> dict[str, Any]:
             "snapshot_revision": wrapper["account_snapshot"]["snapshot_revision"],
             "authorization_generation": wrapper["authorization_generation"],
         }
+    # Preserve the desktop-validated correlation context when the planner returns a
+    # structured domain error without its own correlation fields. Keep any fields
+    # supplied by the planner intact so the parent bridge can still reject mismatches.
+    result.setdefault("request_id", wrapper["request_id"])
+    result.setdefault("snapshot_revision", wrapper["account_snapshot"]["snapshot_revision"])
+    result.setdefault("authorization_generation", wrapper["authorization_generation"])
     result.update({
         "status": adapted.get("status", "error"),
         "component_version": component_version,

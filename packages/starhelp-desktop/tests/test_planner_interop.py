@@ -178,6 +178,17 @@ class ProducerPlannerInteropTests(unittest.TestCase):
                 authorization_generation=AUTHORIZATION_GENERATION,
                 lifecycle=lifecycle,
             )
+            withdrawn_wrapper = json.loads(json.dumps(wrapper))
+            evidence = planner_bundle["evidence"][0]
+            withdrawn_wrapper["producer_request"]["latest_known_validity"][
+                "withdrawn_public_refs"
+            ] = [{"id": evidence["id"], "revision": evidence["revision"]}]
+            withdrawn_result = planner.analyze(
+                request=withdrawn_wrapper,
+                profile_id=PROFILE_ID,
+                authorization_generation=AUTHORIZATION_GENERATION,
+                lifecycle=lifecycle,
+            )
 
         self.assertEqual(result.planner_version, "0.2.0")
         self.assertEqual(result.result["component_version"], "0.3.0")
@@ -188,6 +199,15 @@ class ProducerPlannerInteropTests(unittest.TestCase):
         self.assertEqual(len(result.result["current_equipment_plans"]), 2)
         self.assertTrue(result.result["citations"])
         self.assertTrue(result.result["adapter_metadata"])
+        self.assertEqual(withdrawn_result.result["status"], "error")
+        withdrawn_error = withdrawn_result.result.get("error")
+        self.assertIsInstance(withdrawn_error, dict)
+        self.assertEqual(withdrawn_error.get("code"), "withdrawn_public_object")
+        self.assertEqual(withdrawn_result.result["request_id"], request_id)
+        self.assertEqual(withdrawn_result.result["snapshot_revision"], snapshot.revision)
+        self.assertEqual(
+            withdrawn_result.result["authorization_generation"], AUTHORIZATION_GENERATION
+        )
 
         component_root = Path(__file__).resolve().parents[1]
         bundled_worker = (
@@ -211,6 +231,27 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             self.assertEqual(response["result"]["status"], "plans_available")
             self.assertEqual(response["result"]["request_id"], request_id)
             self.assertTrue(response["result"]["citations"])
+
+            completed = subprocess.run(
+                [str(bundled_worker)],
+                input=(
+                    json.dumps(withdrawn_wrapper, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+                    + b"\n"
+                ),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                timeout=60,
+                check=False,
+            )
+            self.assertEqual(completed.returncode, 0, "bundled planner worker rejected withdrawal result")
+            withdrawn_response = json.loads(completed.stdout.decode("utf-8"))["result"]
+            self.assertEqual(withdrawn_response["status"], "error")
+            self.assertEqual(withdrawn_response["error"]["code"], "withdrawn_public_object")
+            self.assertEqual(withdrawn_response["request_id"], request_id)
+            self.assertEqual(withdrawn_response["snapshot_revision"], snapshot.revision)
+            self.assertEqual(
+                withdrawn_response["authorization_generation"], AUTHORIZATION_GENERATION
+            )
 
 
 if __name__ == "__main__":
