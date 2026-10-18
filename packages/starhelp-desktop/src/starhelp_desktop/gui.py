@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -41,7 +42,7 @@ from .imports import (
     read_ocr_image,
 )
 from .lifecycle import ProfileLifecycle
-from .models import EquipmentIdentity, ImportProposal
+from .models import EquipmentIdentity, ImportProposal, SourceKind
 from .profiles import ProfileRepository, ProfileSummary
 from .planner import LocalPlannerProcess, bundled_planner_command
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
@@ -57,6 +58,12 @@ class _Signals(QObject):
 
 
 class _ProfileFetchSignals(QObject):
+    completed = Signal(object, object)
+    failed = Signal(str, object)
+    cancelled = Signal(object)
+
+
+class _OcrSignals(QObject):
     completed = Signal(object, object)
     failed = Signal(str, object)
     cancelled = Signal(object)
@@ -129,18 +136,29 @@ class _ProfileFetchWorker(QRunnable):
 
 
 class _OcrWorker(QRunnable):
-    def __init__(self, image_bytes: bytes) -> None:
+    def __init__(self, image_bytes: bytes, cancelled: threading.Event) -> None:
         super().__init__()
         self.image_bytes = image_bytes
-        self.signals = _Signals()
+        self.cancelled = cancelled
+        self.signals = _OcrSignals()
 
     def run(self) -> None:
+        if self.cancelled.is_set():
+            self.signals.cancelled.emit(self.cancelled)
+            self.image_bytes = b""
+            return
         try:
             draft = RapidOcrEngine().recognize(self.image_bytes)
         except Exception as exc:
-            self.signals.failed.emit(str(exc))
+            if self.cancelled.is_set():
+                self.signals.cancelled.emit(self.cancelled)
+            else:
+                self.signals.failed.emit(str(exc), self.cancelled)
         else:
-            self.signals.completed.emit(draft)
+            if self.cancelled.is_set():
+                self.signals.cancelled.emit(self.cancelled)
+            else:
+                self.signals.completed.emit(draft, self.cancelled)
         finally:
             self.image_bytes = b""
 
@@ -415,6 +433,8 @@ class AccountsPage(_Page):
         self.pending_auto_refresh = False
         self.auto_refresh_running = False
         self.ocr_draft: OcrDraft | None = None
+        self.ocr_profile: ProfileSummary | None = None
+        self.ocr_cancel: threading.Event | None = None
         self.preview = QTextEdit()
         self.preview.setReadOnly(True)
         self.profile_list = QComboBox()
@@ -534,6 +554,10 @@ class AccountsPage(_Page):
 
     def _selection_changed(self, *_args: object) -> None:
         profile = self._selected_profile()
+        if self.ocr_profile is not None and not self._same_profile_generation(
+            self.ocr_profile, profile
+        ):
+            self._discard_ocr_preview("已切换档案，旧档案的 OCR 候选已丢弃。")
         self.revoke_button.setEnabled(profile is not None)
         if profile is None:
             self.auto_refresh_consent.setChecked(False)
@@ -547,6 +571,48 @@ class AccountsPage(_Page):
             self.uid.setText(config["uid"] if config else "")
             self.server.setText(profile.server_label)
         self._reload_equipment()
+
+    @staticmethod
+    def _same_profile_generation(
+        first: ProfileSummary | None, second: ProfileSummary | None
+    ) -> bool:
+        return bool(
+            first is not None
+            and second is not None
+            and first.profile_id == second.profile_id
+            and first.generation == second.generation
+        )
+
+    def _discard_ocr_preview(self, message: str | None = None) -> None:
+        profile = self.ocr_profile
+        cancel = self.ocr_cancel
+        self.ocr_cancel = None
+        if cancel is not None:
+            cancel.set()
+            if profile is not None:
+                self.lifecycle.unregister_task(profile.profile_id, profile.generation, cancel)
+        self.ocr_profile = None
+        self.ocr_draft = None
+        self.ocr_candidate.clear()
+        if self.pending is not None and self.pending.source_kind is SourceKind.OCR:
+            self.pending = None
+            self.pending_profile = None
+            self.save_button.setEnabled(False)
+        self.progress.setRange(0, 1)
+        self.progress.setValue(0)
+        self.ocr_button.setEnabled(True)
+        if message is not None:
+            self.progress_bus.updated.emit(message, 0)
+            self.preview.setPlainText(message)
+
+    def _finish_ocr_task(self, cancel: threading.Event) -> bool:
+        if self.ocr_cancel is not cancel:
+            return False
+        self.ocr_cancel = None
+        profile = self.ocr_profile
+        if profile is not None:
+            self.lifecycle.unregister_task(profile.profile_id, profile.generation, cancel)
+        return True
 
     def save_auto_refresh_setting(self) -> None:
         profile = self._selected_profile()
@@ -1039,21 +1105,50 @@ class AccountsPage(_Page):
             except ValueError as exc:
                 self.preview.setPlainText(str(exc))
                 return
-            worker = _OcrWorker(image_bytes)
+            self._discard_ocr_preview()
+            profile = self._selected_profile()
+            cancel = threading.Event()
+            if profile is not None:
+                try:
+                    cancel = self.lifecycle.register_task(profile.profile_id, profile.generation)
+                except Exception as exc:
+                    self.preview.setPlainText(f"档案已撤权，未开始 OCR：{exc}")
+                    return
+            self.ocr_profile = profile
+            self.ocr_cancel = cancel
+            worker = _OcrWorker(image_bytes, cancel)
             worker.signals.completed.connect(self._ocr_completed)
             worker.signals.failed.connect(self._ocr_failed)
+            worker.signals.cancelled.connect(self._ocr_cancelled)
             self.progress.setRange(0, 0)
             self.progress_bus.updated.emit("本机 OCR 正在处理截图；图像未上传或复制。", -1)
             self.ocr_button.setEnabled(False)
             self.thread_pool.start(worker)
 
-    def _ocr_completed(self, draft: object) -> None:
+    def _ocr_completed(self, draft: object, cancel: threading.Event) -> None:
+        if not self._finish_ocr_task(cancel):
+            return
+        profile = self.ocr_profile
+        if cancel.is_set() or (
+            profile is not None
+            and (
+                not self.lifecycle.accepts_result(profile.profile_id, profile.generation)
+                or not self._same_profile_generation(profile, self._selected_profile())
+            )
+        ):
+            self._discard_ocr_preview("档案已切换或撤权；OCR 异步结果已丢弃。")
+            return
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.progress_bus.updated.emit("本机 OCR 完成；请把文本行映射到明确字段并核对。", 100)
         self.ocr_button.setEnabled(True)
         if not isinstance(draft, OcrDraft):
-            self._ocr_failed("OCR 返回了不支持的结果")
+            self.ocr_profile = None
+            self.ocr_draft = None
+            self.ocr_candidate.clear()
+            self.progress.setValue(0)
+            self.progress_bus.updated.emit("OCR 未生成候选字段。", 0)
+            self.preview.setPlainText("OCR 返回了不支持的结果；可改用手动或结构化导入。")
             return
         self.ocr_draft = draft
         self.ocr_candidate.clear()
@@ -1064,12 +1159,32 @@ class AccountsPage(_Page):
         else:
             self.preview.setPlainText("OCR 未识别出文本；原图未保存。可改用手动或结构化导入。")
 
-    def _ocr_failed(self, message: str) -> None:
+    def _ocr_failed(self, message: str, cancel: threading.Event) -> None:
+        if not self._finish_ocr_task(cancel):
+            return
+        profile = self.ocr_profile
+        if cancel.is_set() or (
+            profile is not None
+            and (
+                not self.lifecycle.accepts_result(profile.profile_id, profile.generation)
+                or not self._same_profile_generation(profile, self._selected_profile())
+            )
+        ):
+            self._discard_ocr_preview("档案已切换或撤权；OCR 异步结果已丢弃。")
+            return
+        self.ocr_profile = None
+        self.ocr_draft = None
+        self.ocr_candidate.clear()
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.progress_bus.updated.emit("OCR 未生成候选字段。", 0)
         self.ocr_button.setEnabled(True)
         self.preview.setPlainText(f"本机 OCR 失败：{message}\n可改用手动或结构化导入。")
+
+    def _ocr_cancelled(self, cancel: threading.Event) -> None:
+        if not self._finish_ocr_task(cancel):
+            return
+        self._discard_ocr_preview("OCR 已取消，迟到的识别结果已丢弃。")
 
     def map_ocr_line(self) -> None:
         if self.ocr_draft is None or self.ocr_candidate.currentIndex() < 0:
@@ -1082,7 +1197,7 @@ class AccountsPage(_Page):
         except Exception as exc:
             QMessageBox.warning(self, "无法映射 OCR 行", str(exc))
             return
-        self.pending_profile = self._selected_profile()
+        self.pending_profile = self.ocr_profile or self._selected_profile()
         self._render_proposal(self.pending)
         self.save_button.setEnabled(True)
 
@@ -1103,8 +1218,14 @@ class AccountsPage(_Page):
             QMessageBox.warning(self, "未选择档案", "请先创建本地档案或开始一个授权档案请求。")
             return
         try:
-            if self.pending_profile and self.pending_profile.profile_id != profile.profile_id:
+            if self.pending_profile and not self._same_profile_generation(
+                self.pending_profile, profile
+            ):
                 raise ValueError("预览结果与当前档案不匹配")
+            if self.pending_profile and not self.lifecycle.accepts_result(
+                self.pending_profile.profile_id, self.pending_profile.generation
+            ):
+                raise PermissionError("预览所属档案授权已失效；请重新导入并预览。")
             merge_preview = self.repository.preview_merge(profile.profile_id, profile.generation, proposal)
             choices: dict[str, str] = {}
             for conflict in merge_preview.conflicts:
@@ -1150,6 +1271,7 @@ class AccountsPage(_Page):
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
+        self._discard_ocr_preview("档案撤权中，OCR 候选已清除。")
         try:
             if self.pending_cancel is not None and self.fetch_profile == profile:
                 self.pending_cancel.set()

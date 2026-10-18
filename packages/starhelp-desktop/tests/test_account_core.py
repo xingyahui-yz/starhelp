@@ -30,6 +30,7 @@ from starhelp_desktop.gui import (
     ReportsPage,
     PublicKnowledgePage,
     TaskPage,
+    _OcrWorker,
     _ProfileFetchWorker,
     _ProgressBus,
     _ProgressPage,
@@ -398,6 +399,103 @@ class ProgressPageTests(unittest.TestCase):
 
         self.assertEqual(cancelled, [event])
         self.assertEqual(completed, [])
+
+    def test_ocr_worker_discards_result_when_cancelled_during_recognition(self) -> None:
+        event = threading.Event()
+        worker = _OcrWorker(b"synthetic-image", event)
+        draft = OcrDraft((), datetime.now(UTC))
+        cancelled = []
+        completed = []
+
+        def recognize(_image_bytes: bytes) -> OcrDraft:
+            event.set()
+            return draft
+
+        with patch("starhelp_desktop.gui.RapidOcrEngine") as engine:
+            engine.return_value.recognize.side_effect = recognize
+            worker.signals.cancelled.connect(cancelled.append)
+            worker.signals.completed.connect(lambda *_args: completed.append(True))
+            worker.run()
+
+        self.assertEqual(cancelled, [event])
+        self.assertEqual(completed, [])
+        self.assertEqual(worker.image_bytes, b"")
+
+    def test_account_switch_and_revoke_discard_profile_bound_ocr_preview(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            first = repository.begin_profile(
+                label="Synthetic first", provider_id="local-import", server_label="fixture-region"
+            )
+            second = repository.begin_profile(
+                label="Synthetic second", provider_id="local-import", server_label="fixture-region"
+            )
+            page = AccountsPage(repository, lifecycle, _ProgressBus())
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(first.profile_id))
+            )
+            first_cancel = lifecycle.register_task(first.profile_id, first.generation)
+            page.ocr_profile = first
+            page.ocr_cancel = first_cancel
+            page.ocr_draft = OcrDraft(
+                lines=(OcrTextLine("synthetic first profile", 0.99, ()),),
+                recognized_at=datetime.now(UTC),
+            )
+            page.ocr_candidate.addItem("synthetic OCR line", 0)
+            page.pending = proposal_from_ocr_mapping(
+                page.ocr_draft, {"character:fixture.level": 0}
+            )
+            page.pending_profile = first
+            page.save_button.setEnabled(True)
+
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(second.profile_id))
+            )
+
+            self.assertTrue(first_cancel.is_set())
+            self.assertIsNone(page.ocr_draft)
+            self.assertIsNone(page.ocr_profile)
+            self.assertIsNone(page.pending)
+            self.assertFalse(page.save_button.isEnabled())
+            self.assertEqual(page.ocr_candidate.count(), 0)
+            self.assertIn("旧档案", page.preview.toPlainText())
+
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(first.profile_id))
+            )
+            revoke_cancel = lifecycle.register_task(first.profile_id, first.generation)
+            page.ocr_profile = first
+            page.ocr_cancel = revoke_cancel
+            page.ocr_draft = OcrDraft(
+                lines=(OcrTextLine("synthetic revoke profile", 0.99, ()),),
+                recognized_at=datetime.now(UTC),
+            )
+            page.ocr_candidate.addItem("synthetic revoke line", 0)
+            page.pending = proposal_from_ocr_mapping(
+                page.ocr_draft, {"character:fixture.level": 0}
+            )
+            page.pending_profile = first
+            page.save_button.setEnabled(True)
+            with patch(
+                "starhelp_desktop.gui.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                page.revoke_selected()
+
+            self.assertTrue(revoke_cancel.is_set())
+            self.assertFalse(lifecycle.accepts_result(first.profile_id, first.generation))
+            self.assertIsNone(page.ocr_draft)
+            self.assertIsNone(page.pending)
+            self.assertFalse(page.save_button.isEnabled())
+            self.assertEqual(page.ocr_candidate.count(), 0)
+            self.assertEqual(
+                [profile.profile_id for profile in repository.list_profiles()],
+                [second.profile_id],
+            )
+            page.close()
 
 
 class ImportAndPrivacyTests(unittest.TestCase):

@@ -322,3 +322,20 @@ fixture value as `[UID 已隐藏]`; no user image or network request was used. T
 Windows candidate manifest was independently rechecked: all 919 listed SHA-256 values match and
 the candidate file set is exact. These checks do not resolve production M0 mappings/trust, complete
 three-mode equipment fixtures, publisher signing, or real-account/target-machine acceptance.
+
+### OCR profile lifecycle isolation (2026-10-18)
+
+AccountsPage now binds screenshot OCR to the selected profile ID and authorization generation,
+registers the background recognition as lifecycle work, and drops mapped OCR drafts when the user
+switches profiles or revokes authorization. The worker checks cancellation both before and after
+recognition, releases its image reference, and never emits a late candidate after cancellation.
+Saving a preview also requires its captured profile generation to remain active. Synthetic Qt
+regressions cover cancellation during recognition, profile switching, and revoke cleanup.
+
+Verification after this source change: all 49 package tests, `compileall`, and `git diff --check`
+passed. A fresh PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes/file set
+and stayed alive for an 8-second startup under isolated `LOCALAPPDATA`. Installer install,
+upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped under the component
+build directory after the system temp path denied a staging move. The candidate remains unsigned;
+production M0, publisher signing, target-Windows acceptance, and real-account acceptance remain
+outstanding.
