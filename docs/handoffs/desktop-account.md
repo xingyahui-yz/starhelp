@@ -470,3 +470,11 @@ target-Windows acceptance, and real-account acceptance remain outstanding.
 ReportsPage 将 planner result 按分析范围、当前配装、调装、待确认候选、未采用原因、覆盖/时效/降级、公共证据引用和排障建议分区；方案对象保留完整 JSON，并把方案中的培养步骤、成本和材料缺口另行汇总。所有未识别的顶层规划器字段继续显示在“其他规划器字段”，没有返回的章节不臆造。保存报告与未保存预览共用此呈现逻辑；合成 Qt 回归覆盖范围、配装、培养与引用章节。
 
 验证：56 项 package unittest、compileall、diff-check 通过。重建 unsigned PyInstaller 6.22.3 候选包，919 项 SHA-256 与完整文件集合一致；隔离 LOCALAPPDATA 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、连续双向回滚和篡改候选拒绝通过。生产 M0 映射/签名信任、发布者签名、目标 Windows 和真实账号验收仍待完成。
+
+### Mihomo V2 endpoint alignment（2026-10-18）
+
+The public-profile client now requests the documented V2 default with only `lang`; it no longer adds the undocumented `version=v2` query. MetaCubeX/mihomo's upstream [README](https://github.com/MetaCubeX/mihomo#basic) shows V2 without a version parameter and uses `version=v1` only for V1; its client likewise adds only the language for the default request. A synthetic transport assertion locks the exact URL and continues checking UID echo matching. No live UID was queried; provider authorization, region mapping and source coverage remain M0/user acceptance items.
+
+Verification: all 56 package tests pass; `compileall` and `git diff --check` pass. Candidate rebuild and frozen-package checks are recorded after this source change below.
+
+Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest matches the exact candidate file set; isolated 8-second startup loaded Qt6Core/Qt6Widgets; synthetic install, upgrade, two-way rollback and tamper rejection passed. No real UID request was made.

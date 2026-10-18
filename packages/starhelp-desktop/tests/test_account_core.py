@@ -887,7 +887,7 @@ class ImportAndPrivacyTests(unittest.TestCase):
     def test_public_uid_redirects_are_rejected(self) -> None:
         handler = _RejectRedirects()
         request = urllib.request.Request(
-            "https://api.mihomo.me/sr_info_parsed/100000999?lang=cn&version=v2"
+            "https://api.mihomo.me/sr_info_parsed/100000999?lang=cn"
         )
         self.assertIsNone(handler.redirect_request(
             request, None, 302, "Found", {}, "https://other.example/redirected"
@@ -964,15 +964,22 @@ class ImportAndPrivacyTests(unittest.TestCase):
         class Opener:
             def __init__(self, body: bytes) -> None:
                 self.response = Response(body)
+                self.request_url: str | None = None
 
-            def open(self, _request, timeout: float):
+            def open(self, request, timeout: float):
                 if not 1 <= timeout <= 60:
                     raise AssertionError("public profile request timeout is out of range")
+                self.request_url = request.full_url
                 return self.response
 
         matching = json.dumps({"player": {"uid": selection.uid}, "characters": []}).encode()
-        with patch("urllib.request.build_opener", return_value=Opener(matching)):
+        opener = Opener(matching)
+        with patch("urllib.request.build_opener", return_value=opener):
             self.assertEqual(client.fetch(selection).ownership, {})
+        self.assertEqual(
+            opener.request_url,
+            "https://api.mihomo.me/sr_info_parsed/100000999?lang=cn",
+        )
 
         for payload in (
             {"player": {"uid": "100000998"}, "characters": []},

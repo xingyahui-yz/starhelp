@@ -128,7 +128,9 @@ class MihomoPublicProfileClient:
         if not selection.server_label.strip():
             raise ValueError("server/region must be explicitly selected")
 
-        url = f"{self.BASE_URL}/{urllib.parse.quote(selection.uid, safe='')}?lang={self._language}&version=v2"
+        # Mihomo documents V2 as the default response; only V1 needs a version query.
+        query = urllib.parse.urlencode({"lang": self._language})
+        url = f"{self.BASE_URL}/{urllib.parse.quote(selection.uid, safe='')}?{query}"
         request = urllib.request.Request(
             url,
             headers={"Accept": "application/json", "User-Agent": "StarHelp-Desktop/0.1"},
