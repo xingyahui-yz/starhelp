@@ -261,6 +261,8 @@ class ProgressPageTests(unittest.TestCase):
 
             bus = _ProgressBus()
             page = _ProgressPage(profiles, bus)
+            page.show()
+            self.app.processEvents()
             self.assertIn("Mihomo 忘却之庭摘要", page.mode_status.toPlainText())
             self.assertIn("memory_data.chaos_id: 1234", page.mode_status.toPlainText())
             for mode in _ProgressPage.MODES:
@@ -276,8 +278,10 @@ class ProgressPageTests(unittest.TestCase):
             ])
             self.assertIn("进行中", page.history.item(0).text())
 
+            page.hide()
             profiles.revoke(profile.profile_id)
-            page.reload_profiles()
+            page.show()
+            self.app.processEvents()
             self.assertIn("尚无已授权档案", page.mode_status.toPlainText())
             page.close()
 

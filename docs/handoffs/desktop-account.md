@@ -401,3 +401,8 @@ PyInstaller 6.22.3 candidate contains 919 files and its SHA-256 manifest matches
 The app remained alive for an 8-second launch under isolated `LOCALAPPDATA`. Synthetic installer
 install, upgrade, two-way rollback, and tamper rejection pass with temp data under the component
 build directory. Three-mode current-cycle coverage, M0 IDs and source mapping remain incomplete.
+
+The progress-page Qt regression also now exercises the real hide/revoke/show path: after profile
+revocation on another page, the next page entry reloads the profile list and removes the old summary
+from view. The full 52-test suite, `compileall`, and `git diff --check` passed; this follow-up changes
+only test coverage and handoff evidence, so the previously verified application candidate is unchanged.
