@@ -636,6 +636,36 @@ class ImportAndPrivacyTests(unittest.TestCase):
 
 
 class StorageLifecycleTests(unittest.TestCase):
+    def test_private_store_rejects_oversized_envelope_before_unprotect(self) -> None:
+        with temporary_directory() as directory:
+            store = EncryptedPrivateStore(Path(directory) / "private", TestProtector())
+            path = store.root / "fixture-object.bin"
+            path.write_bytes(b"SHDPAPI1" + b"x" * 64)
+            with patch("starhelp_desktop.storage._MAX_PRIVATE_OBJECT_BYTES", 8), patch(
+                "starhelp_desktop.storage._MAX_DPAPI_ENVELOPE_OVERHEAD", 0
+            ), patch.object(store._protector, "unprotect") as unprotect:
+                with self.assertRaisesRegex(ValueError, "encrypted private object"):
+                    store.load("fixture-object")
+                unprotect.assert_not_called()
+
+    def test_private_store_bounds_plaintext_on_save_and_after_unprotect(self) -> None:
+        with temporary_directory() as directory:
+            store = EncryptedPrivateStore(Path(directory) / "private", TestProtector())
+            with patch("starhelp_desktop.storage._MAX_PRIVATE_OBJECT_BYTES", 8), patch.object(
+                store._protector, "protect"
+            ) as protect:
+                with self.assertRaisesRegex(ValueError, "private object exceeds"):
+                    store.save("fixture-large", {"data": "x" * 64})
+                protect.assert_not_called()
+
+            path = store.root / "fixture-decrypted-large.bin"
+            path.write_bytes(b"SHDPAPI1x")
+            with patch("starhelp_desktop.storage._MAX_PRIVATE_OBJECT_BYTES", 8), patch(
+                "starhelp_desktop.storage._MAX_DPAPI_ENVELOPE_OVERHEAD", 32
+            ), patch.object(store._protector, "unprotect", return_value=b"x" * 9):
+                with self.assertRaisesRegex(ValueError, "private object exceeds"):
+                    store.load("fixture-decrypted-large")
+
     @unittest.skipUnless(sys.platform == "win32", "Windows DPAPI integration check")
     def test_windows_dpapi_round_trips_synthetic_private_object(self) -> None:
         with temporary_directory() as directory:

@@ -10,6 +10,10 @@ from typing import Protocol
 from uuid import UUID
 
 
+_MAX_PRIVATE_OBJECT_BYTES = 64 * 1024 * 1024
+_MAX_DPAPI_ENVELOPE_OVERHEAD = 64 * 1024
+
+
 class DataProtector(Protocol):
     def protect(self, data: bytes) -> bytes: ...
 
@@ -101,7 +105,11 @@ class EncryptedPrivateStore:
     def save(self, key: str, value: dict[str, object]) -> Path:
         safe_key = self._safe_key(key)
         plaintext = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        if len(plaintext) > _MAX_PRIVATE_OBJECT_BYTES:
+            raise ValueError("private object exceeds the configured size limit")
         encrypted = b"SHDPAPI1" + self._protector.protect(plaintext)
+        if len(encrypted) > _MAX_PRIVATE_OBJECT_BYTES + _MAX_DPAPI_ENVELOPE_OVERHEAD:
+            raise ValueError("encrypted private object exceeds the configured size limit")
         destination = self.root / f"{safe_key}.bin"
         descriptor, name = tempfile.mkstemp(prefix=f".{safe_key}.", suffix=".tmp", dir=self.root)
         temporary = Path(name)
@@ -118,10 +126,17 @@ class EncryptedPrivateStore:
 
     def load(self, key: str) -> dict[str, object]:
         path = self.root / f"{self._safe_key(key)}.bin"
-        payload = path.read_bytes()
+        max_envelope = _MAX_PRIVATE_OBJECT_BYTES + _MAX_DPAPI_ENVELOPE_OVERHEAD
+        with path.open("rb") as stream:
+            payload = stream.read(max_envelope + 1)
+        if len(payload) > max_envelope:
+            raise ValueError("encrypted private object exceeds the configured size limit")
         if not payload.startswith(b"SHDPAPI1"):
             raise ValueError("private object has an unknown encryption envelope")
-        value = json.loads(self._protector.unprotect(payload[8:]).decode("utf-8"))
+        plaintext = self._protector.unprotect(payload[8:])
+        if len(plaintext) > _MAX_PRIVATE_OBJECT_BYTES:
+            raise ValueError("private object exceeds the configured size limit")
+        value = json.loads(plaintext.decode("utf-8"))
         if not isinstance(value, dict):
             raise ValueError("private object root must be a JSON object")
         return value

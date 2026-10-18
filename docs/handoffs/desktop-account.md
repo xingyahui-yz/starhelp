@@ -77,6 +77,9 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   validator/cache, and explicit-save report service. UID requests reject redirects, so the UID stays
   on the player-selected HTTPS service. Saving and revocation are serialized to prevent a late write
   after cleanup.
+- Private object saves reject plaintext JSON above 64 MiB; loads bound the encrypted envelope read
+  before DPAPI and independently cap decrypted bytes before JSON parsing. This prevents corrupted
+  or unexpectedly large local objects from causing unbounded reads or reaching the decryptor/parser.
 - The Mihomo response parser rejects duplicate JSON keys, non-finite constants, invalid UTF-8,
   excessive nesting, and non-object roots. Numeric preview fields exclude booleans, NaN, infinities,
   and overflowing integers so malformed service values cannot enter the encrypted snapshot. The
@@ -284,7 +287,7 @@ save click. No real profile, UID, or network request is involved. This makes a v
 synthetic substitute available while M0 remains `0.1-draft`; it does not enable production task
 mapping, trust, source coverage, or MVP acceptance.
 
-Verification on 2026-10-18: all 44 package `unittest` cases pass; `compileall` and `git diff --check`
+Verification on 2026-10-18: all 46 package `unittest` cases pass; `compileall` and `git diff --check`
 pass. A fresh PyInstaller 6.22.3 candidate has 919 manifest entries and all hashes match; archive
 inspection contains `starhelp_desktop.analysis`, `starhelp_desktop.producer_request`, and
 `starhelp_desktop.synthetic_demo`, while `_internal/demo-fixtures/` contains the pinned A bundle,
@@ -293,7 +296,8 @@ synthetic B snapshot, and fixture public key. The packaged planner worker is pre
 installer install, upgrade, both rollback directions, and tamper rejection passed with TEMP/TMP in
 a component-local temporary directory. Cache receipt digest matching/tamper behavior and bounded
 pre-parse cache/receipt reads are covered by regressions. OCR screenshot file reads are also bounded
-before decode, with empty and over-limit file regressions. The candidate remains unsigned; production M0,
+before decode, with empty and over-limit file regressions. Private object write, encrypted-envelope
+read, and decrypted-size limits have dedicated regressions. The candidate remains unsigned; production M0,
 publisher signing, target-Windows acceptance, and real-account acceptance remain outstanding.
 
 ### Report reference validation follow-up (2026-10-18)
