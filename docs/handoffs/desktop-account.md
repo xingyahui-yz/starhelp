@@ -339,3 +339,18 @@ upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped unde
 build directory after the system temp path denied a staging move. The candidate remains unsigned;
 production M0, publisher signing, target-Windows acceptance, and real-account acceptance remain
 outstanding.
+
+### Public profile request switch isolation (2026-10-18)
+
+AccountsPage now cancels a manual or authorized automatic public-profile request immediately when
+the selected profile ID or authorization generation changes. It finalizes the old lifecycle task,
+clears pending profile data, and leaves late completion/failure callbacks unable to replace the
+new profile's page. A synthetic Qt regression covers switching during an in-flight request and
+asserts that a late proposal and failure remain discarded.
+
+Verification after this source change: all 50 package tests, `compileall`, and `git diff --check`
+passed. A fresh PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes/file set
+and stayed alive for an 8-second startup under isolated `LOCALAPPDATA`. Installer install,
+upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped under the component
+build directory. The candidate remains unsigned; production M0, publisher signing, target-Windows
+acceptance, and real-account acceptance remain outstanding.

@@ -497,6 +497,57 @@ class ProgressPageTests(unittest.TestCase):
             )
             page.close()
 
+    def test_account_switch_cancels_public_fetch_and_discards_late_preview(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            first = repository.begin_profile(
+                label="Synthetic fetch first", provider_id="local-import",
+                server_label="fixture-region",
+            )
+            second = repository.begin_profile(
+                label="Synthetic fetch second", provider_id="local-import",
+                server_label="fixture-region",
+            )
+            page = AccountsPage(repository, lifecycle, _ProgressBus())
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(first.profile_id))
+            )
+            cancel = lifecycle.register_task(first.profile_id, first.generation)
+            page.fetch_profile = first
+            page.pending_cancel = cancel
+            page.pending_auto_refresh = True
+            page.cancel_fetch_button.setEnabled(True)
+
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(second.profile_id))
+            )
+
+            self.assertTrue(cancel.is_set())
+            self.assertIsNone(page.fetch_profile)
+            self.assertIsNone(page.pending_cancel)
+            self.assertIsNone(page.pending)
+            self.assertIsNone(page.pending_profile)
+            self.assertFalse(page.cancel_fetch_button.isEnabled())
+            cancelled_text = page.preview.toPlainText()
+            self.assertIn("已切换档案", cancelled_text)
+            page._fetch_completed(ImportProposal.create(
+                source_kind=SourceKind.PUBLIC_PROFILE,
+                source_id="synthetic-late-response",
+                observed_at=datetime.now(UTC),
+                fields={},
+                coverage=frozenset(),
+            ), cancel)
+            page._fetch_failed("synthetic late failure", cancel)
+            self.assertEqual(page.preview.toPlainText(), cancelled_text)
+            self.assertEqual(
+                [entry.profile_id for entry in repository.list_profiles()],
+                [first.profile_id, second.profile_id],
+            )
+            page.close()
+
 
 class ImportAndPrivacyTests(unittest.TestCase):
     def test_ocr_image_file_read_is_bounded_without_a_size_check_race(self) -> None:

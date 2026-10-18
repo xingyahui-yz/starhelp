@@ -554,6 +554,17 @@ class AccountsPage(_Page):
 
     def _selection_changed(self, *_args: object) -> None:
         profile = self._selected_profile()
+        if self.fetch_profile is not None and not self._same_profile_generation(
+            self.fetch_profile, profile
+        ):
+            cancel = self.pending_cancel
+            if cancel is not None:
+                cancel.set()
+                self._fetch_cancelled(cancel)
+                self.progress_bus.updated.emit("切换档案后已丢弃旧档案查询结果。", 0)
+                self.preview.setPlainText(
+                    "已切换档案；旧档案公开查询已取消，任何迟到结果都会被丢弃。"
+                )
         if self.ocr_profile is not None and not self._same_profile_generation(
             self.ocr_profile, profile
         ):
