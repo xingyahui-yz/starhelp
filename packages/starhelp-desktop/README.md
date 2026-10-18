@@ -20,8 +20,10 @@ requires Windows; the encryption contract is injected in platform-independent un
 ## Integration status
 
 - Public profile provider: Mihomo parsed HSR endpoint normalization is covered by synthetic fixtures,
-  including malformed optional arrays. No real UID has been requested; UID-to-region routing remains
-  an M0 decision.
+  including malformed optional arrays. Network responses must echo the requested UID in the documented
+  `player.uid` field or they are rejected before preview. Manual and separately authorized automatic
+  reads can be canceled locally; an already sent HTTP request may still finish at the service, but its
+  response is discarded. No real UID has been requested; UID-to-region routing remains an M0 decision.
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: no source code is imported from their worktrees. The
   desktop package vendors the pinned C 0.3.0 wheel as a black-box artifact and launches its worker
