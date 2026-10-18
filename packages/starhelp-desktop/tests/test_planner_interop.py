@@ -20,6 +20,7 @@ from starhelp_desktop.bundles import (
     PublicBundleCache,
     PublicBundleSynchronizer,
 )
+from starhelp_desktop.analysis import ProducerAnalysisRunner
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
 from starhelp_desktop.models import ProfileAuthorization
@@ -29,6 +30,7 @@ from starhelp_desktop.producer_request import (
     select_public_task,
 )
 from starhelp_desktop.storage import EncryptedPrivateStore
+from starhelp_desktop.reports import ReportLifecycle
 from test_account_core import TestProtector
 
 
@@ -149,12 +151,32 @@ class ProducerPlannerInteropTests(unittest.TestCase):
                     "starhelp.producers.v0.1", "starhelp.local-profile.v0.2",
                 }),
             )
-            result = planner.analyze(
+            reports = ReportLifecycle(store, lifecycle)
+            execution = ProducerAnalysisRunner(planner, reports).run(
                 request=wrapper,
                 profile_id=PROFILE_ID,
                 authorization_generation=AUTHORIZATION_GENERATION,
                 lifecycle=lifecycle,
             )
+            result = execution.planner_result
+            self.assertIsNotNone(execution.temporary_report)
+            assert execution.temporary_report is not None
+            self.assertEqual(store.list_profile_keys(PROFILE_ID, "report"), ())
+            self.assertIn("ev_fixture_0001@1", execution.temporary_report.public_refs)
+            reports.save_explicitly(
+                execution.temporary_report,
+                current_snapshot_revision=snapshot.revision,
+                current_public_release_id=validated.release_id,
+            )
+            saved_reports = reports.list_saved(
+                profile_id=PROFILE_ID,
+                generation=AUTHORIZATION_GENERATION,
+                current_snapshot_revision=snapshot.revision,
+                current_public_release_id=validated.release_id,
+            )
+            self.assertEqual(len(saved_reports), 1)
+            self.assertEqual(saved_reports[0].public_release_id, validated.release_id)
+            self.assertEqual(saved_reports[0].snapshot_revision, snapshot.revision)
             withdrawn_wrapper = json.loads(json.dumps(wrapper))
             evidence = planner_bundle["evidence"][0]
             withdrawn_wrapper["producer_request"]["latest_known_validity"][
