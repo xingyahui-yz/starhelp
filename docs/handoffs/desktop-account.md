@@ -86,7 +86,8 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   validity, and displays when online withdrawal state is unknown. It does not manufacture a report
   without a planner result. TaskPage exposes a temporary-report signal; the report page previews it
   and saves only after the user clicks the explicit save action. Report writes and task-preference
-  writes serialize with revocation. No planner currently emits that signal.
+  writes serialize with revocation. TaskPage emits this signal only from the explicitly confirmed
+  synthetic demo; production task submission remains disabled.
 - A local planner subprocess bridge accepts only an explicit argument vector (no shell), sends one
   complete `AnalysisRequest` as UTF-8 JSON through stdin, and validates a single stdout envelope
   declaring protocol version, planner version, capabilities, and result. It enforces request and
@@ -236,17 +237,48 @@ The rebuilt unsigned PyInstaller 6.22.3 candidate has 827 SHA-256 manifest entri
 
 Added `starhelp_desktop.producer_request` as the B-owned request construction seam for the pinned C producer adapter. `select_public_task` takes stage scope and public goal directly from a validated bundle's planner view by exact IDs; absent, ambiguous, cross-release, or mismatched mappings fail closed. `build_producer_analysis_request` preserves original signed A bytes, serializes the supplied B snapshot, hashes both byte sequences, and requires explicit A/B producer commits, format profiles, distribution trust purpose/key material, and active authorization generation. It does not access the network, choose production trust, or persist data. The A/B/C synthetic replay test now exercises this shared builder, including an unavailable stage rejection; all 40 component tests and `compileall` passed. Ruff was not installed in the component venv.
 
-This is a request builder only; TaskPage has not been wired to submit it. The public mode/stage/goal mapping, production trust configuration, serializer/request contract, and complete coverage cases remain M0 blockers. Current UI task creation stores only an encrypted goal draft and must continue to state that no analysis or recommendation ran.
+This is a request builder only; at this point in the work TaskPage had not been wired to submit it. The public mode/stage/goal mapping, production trust configuration, serializer/request contract, and complete coverage cases remain M0 blockers. Regular UI task creation stores only an encrypted goal draft and does not analyze or recommend.
 
 ### Synthetic analysis-to-report orchestration (2026-10-18)
 
 Added `starhelp_desktop.analysis.ProducerAnalysisRunner` to call `LocalPlannerProcess` under the selected profile authorization and produce an `AnalysisReport` only for `plans_available`. The unsaved report retains the planner result/citations and binds the exact snapshot revision, bundle release, and planner version. Citation IDs/revisions are retained as report references; malformed or cross-release citation data fails closed. No result is persisted by the runner; the existing explicit-save lifecycle remains the only persistence path. The signed A bundle + pinned B synthetic snapshot + C 0.3.0 test now exercises request construction, local planning, temporary report creation, explicit save, and report reload. All 40 package tests, `compileall`, and `git diff --check` pass.
 
-The orchestration is available as a component seam but is not yet connected to TaskPage. Production UI execution still requires frozen M0 mappings, snapshot/request semantics, and provisioned production trust; do not treat this synthetic replay as a production or complete MVP flow.
+The orchestration is available as a component seam. Production UI execution still requires frozen M0 mappings, snapshot/request semantics, and provisioned production trust; do not treat this synthetic replay as a production or complete MVP flow.
 
 ### Refreshed candidate evidence (2026-10-18)
 
 Exported the request builder and analysis runner from the component package root so PyInstaller includes them. Rebuilt the unsigned candidate with PyInstaller 6.22.3; its manifest contains 916 files and every SHA-256 entry verifies. PyInstaller archive inspection confirms `starhelp_desktop.analysis` and `starhelp_desktop.producer_request` are present. An isolated 8-second launch loaded Qt6Core.dll and Qt6Widgets.dll. The installer smoke initially hit Access denied moving a staging directory under the sandbox system temp path; the run left no residual smoke directory. Re-running with TEMP/TMP scoped to the component build directory passed install, upgrade, both rollback directions, and tamper rejection. This remains an unsigned candidate; target-machine acceptance, publisher signing and production M0 remain outstanding.
+
+### Explicit synthetic TaskPage demo (2026-10-18)
+
+TaskPage now exposes “运行合成联调演示（仅 fixture）” as a distinct button. It asks before creating
+or reusing a separately labeled encrypted synthetic profile, reads only the three bundled
+`producer-interop-v1` fixtures, checks their pinned SHA-256 values, validates the A bundle with its
+fixture-only Ed25519 key, selects exact stage/template/goal IDs from that signed bundle, and stores
+those canonical IDs as the demo profile's encrypted last-task draft. It never loads the currently
+selected profile snapshot and has no network client. The B snapshot, task request, and planner run
+stay within the local subprocess path. Analysis runs on a Qt worker; eligible results reach the
+existing report preview and remain unsaved until the user clicks the explicit save button. Pending
+and saved report labels carry a persistent `synthetic_demo` marker and visibly say “仅合成 fixture”.
+The demo profile appears in Accounts and can be revoked there. The frozen app packages these
+fixtures under `demo-fixtures/`.
+
+An offscreen PySide6 regression clicks the demo button with synthetic approval, waits for the local
+C 0.3.0 worker result, confirms a distinct `synthetic-demo` profile and a staged report, verifies the
+encrypted report store remains empty before explicit save, and confirms one report exists after the
+save click. No real profile, UID, or network request is involved. This makes a visible end-to-end
+synthetic substitute available while M0 remains `0.1-draft`; it does not enable production task
+mapping, trust, source coverage, or MVP acceptance.
+
+Verification on 2026-10-18: all 41 package `unittest` cases pass; `compileall` and `git diff --check`
+pass. A fresh PyInstaller 6.22.3 candidate has 919 manifest entries and all hashes match; archive
+inspection contains `starhelp_desktop.analysis`, `starhelp_desktop.producer_request`, and
+`starhelp_desktop.synthetic_demo`, while `_internal/demo-fixtures/` contains the pinned A bundle,
+synthetic B snapshot, and fixture public key. The packaged planner worker is present. An isolated
+8-second startup under a new `LOCALAPPDATA` stayed alive and loaded Qt6Core/Qt6Widgets. Synthetic
+installer install, upgrade, both rollback directions, and tamper rejection passed with TEMP/TMP in
+a component-local temporary directory. The candidate remains unsigned; production M0, publisher
+signing, target-Windows acceptance, and real-account acceptance remain outstanding.
 
 ### Report reference validation follow-up (2026-10-18)
 

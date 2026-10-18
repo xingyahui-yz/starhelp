@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .analysis import ProducerAnalysisRunner
 from .bundles import PublicBundleCache
 from .equipment import EquipmentMergeConflictError
 from .imports import (
@@ -40,9 +42,11 @@ from .imports import (
 from .lifecycle import ProfileLifecycle
 from .models import EquipmentIdentity, ImportProposal
 from .profiles import ProfileRepository, ProfileSummary
+from .planner import LocalPlannerProcess, bundled_planner_command
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
 from .reports import AnalysisReport, ReportLifecycle
 from .storage import EncryptedPrivateStore
+from .synthetic_demo import SyntheticDemoContext, prepare_synthetic_demo
 from .tasks import AnalysisTaskDraft, TaskRepository
 
 
@@ -59,6 +63,41 @@ class _ProfileFetchSignals(QObject):
 
 class _ProgressBus(QObject):
     updated = Signal(str, int)
+
+
+class _SyntheticAnalysisSignals(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+
+
+class _SyntheticAnalysisWorker(QRunnable):
+    def __init__(self, context: SyntheticDemoContext, lifecycle: ProfileLifecycle,
+                 store: EncryptedPrivateStore) -> None:
+        super().__init__()
+        self.context = context
+        self.lifecycle = lifecycle
+        self.store = store
+        self.signals = _SyntheticAnalysisSignals()
+
+    def run(self) -> None:
+        try:
+            runner = ProducerAnalysisRunner(
+                LocalPlannerProcess(
+                    bundled_planner_command(),
+                    frozenset({"starhelp.producers.v0.1", "starhelp.local-profile.v0.2"}),
+                ),
+                ReportLifecycle(self.store, self.lifecycle),
+            )
+            execution = runner.run(
+                request=self.context.request,
+                profile_id=self.context.profile.profile_id,
+                authorization_generation=self.context.profile.generation,
+                lifecycle=self.lifecycle,
+            )
+        except Exception as exc:
+            self.signals.failed.emit(str(exc))
+        else:
+            self.signals.completed.emit(execution)
 
 
 class _ProfileFetchWorker(QRunnable):
@@ -125,11 +164,16 @@ class TaskPage(_Page):
     temporary_report_ready = Signal(object)
 
     def __init__(self, profiles: ProfileRepository, tasks: TaskRepository,
-                 progress_bus: _ProgressBus) -> None:
+                 progress_bus: _ProgressBus, lifecycle: ProfileLifecycle,
+                 store: EncryptedPrivateStore) -> None:
         super().__init__("任务", "选择公开关卡和本地档案。目标记忆按档案加密保存；规划器未连接时不会生成推荐。")
         self.profiles = profiles
         self.tasks = tasks
         self.progress_bus = progress_bus
+        self.lifecycle = lifecycle
+        self.store = store
+        self.thread_pool = QThreadPool.globalInstance()
+        self._demo_worker: _SyntheticAnalysisWorker | None = None
         form = QFormLayout()
         self.mode = QComboBox()
         self.mode.addItems(["混沌回忆", "虚构叙事", "末日幻影"])
@@ -162,13 +206,99 @@ class TaskPage(_Page):
         row = QHBoxLayout()
         self.refresh_profiles = QPushButton("刷新档案列表")
         self.analyze = QPushButton("创建分析任务")
+        self.synthetic_demo = QPushButton("运行合成联调演示（仅 fixture）")
+        self.synthetic_demo.setToolTip(
+            "只读取随应用分发并校验摘要的合成数据与测试公钥；不读取所选档案，不访问网络。"
+        )
         row.addWidget(self.refresh_profiles)
         row.addWidget(self.analyze)
         self.content.addLayout(row)
+        self.content.addWidget(self.synthetic_demo)
         self.refresh_profiles.clicked.connect(self.reload_profiles)
         self.analyze.clicked.connect(self.create_task)
+        self.synthetic_demo.clicked.connect(self.run_synthetic_demo)
         self.profile.currentIndexChanged.connect(self.restore_last_task)
         self.reload_profiles()
+
+    def run_synthetic_demo(self) -> None:
+        if self._demo_worker is not None:
+            return
+        choice = QMessageBox.question(
+            self,
+            "运行合成联调演示",
+            "将只使用应用内置并校验摘要的 A 签名 fixture、测试公钥和合成 B 快照，"
+            "创建或复用一个单独的加密演示档案；不会读取当前所选真实档案，也不会访问网络。"
+            "演示档案可在“账号与导入”页撤权并删除。是否继续？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if choice != QMessageBox.StandardButton.Yes:
+            return
+        self.synthetic_demo.setEnabled(False)
+        self.status.setText("正在验证内置合成 fixture…")
+        self.progress.setRange(0, 0)
+        try:
+            context = prepare_synthetic_demo(self.profiles)
+            scope = context.task["scope"]
+            public_goal = context.task["public_goal"]
+            draft = AnalysisTaskDraft.create(
+                profile_id=context.profile.profile_id,
+                authorization_generation=context.profile.generation,
+                mode_label=scope["mode_id"],
+                cycle_id=scope["cycle_id"],
+                stage_id=scope["stage_id"],
+                goal_label=public_goal["kind"],
+            )
+            self.tasks.save_last(draft)
+        except Exception as exc:
+            self.synthetic_demo.setEnabled(True)
+            self.progress.setRange(0, 100)
+            self.status.setText(f"合成演示未启动：{exc}")
+            self.progress_bus.updated.emit("合成联调演示未启动。", 0)
+            return
+
+        self.reload_profiles()
+        index = self.profile.findData(str(context.profile.profile_id))
+        if index >= 0:
+            self.profile.setCurrentIndex(index)
+        self.status.setText("合成演示档案已准备；本地规划器正在分析 fixture 数据…")
+        self.progress_bus.updated.emit("仅合成 fixture：本地规划分析进行中。", -1)
+        worker = _SyntheticAnalysisWorker(context, self.lifecycle, self.store)
+        worker.signals.completed.connect(self._synthetic_demo_completed)
+        worker.signals.failed.connect(self._synthetic_demo_failed)
+        self._demo_worker = worker
+        self.thread_pool.start(worker)
+
+    def _synthetic_demo_completed(self, execution: object) -> None:
+        self._demo_worker = None
+        self.synthetic_demo.setEnabled(True)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(100)
+        report = getattr(execution, "temporary_report", None)
+        if report is not None:
+            report = replace(
+                report,
+                task={**report.task, "synthetic_demo": True},
+            )
+            self.status.setText(
+                "合成联调完成：报告仅待在报告页预览，尚未保存。"
+                "此结果仅来自 fixture，不代表真实游戏建议。"
+            )
+            self.progress_bus.updated.emit("合成 fixture 分析完成；报告待用户主动保存。", 100)
+            self.temporary_report_ready.emit(report)
+            return
+        result = getattr(execution, "planner_result", None)
+        status = getattr(result, "result", {}).get("status", "unknown")
+        self.status.setText(f"合成演示结束，没有可展示的报告（状态：{status}）。")
+        self.progress_bus.updated.emit("合成 fixture 分析结束，没有生成报告。", 100)
+
+    def _synthetic_demo_failed(self, message: str) -> None:
+        self._demo_worker = None
+        self.synthetic_demo.setEnabled(True)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.status.setText(f"合成联调失败：{message}。演示档案可在账号页撤权。")
+        self.progress_bus.updated.emit("合成联调失败；没有报告可保存。", 0)
 
     def reload_profiles(self) -> None:
         selected = self.profile.currentData()
@@ -1136,9 +1266,10 @@ class ReportsPage(_Page):
         for report in reports:
             report_key = str(report.report_id)
             self.saved_reports[report_key] = report
+            demo_label = " · 仅合成 fixture" if report.task.get("synthetic_demo") is True else ""
             item = QListWidgetItem(
                 f"{report.created_at.astimezone().strftime('%Y-%m-%d %H:%M')} · "
-                f"{labels[report.validity.value]} · {report.planner_version}"
+                f"{labels[report.validity.value]} · {report.planner_version}{demo_label}"
             )
             item.setData(Qt.ItemDataRole.UserRole, report_key)
             self.report_list.addItem(item)
@@ -1176,8 +1307,10 @@ class ReportsPage(_Page):
         self.pending_report = report
         self.profile_list.setCurrentIndex(index)
         self.refresh_reports()
+        demo_label = "（仅合成 fixture，不代表真实游戏建议）" \
+            if report.task.get("synthetic_demo") is True else ""
         self.status.setText(
-            "有一份未保存的本地分析结果。点击“主动保存当前分析结果”后才会加密留存。"
+            f"有一份未保存的本地分析结果{demo_label}。点击“主动保存当前分析结果”后才会加密留存。"
         )
         self.detail.setPlainText(json.dumps({
             "状态": report.validity.value,
@@ -1198,8 +1331,10 @@ class ReportsPage(_Page):
             self.save_pending_button.setEnabled(False)
             self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
             return
+        demo_label = "（仅合成 fixture，不代表真实游戏建议）" \
+            if report.task.get("synthetic_demo") is True else ""
         self.status.setText(
-            "有一份未保存的本地分析结果。点击“主动保存当前分析结果”后才会加密留存。"
+            f"有一份未保存的本地分析结果{demo_label}。点击“主动保存当前分析结果”后才会加密留存。"
         )
         self.detail.setPlainText(json.dumps({
             "状态": report.validity.value,
@@ -1314,7 +1449,9 @@ class StarHelpWindow(QMainWindow):
         self.navigation.addItems(["任务", "公共资料", "账号与导入", "进度", "报告", "设置与维护"])
         self.navigation.setFixedWidth(180)
         self.pages = QStackedWidget()
-        self.task_page = TaskPage(self.profiles, self.tasks, self.progress_bus)
+        self.task_page = TaskPage(
+            self.profiles, self.tasks, self.progress_bus, self.lifecycle, store
+        )
         self.accounts_page = AccountsPage(self.profiles, self.lifecycle, self.progress_bus)
         self.progress_page = _ProgressPage(self.progress_bus)
         self.pages.addWidget(self.task_page)

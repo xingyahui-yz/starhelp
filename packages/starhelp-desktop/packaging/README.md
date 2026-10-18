@@ -17,15 +17,18 @@ Run the synthetic installer smoke flow with
 tamper rejection in a temporary directory.
 
 The worker, reusable producer request builder, and analysis-to-temporary-report runner are included
-for the local adapter interface.
-TaskPage currently saves only an encrypted goal draft; it does not submit requests or generate a
-recommendation. Production submission remains unavailable until M0 task mappings, the snapshot/
-request contract, and a separately provisioned production trust anchor are frozen. The integration
-test replays request construction, local analysis, temporary report creation, and explicit report
-save using only the synthetic signed fixture under `tests/fixtures/producer-interop-v1/`. The runner
-is exported from the component package and included in the frozen app, but is not connected to
-TaskPage yet. The current candidate build was verified with 916 manifest entries, an isolated Qt
-startup smoke, and the synthetic installer install/upgrade/rollback/tamper flow.
+for the local adapter interface. TaskPage has a separate, explicit “synthetic interop demo” button.
+After confirmation, it verifies bundled fixture hashes and the test-only Ed25519 key, creates or
+reuses an encrypted profile labeled as synthetic, saves the fixture's canonical task IDs to that
+profile, and runs the local planner worker in a background thread. It never reads the selected
+profile or accesses the network. Any eligible report is staged for preview and still requires the
+existing explicit save action. The synthetic profile can be revoked and deleted from Accounts.
+
+This UI is only a synthetic integration substitute. Regular task creation still saves an encrypted
+draft and does not submit a production request. Production submission remains unavailable until M0
+task mappings, the snapshot/request contract, complete representative fixtures, and a separately
+provisioned production trust anchor are frozen. The source fixture files are under
+`tests/fixtures/producer-interop-v1/` and are embedded in the candidate under `demo-fixtures/`.
 
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release

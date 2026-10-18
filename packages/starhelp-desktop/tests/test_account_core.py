@@ -7,6 +7,7 @@ import os
 import sys
 import threading
 import tempfile
+import time
 import unittest
 import urllib.request
 from dataclasses import replace
@@ -14,7 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from starhelp_desktop.bundles import (
     BundleRejected,
@@ -23,7 +24,14 @@ from starhelp_desktop.bundles import (
     PublicBundleSynchronizer,
 )
 from starhelp_desktop.equipment import EquipmentIdentityService, EquipmentMergeConflictError
-from starhelp_desktop.gui import AccountsPage, _ProfileFetchWorker, _ProgressBus, _ProgressPage
+from starhelp_desktop.gui import (
+    AccountsPage,
+    ReportsPage,
+    TaskPage,
+    _ProfileFetchWorker,
+    _ProgressBus,
+    _ProgressPage,
+)
 from starhelp_desktop.imports import (
     OcrDraft,
     OcrTextLine,
@@ -241,6 +249,50 @@ class ProgressPageTests(unittest.TestCase):
         ])
         self.assertIn("进行中", page.history.item(0).text())
         page.close()
+
+    def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            tasks = TaskRepository(store, lifecycle)
+            cache = PublicBundleCache(root / "public-cache")
+            bus = _ProgressBus()
+            task_page = TaskPage(profiles, tasks, bus, lifecycle, store)
+            reports_page = ReportsPage(profiles, lifecycle, store, cache)
+            task_page.temporary_report_ready.connect(reports_page.stage_temporary_report)
+
+            with patch(
+                "starhelp_desktop.gui.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                task_page.synthetic_demo.click()
+
+            deadline = time.monotonic() + 30
+            while reports_page.pending_report is None and time.monotonic() < deadline:
+                self.app.processEvents()
+                time.sleep(0.01)
+
+            self.assertIsNotNone(reports_page.pending_report)
+            self.assertTrue(reports_page.pending_report.task.get("synthetic_demo"))
+            demo_profiles = [
+                item for item in profiles.list_profiles()
+                if item.provider_id == "synthetic-demo"
+            ]
+            self.assertEqual(len(demo_profiles), 1)
+            self.assertEqual(task_page.profile.currentData(), str(demo_profiles[0].profile_id))
+            self.assertEqual(store.list_profile_keys(demo_profiles[0].profile_id, "report"), ())
+            self.assertIn("合成联调完成", task_page.status.text())
+            self.assertIn("仅合成 fixture", reports_page.status.text())
+
+            reports_page.save_pending_button.click()
+            self.assertIsNone(reports_page.pending_report)
+            self.assertEqual(
+                len(store.list_profile_keys(demo_profiles[0].profile_id, "report")), 1
+            )
+            task_page.close()
+            reports_page.close()
 
     def test_account_page_cancellation_discards_late_public_profile_result(self) -> None:
         class EmptyRepository:

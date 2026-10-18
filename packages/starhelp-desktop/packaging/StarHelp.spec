@@ -5,12 +5,19 @@ from PyInstaller.utils.hooks import collect_all
 root = Path(SPECPATH).parent
 ocr_datas, ocr_binaries, ocr_hiddenimports = collect_all("rapidocr")
 runtime_datas, runtime_binaries, runtime_hiddenimports = collect_all("onnxruntime")
+fixture_root = root / "tests" / "fixtures" / "producer-interop-v1"
+demo_fixture_names = (
+    "knowledge-planner-fixture-v1.bpublic.json",
+    "synthetic-b-snapshot-045965b.json",
+    "fixture-ed25519-public.pem",
+)
+demo_datas = [(str(fixture_root / name), "demo-fixtures") for name in demo_fixture_names]
 
 a = Analysis(
     [str(root / "packaging" / "entrypoint.py")],
     pathex=[str(root / "src")],
     binaries=ocr_binaries + runtime_binaries,
-    datas=ocr_datas + runtime_datas,
+    datas=ocr_datas + runtime_datas + demo_datas,
     hiddenimports=["PIL.Image", *ocr_hiddenimports, *runtime_hiddenimports],
     hookspath=[],
     hooksconfig={},
