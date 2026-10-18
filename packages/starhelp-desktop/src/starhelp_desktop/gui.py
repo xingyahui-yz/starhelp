@@ -1993,6 +1993,11 @@ class StarHelpWindow(QMainWindow):
         self.navigation.currentRowChanged.connect(self.pages.setCurrentIndex)
         self.navigation.setCurrentRow(0)
 
+    def closeEvent(self, event: object) -> None:
+        self.accounts_page.auto_refresh_timer.stop()
+        self.lifecycle.cancel_all_tasks()
+        super().closeEvent(event)
+
 
 def create_window() -> StarHelpWindow:
     if os.name != "nt":

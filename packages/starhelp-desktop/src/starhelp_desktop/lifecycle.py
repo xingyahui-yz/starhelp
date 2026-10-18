@@ -82,6 +82,14 @@ class ProfileLifecycle:
             if not self._tasks[profile_id]:
                 self._tasks.pop(profile_id, None)
 
+    def cancel_all_tasks(self) -> int:
+        """Signal all active work to stop without changing profile authorization."""
+        with self._lock:
+            tasks = tuple(task for profile_tasks in self._tasks.values() for task in profile_tasks)
+            for task in tasks:
+                task.cancel.set()
+            return len(tasks)
+
     def accepts_result(self, profile_id: UUID, generation: int) -> bool:
         return self.is_active(profile_id, generation)
 

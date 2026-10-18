@@ -30,6 +30,7 @@ from starhelp_desktop.gui import (
     AccountsPage,
     ReportsPage,
     PublicKnowledgePage,
+    StarHelpWindow,
     TaskPage,
     _OcrWorker,
     _ProfileFetchWorker,
@@ -261,6 +262,28 @@ class ProgressPageTests(unittest.TestCase):
             page.server.setText("another-fixture-server")
             self.assertFalse(page.confirm_consent.isChecked())
             page.close()
+
+    def test_window_close_cancels_background_tasks_without_revoking_profiles(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            window = StarHelpWindow(store, root / "temp", PublicBundleCache(root / "cache"))
+            profile = window.profiles.begin_profile(
+                label="Synthetic shutdown profile",
+                provider_id="local-import",
+                server_label="fixture-region",
+            )
+            cancel = window.lifecycle.register_task(profile.profile_id, profile.generation)
+            self.assertTrue(window.accounts_page.auto_refresh_timer.isActive())
+
+            self.assertTrue(window.close())
+
+            self.assertTrue(cancel.is_set())
+            self.assertFalse(window.accounts_page.auto_refresh_timer.isActive())
+            self.assertTrue(window.lifecycle.is_active(profile.profile_id, profile.generation))
+            self.assertEqual(
+                [item.profile_id for item in window.profiles.list_profiles()], [profile.profile_id]
+            )
 
     def test_progress_page_keeps_only_bounded_session_history(self) -> None:
         with temporary_directory() as directory:
