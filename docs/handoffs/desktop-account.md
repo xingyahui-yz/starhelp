@@ -41,6 +41,16 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 4. The shared MVP contract remains `0.1-draft`. Real mode/cycle/stage IDs, source coverage and
    permissions, region interpretation, transport/error schema, release hash/signature rules,
    capabilities, and condition semantics remain M0 decisions. No shared contract was modified.
+5. The official [Mihomo `player.py` model](https://github.com/MetaCubeX/mihomo/blob/008b91bfe8c0e2daca0ab69061efd9ea1ad71bd2/mihomo/models/player.py)
+   and its [v1 player model](https://github.com/MetaCubeX/mihomo/blob/008b91bfe8c0e2daca0ab69061efd9ea1ad71bd2/mihomo/models/v1/player.py)
+   document `memory_data` / `ChallengeData` as a `ForgottenHall` summary with fields such as
+   `level`, `chaos_id`, and `chaos_level` (v1 aliases include `PreMazeGroupIndex`, `MazeGroupIndex`,
+   and `MazeGroupID`). They do not establish complete current-cycle history or mappings for all
+   three challenge modes. The B adapter now retains only these bounded nonnegative integer fields
+   under their provider field names and source scope. The Progress page renders them as a raw source
+   summary and keeps Memory of Chaos, Pure Fiction, and Apocalyptic Shadow progress `unknown` until
+   source coverage and M0 mappings are verified. Model inspection is not live API verification; no
+   real UID was queried.
 
 ## Implemented so far
 
@@ -77,6 +87,11 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
   validator/cache, and explicit-save report service. UID requests reject redirects, so the UID stays
   on the player-selected HTTPS service. Saving and revocation are serialized to prevent a late write
   after cleanup.
+- Mihomo's documented `player.memory_data` summary values (`level`, `chaos_id`, `chaos_level`) are
+  imported as bounded, source-scoped fields with observed timestamps and normal field-level merge
+  coverage. The Progress page displays these values under their original source names. It shows the
+  three challenge modes as unknown and says missing records do not mean uncleared; no cycle, stage,
+  star, score, or full-history mapping is inferred from these summary fields.
 - Private object saves reject plaintext JSON above 64 MiB; loads bound the encrypted envelope read
   before DPAPI and independently cap decrypted bytes before JSON parsing. This prevents corrupted
   or unexpectedly large local objects from causing unbounded reads or reaching the decryptor/parser.
@@ -369,3 +384,20 @@ set and stayed alive for an 8-second startup under isolated `LOCALAPPDATA`. Inst
 upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped under the component
 build directory. The candidate remains unsigned; production M0, publisher signing, target-Windows
 acceptance, and real-account acceptance remain outstanding.
+
+### Mihomo progress summary and three-mode status (2026-10-18)
+
+The public profile preview now preserves only the named nonnegative integer `player.memory_data`
+fields `level`, `chaos_id`, and `chaos_level` as source-scoped facts. The Progress page selects an
+authorized local profile, displays these values with their original source names and observation
+times, and keeps Memory of Chaos, Pure Fiction, and Apocalyptic Shadow separately marked unknown.
+It says missing records do not mean uncleared and refreshes its profile selection on page entry so
+revoked profile data is removed from view. No cycle, stage, star, score, or historical coverage is
+inferred. The field names were checked against the official Mihomo models at commit
+`008b91bfe8c0e2daca0ab69061efd9ea1ad71bd2`; no real UID or live public profile was queried.
+
+Verification: all 52 package tests pass; `compileall` and `git diff --check` pass. A fresh unsigned
+PyInstaller 6.22.3 candidate contains 919 files and its SHA-256 manifest matches the exact file set.
+The app remained alive for an 8-second launch under isolated `LOCALAPPDATA`. Synthetic installer
+install, upgrade, two-way rollback, and tamper rejection pass with temp data under the component
+build directory. Three-mode current-cycle coverage, M0 IDs and source mapping remain incomplete.

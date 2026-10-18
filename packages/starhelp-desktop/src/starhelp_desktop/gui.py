@@ -1593,9 +1593,23 @@ class SettingsPage(_Page):
 
 class _ProgressPage(_Page):
     MAX_HISTORY = 50
+    MODES = ("混沌回忆", "虚构叙事", "末日幻影")
 
-    def __init__(self, progress_bus: _ProgressBus) -> None:
-        super().__init__("进度", "耗时任务在后台运行；撤权会取消任务并拒收迟到结果。")
+    def __init__(self, profiles: ProfileRepository, progress_bus: _ProgressBus) -> None:
+        super().__init__("进度", "查看当前档案的公开进度覆盖，以及本会话的后台任务状态。")
+        self.profiles = profiles
+        profile_row = QHBoxLayout()
+        profile_row.addWidget(QLabel("本地档案"))
+        self.profile_list = QComboBox()
+        self.profile_list.setAccessibleName("进度页本地档案")
+        self.refresh_profiles = QPushButton("刷新档案")
+        profile_row.addWidget(self.profile_list, 1)
+        profile_row.addWidget(self.refresh_profiles)
+        self.content.addLayout(profile_row)
+        self.mode_status = QTextEdit()
+        self.mode_status.setReadOnly(True)
+        self.mode_status.setAccessibleName("三种玩法进度覆盖")
+        self.content.addWidget(self.mode_status)
         self.status = QLabel("当前没有后台任务。")
         self.status.setWordWrap(True)
         self.bar = QProgressBar()
@@ -1607,7 +1621,69 @@ class _ProgressPage(_Page):
         self.history = QListWidget()
         self.history.setAccessibleName("最近进度活动")
         self.content.addWidget(self.history, 1)
+        self.profile_list.currentIndexChanged.connect(self._refresh_mode_status)
+        self.refresh_profiles.clicked.connect(self.reload_profiles)
         progress_bus.updated.connect(self._update)
+        self.reload_profiles()
+
+    def showEvent(self, event: object) -> None:
+        super().showEvent(event)
+        # Revocation on another page removes the profile from the repository. Refreshing
+        # whenever this page becomes visible prevents stale private progress staying on screen.
+        self.reload_profiles()
+
+    def reload_profiles(self) -> None:
+        selected = self.profile_list.currentData()
+        self.profile_list.blockSignals(True)
+        self.profile_list.clear()
+        for profile in self.profiles.list_profiles():
+            self.profile_list.addItem(profile.label, str(profile.profile_id))
+        index = self.profile_list.findData(selected)
+        fallback = 0 if self.profile_list.count() else -1
+        self.profile_list.setCurrentIndex(index if index >= 0 else fallback)
+        self.profile_list.blockSignals(False)
+        self._refresh_mode_status()
+
+    def _refresh_mode_status(self, *_args: object) -> None:
+        selected_id = self.profile_list.currentData()
+        if not isinstance(selected_id, str):
+            self.mode_status.setPlainText("尚无已授权档案。三种玩法的进度均为未知。")
+            return
+        profile = next(
+            (item for item in self.profiles.list_profiles() if str(item.profile_id) == selected_id),
+            None,
+        )
+        if profile is None:
+            self.mode_status.setPlainText("档案已撤权或不存在。三种玩法的进度均为未知。")
+            return
+        try:
+            snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+        except FileNotFoundError:
+            snapshot = None
+        except Exception:
+            self.mode_status.setPlainText("档案资料不可读取；未显示旧进度。")
+            return
+
+        lines = [f"档案：{profile.label}", "", "玩法记录覆盖："]
+        lines.extend(f"- {mode}：未知（没有可核实的该模式记录）" for mode in self.MODES)
+        lines.append("缺少公开记录不代表未通关；M0 模式、周期和关卡映射未冻结。")
+        summary_fields = {
+            path: fact for path, fact in (snapshot.fields.items() if snapshot else ())
+            if path.startswith("progress:mihomo-memory-summary:")
+            and fact.source_kind is SourceKind.PUBLIC_PROFILE
+            and fact.source_id == MihomoPublicProfileClient.PROVIDER_ID
+        }
+        lines.extend(("", "Mihomo 忘却之庭摘要（保留来源字段名，不映射到上述模式）："))
+        if summary_fields:
+            for path, fact in sorted(summary_fields.items()):
+                source_field = path.rsplit(":", 1)[-1]
+                lines.append(
+                    f"- memory_data.{source_field}: {fact.value!r} · "
+                    f"{fact.status.value} · 观测于 {fact.observed_at.isoformat()}"
+                )
+        else:
+            lines.append("- 此档案没有已导入的 Mihomo 进度摘要字段。")
+        self.mode_status.setPlainText("\n".join(lines))
 
     def _update(self, message: str, value: int) -> None:
         self.status.setText(message)
@@ -1645,7 +1721,7 @@ class StarHelpWindow(QMainWindow):
             self.profiles, self.tasks, self.progress_bus, self.lifecycle, store
         )
         self.accounts_page = AccountsPage(self.profiles, self.lifecycle, self.progress_bus)
-        self.progress_page = _ProgressPage(self.progress_bus)
+        self.progress_page = _ProgressPage(self.profiles, self.progress_bus)
         self.pages.addWidget(self.task_page)
         self.pages.addWidget(PublicKnowledgePage(public_cache))
         self.pages.addWidget(self.accounts_page)

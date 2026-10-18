@@ -23,7 +23,10 @@ requires Windows; the encryption contract is injected in platform-independent un
   including malformed optional arrays. Network responses must echo the requested UID in the documented
   `player.uid` field or they are rejected before preview. Manual and separately authorized automatic
   reads can be canceled locally; an already sent HTTP request may still finish at the service, but its
-  response is discarded. No real UID has been requested; UID-to-region routing remains an M0 decision.
+  response is discarded. Mihomo `player.memory_data` summary values are retained with their provider
+  field names and are shown as raw summary facts in the Progress page; they are not mapped to complete
+  cycle or three-mode history. The three challenge modes stay unknown unless separately verified.
+  No real UID has been requested; UID-to-region routing remains an M0 decision.
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: no source code is imported from their worktrees. The
   desktop package vendors the pinned C 0.3.0 wheel as a black-box artifact and launches its worker

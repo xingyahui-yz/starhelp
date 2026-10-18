@@ -175,6 +175,28 @@ class MihomoPublicProfileClient:
             "角色列表是公开展示档案；未展示角色和物品的所有权保持未知。服务返回的总数不构成逐项清单。",
             "物品身份尚未被来源证明；同一类型 ID、词条或属性不作副本身份依据。",
         ]
+        player = payload.get("player")
+        memory_data = player.get("memory_data") if isinstance(player, dict) else None
+        if isinstance(memory_data, dict):
+            # Preserve only the provider's explicitly named summary fields. Their cycle,
+            # stage, and current three-mode semantics are not inferred here.
+            for source_key in ("level", "chaos_id", "chaos_level"):
+                value = memory_data.get(source_key)
+                if _finite_integer(value) and value >= 0:
+                    path = f"progress:mihomo-memory-summary:{source_key}"
+                    fields[path] = FieldFact(
+                        value=value,
+                        status=FieldStatus.NEEDS_REVIEW,
+                        source_kind=SourceKind.PUBLIC_PROFILE,
+                        source_id=self.PROVIDER_ID,
+                        observed_at=observed,
+                        scope=f"mihomo-player.memory_data.{source_key}",
+                    )
+                    covered.add(path)
+            if any(path.startswith("progress:mihomo-memory-summary:") for path in fields):
+                warnings.append(
+                    "Mihomo 提供了忘却之庭摘要字段；未将其换算为玩法、周期、关卡或完整历史记录。"
+                )
         for character in characters:
             if not isinstance(character, dict):
                 continue

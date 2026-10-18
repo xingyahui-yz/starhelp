@@ -242,18 +242,44 @@ class ProgressPageTests(unittest.TestCase):
         cls.app = QApplication.instance() or QApplication([])
 
     def test_progress_page_keeps_only_bounded_session_history(self) -> None:
-        bus = _ProgressBus()
-        page = _ProgressPage(bus)
-        for index in range(_ProgressPage.MAX_HISTORY + 2):
-            bus.updated.emit(f"synthetic operation {index}", -1 if index == 51 else index % 101)
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic progress profile",
+                provider_id="mihomo-public-profile",
+                server_label="fixture-server",
+            )
+            proposal = MihomoPublicProfileClient().to_preview({
+                "player": {"memory_data": {"level": 8, "chaos_id": 1234, "chaos_level": 12}},
+                "characters": [],
+            })
+            profiles.save_confirmed_import(profile.profile_id, profile.generation,
+                                           confirm_import(proposal))
 
-        self.assertEqual(page.history.count(), _ProgressPage.MAX_HISTORY)
-        self.assertIn("synthetic operation 51", page.history.item(0).text())
-        self.assertNotIn("synthetic operation 0", [
-            page.history.item(index).text() for index in range(page.history.count())
-        ])
-        self.assertIn("进行中", page.history.item(0).text())
-        page.close()
+            bus = _ProgressBus()
+            page = _ProgressPage(profiles, bus)
+            self.assertIn("Mihomo 忘却之庭摘要", page.mode_status.toPlainText())
+            self.assertIn("memory_data.chaos_id: 1234", page.mode_status.toPlainText())
+            for mode in _ProgressPage.MODES:
+                self.assertIn(f"{mode}：未知", page.mode_status.toPlainText())
+
+            for index in range(_ProgressPage.MAX_HISTORY + 2):
+                bus.updated.emit(f"synthetic operation {index}", -1 if index == 51 else index % 101)
+
+            self.assertEqual(page.history.count(), _ProgressPage.MAX_HISTORY)
+            self.assertIn("synthetic operation 51", page.history.item(0).text())
+            self.assertNotIn("synthetic operation 0", [
+                page.history.item(index).text() for index in range(page.history.count())
+            ])
+            self.assertIn("进行中", page.history.item(0).text())
+
+            profiles.revoke(profile.profile_id)
+            page.reload_profiles()
+            self.assertIn("尚无已授权档案", page.mode_status.toPlainText())
+            page.close()
 
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
         with temporary_directory() as directory:
@@ -728,6 +754,37 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(proposal.equipment[0].identity, EquipmentIdentity.AMBIGUOUS)
         self.assertFalse(proposal.equipment[0].may_be_reassigned)
         self.assertIn("attribute:0.value", proposal.equipment[0].facts)
+
+    def test_mihomo_preserves_only_named_memory_summary_values_without_mode_mapping(self) -> None:
+        proposal = MihomoPublicProfileClient().to_preview({
+            "player": {
+                "uid": "100000999",
+                "memory_data": {
+                    "level": 8,
+                    "chaos_id": 1234,
+                    "chaos_level": 12,
+                    "negative": -1,
+                    "malformed_bool": True,
+                    "unexpected": "ignored",
+                },
+            },
+            "characters": [],
+        })
+
+        self.assertEqual(
+            {path: item.value for path, item in proposal.fields.items()},
+            {
+                "progress:mihomo-memory-summary:level": 8,
+                "progress:mihomo-memory-summary:chaos_id": 1234,
+                "progress:mihomo-memory-summary:chaos_level": 12,
+            },
+        )
+        self.assertEqual(proposal.coverage, frozenset(proposal.fields))
+        self.assertTrue(all(item.status is FieldStatus.NEEDS_REVIEW for item in proposal.fields.values()))
+        self.assertTrue(all(item.scope.startswith("mihomo-player.memory_data.")
+                            for item in proposal.fields.values()))
+        self.assertNotIn("100000999", json.dumps(proposal.fields, default=str))
+        self.assertTrue(any("未将其换算" in warning for warning in proposal.warnings))
 
     def test_mihomo_malformed_optional_arrays_are_ignored(self) -> None:
         proposal = MihomoPublicProfileClient().to_preview({
