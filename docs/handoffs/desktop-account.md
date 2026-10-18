@@ -354,3 +354,18 @@ and stayed alive for an 8-second startup under isolated `LOCALAPPDATA`. Installe
 upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped under the component
 build directory. The candidate remains unsigned; production M0, publisher signing, target-Windows
 acceptance, and real-account acceptance remain outstanding.
+
+### Bound import preview profile isolation (2026-10-18)
+
+When a structured, manual, OCR, or public-profile import preview is bound to a profile ID and
+generation, switching to a different profile now clears that preview and disables its save action.
+Unbound local previews remain available for a later explicit profile choice. A synthetic Qt test
+switches between two independent local profiles while a structured import is pending and verifies
+the preview is removed without writing either profile snapshot.
+
+Verification after this source change: all 51 package tests, `compileall`, and `git diff --check`
+passed. The rebuilt PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes/file
+set and stayed alive for an 8-second startup under isolated `LOCALAPPDATA`. Installer install,
+upgrade, two-way rollback, and tamper rejection passed with TEMP/TMP scoped under the component
+build directory. The candidate remains unsigned; production M0, publisher signing, target-Windows
+acceptance, and real-account acceptance remain outstanding.

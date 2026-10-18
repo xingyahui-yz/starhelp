@@ -548,6 +548,46 @@ class ProgressPageTests(unittest.TestCase):
             )
             page.close()
 
+    def test_account_switch_discards_bound_structured_import_preview(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            first = repository.begin_profile(
+                label="Synthetic import first", provider_id="local-import",
+                server_label="fixture-region",
+            )
+            second = repository.begin_profile(
+                label="Synthetic import second", provider_id="local-import",
+                server_label="fixture-region",
+            )
+            page = AccountsPage(repository, lifecycle, _ProgressBus())
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(first.profile_id))
+            )
+            page.pending = StructuredImportAdapter().preview_object({
+                "schema_id": StructuredImportAdapter.SCHEMA_ID,
+                "schema_version": StructuredImportAdapter.SCHEMA_VERSION,
+                "observed_at": "2026-10-18T00:00:00Z",
+                "fields": {"character:fixture.level": {"value": 80}},
+            }).proposal
+            page.pending_profile = first
+            page._render_proposal(page.pending)
+            page.save_button.setEnabled(True)
+
+            page.profile_list.setCurrentIndex(
+                page.profile_list.findData(str(second.profile_id))
+            )
+
+            self.assertIsNone(page.pending)
+            self.assertIsNone(page.pending_profile)
+            self.assertFalse(page.save_button.isEnabled())
+            self.assertIn("旧档案导入预览已清除", page.preview.toPlainText())
+            self.assertEqual(store.list_profile_keys(first.profile_id, "snapshot"), ())
+            self.assertEqual(store.list_profile_keys(second.profile_id, "snapshot"), ())
+            page.close()
+
 
 class ImportAndPrivacyTests(unittest.TestCase):
     def test_ocr_image_file_read_is_bounded_without_a_size_check_race(self) -> None:

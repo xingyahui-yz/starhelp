@@ -569,6 +569,16 @@ class AccountsPage(_Page):
             self.ocr_profile, profile
         ):
             self._discard_ocr_preview("已切换档案，旧档案的 OCR 候选已丢弃。")
+        if (
+            self.pending is not None
+            and self.pending_profile is not None
+            and not self._same_profile_generation(self.pending_profile, profile)
+        ):
+            self.pending = None
+            self.pending_profile = None
+            self.save_button.setEnabled(False)
+            self.progress_bus.updated.emit("切换档案后已清除旧档案导入预览。", 0)
+            self.preview.setPlainText("已切换档案；旧档案导入预览已清除，请重新导入。")
         self.revoke_button.setEnabled(profile is not None)
         if profile is None:
             self.auto_refresh_consent.setChecked(False)
