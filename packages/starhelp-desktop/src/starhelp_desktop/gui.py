@@ -12,6 +12,8 @@ from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
@@ -211,12 +213,18 @@ class TaskPage(_Page):
         self.excluded = QLineEdit()
         self.excluded.setPlaceholderText("公共角色 ID，以逗号分隔")
         self.locked = QLineEdit()
-        self.locked.setPlaceholderText("本地装备实例 ID；未知身份不会参与调装")
+        self.locked.setPlaceholderText("从所选档案的当前装备快照中选择")
+        self.choose_locked_equipment = QPushButton("选择装备…")
+        lock_row = QWidget()
+        lock_layout = QHBoxLayout(lock_row)
+        lock_layout.setContentsMargins(0, 0, 0, 0)
+        lock_layout.addWidget(self.locked, 1)
+        lock_layout.addWidget(self.choose_locked_equipment)
         for label, widget in (("玩法", self.mode), ("周期", self.cycle), ("关卡", self.stage),
                               ("目标", self.goal), ("本地档案", self.profile),
-                              ("固定角色", self.fixed), ("排除角色", self.excluded),
-                              ("锁定装备", self.locked)):
+                              ("固定角色", self.fixed), ("排除角色", self.excluded)):
             form.addRow(label, widget)
+        form.addRow("锁定装备", lock_row)
         self.content.addLayout(form)
         self.status = QLabel("尚未创建任务。公共 ID 与条件语义仍需 M0 核验。")
         self.status.setWordWrap(True)
@@ -239,6 +247,7 @@ class TaskPage(_Page):
         self.refresh_profiles.clicked.connect(self.reload_profiles)
         self.analyze.clicked.connect(self.create_task)
         self.synthetic_demo.clicked.connect(self.run_synthetic_demo)
+        self.choose_locked_equipment.clicked.connect(self.open_equipment_lock_picker)
         self.profile.currentIndexChanged.connect(self.restore_last_task)
         self.reload_profiles()
 
@@ -349,6 +358,28 @@ class TaskPage(_Page):
             QMessageBox.warning(self, "档案不可用", "所选档案已撤权或不存在，请刷新档案列表。")
             self.reload_profiles()
             return
+        requested_locks = tuple(
+            item.strip() for item in self.locked.text().split(",") if item.strip()
+        )
+        if requested_locks:
+            try:
+                snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+            except FileNotFoundError:
+                QMessageBox.warning(self, "装备锁定不可用", "此档案没有当前装备快照，请先导入并确认。")
+                return
+            except (PermissionError, ValueError) as exc:
+                QMessageBox.warning(self, "装备锁定不可用", str(exc))
+                self.reload_profiles()
+                return
+            available_ids = {str(item.local_instance_id) for item in snapshot.equipment}
+            missing_ids = set(requested_locks) - available_ids
+            if missing_ids:
+                QMessageBox.warning(
+                    self,
+                    "装备锁定已过期",
+                    "锁定列表中有装备已不在此档案的当前快照。请重新选择装备后再创建任务。",
+                )
+                return
         try:
             task = AnalysisTaskDraft.create(
                 profile_id=profile.profile_id,
@@ -366,6 +397,70 @@ class TaskPage(_Page):
             QMessageBox.warning(self, "无法创建任务", str(exc))
             return
         self._show_waiting_task(task)
+
+    def open_equipment_lock_picker(self) -> None:
+        profile_id = self.profile.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == profile_id), None)
+        if profile is None:
+            QMessageBox.information(self, "需要本地档案", "先选择一个已授权档案。")
+            return
+        try:
+            snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+        except FileNotFoundError:
+            QMessageBox.information(
+                self, "没有装备快照", "此档案尚无已确认的装备实例导入。"
+            )
+            return
+        except (PermissionError, ValueError) as exc:
+            QMessageBox.warning(self, "装备资料不可用", str(exc))
+            return
+        if not snapshot.equipment:
+            QMessageBox.information(self, "没有装备实例", "此档案当前快照中没有装备实例。")
+            return
+
+        selected_ids = {
+            value.strip() for value in self.locked.text().split(",") if value.strip()
+        }
+        dialog = QDialog(self)
+        dialog.setWindowTitle("选择锁定的装备实例")
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel(
+            "仅列出此档案当前快照中的本地实例。未确认身份的装备仍可锁定当前记录，"
+            "但不会因此获得跨角色调装资格。"
+        ))
+        choices = QListWidget(dialog)
+        choices.setObjectName("equipmentLockChoices")
+        for equipment in snapshot.equipment:
+            owner = f"角色 {equipment.owner_character_id}" \
+                if equipment.owner_character_id else "未识别角色"
+            instance_id = str(equipment.local_instance_id)
+            item = QListWidgetItem(
+                f"{equipment.slot} · 类型 {equipment.public_type_id} · {owner} · "
+                f"身份 {equipment.identity.value} · 实例 {instance_id}",
+                choices,
+            )
+            item.setData(Qt.ItemDataRole.UserRole, instance_id)
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            item.setCheckState(
+                Qt.CheckState.Checked if instance_id in selected_ids else Qt.CheckState.Unchecked
+            )
+        layout.addWidget(choices)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
+            parent=dialog,
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        locked_ids = [
+            choices.item(index).data(Qt.ItemDataRole.UserRole)
+            for index in range(choices.count())
+            if choices.item(index).checkState() == Qt.CheckState.Checked
+        ]
+        self.locked.setText(", ".join(locked_ids))
 
     def restore_last_task(self, *_args: object) -> None:
         profile_id = self.profile.currentData()

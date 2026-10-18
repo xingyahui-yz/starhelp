@@ -434,3 +434,18 @@ manifest entries with exact hashes and file set, stayed alive for an 8-second st
 `LOCALAPPDATA`, and passed synthetic installer install, upgrade, two-way rollback, and tamper
 rejection. Production M0 mappings/trust, publisher signing, target-Windows acceptance, and
 real-account acceptance remain outstanding.
+
+### Task equipment lock selection (2026-10-18)
+
+TaskPage now opens a multi-select picker populated only from the selected authorized profile's
+current equipment snapshot. Each choice shows slot, public type, owner, identity state, and local
+instance ID. Unconfirmed identities may be locked for the current record but are not thereby
+eligible for cross-character rearrangement. Task creation rechecks selected IDs against the current
+snapshot and refuses stale or arbitrary IDs. A synthetic Qt regression verifies selection, encrypted
+task preference persistence, and rejection without overwriting the previous task when an ID is stale.
+
+Verification: all 55 package tests pass; `compileall` and `git diff --check` pass. A rebuilt unsigned
+PyInstaller 6.22.3 candidate has 919 manifest entries with exact hashes and file set, stayed alive
+for an 8-second startup under isolated `LOCALAPPDATA`, and passed synthetic installer install,
+upgrade, two-way rollback, and tamper rejection. Production M0 mappings/trust, publisher signing,
+target-Windows acceptance, and real-account acceptance remain outstanding.

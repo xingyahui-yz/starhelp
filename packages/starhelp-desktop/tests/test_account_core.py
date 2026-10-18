@@ -15,7 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QDialog, QListWidget, QMessageBox
 
 from starhelp_desktop.bundles import (
     BundleRejected,
@@ -405,6 +406,65 @@ class ProgressPageTests(unittest.TestCase):
             self.assertIn("账号快照已更新", reports_page.detail.toPlainText())
             self.assertEqual(store.list_profile_keys(profile.profile_id, "report"), ())
             reports_page.close()
+
+    def test_task_equipment_lock_picker_uses_only_current_profile_instances(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic equipment profile",
+                provider_id="synthetic-source",
+                server_label="fixture-server",
+            )
+            instance_id = uuid4()
+            equipment = EquipmentInstance(
+                local_instance_id=instance_id,
+                public_type_id="fixture-equipment-type",
+                slot="fixture-slot",
+                identity=EquipmentIdentity.UNCONFIRMED,
+                owner_character_id="fixture-character",
+            )
+            proposal = confirm_import(ImportProposal.create(
+                source_kind=SourceKind.MANUAL,
+                source_id="fixture-equipment-import",
+                observed_at=datetime.now(UTC),
+                fields={},
+                equipment=(equipment,),
+                coverage=frozenset({"equipment"}),
+            ))
+            profiles.save_confirmed_import(profile.profile_id, profile.generation, proposal)
+            tasks = TaskRepository(store, lifecycle)
+            page = TaskPage(profiles, tasks, _ProgressBus(), lifecycle, store)
+
+            def choose_first_equipment() -> QDialog.DialogCode:
+                dialog = page.findChild(QDialog)
+                self.assertIsNotNone(dialog)
+                choices = dialog.findChild(QListWidget, "equipmentLockChoices")
+                self.assertIsNotNone(choices)
+                choices.item(0).setCheckState(Qt.CheckState.Checked)
+                return QDialog.DialogCode.Accepted
+
+            with patch.object(QDialog, "exec", side_effect=choose_first_equipment):
+                page.open_equipment_lock_picker()
+            self.assertEqual(page.locked.text(), str(instance_id))
+
+            page.cycle.setText("fixture-cycle")
+            page.stage.setText("fixture-stage")
+            page.create_task()
+            saved = tasks.load_last(profile.profile_id, profile.generation)
+            self.assertEqual(saved.locked_equipment_instance_ids, (str(instance_id),))
+
+            page.locked.setText(str(uuid4()))
+            with patch("starhelp_desktop.gui.QMessageBox.warning") as warning:
+                page.create_task()
+            warning.assert_called_once()
+            self.assertEqual(
+                tasks.load_last(profile.profile_id, profile.generation).locked_equipment_instance_ids,
+                (str(instance_id),),
+            )
+            page.close()
 
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
         with temporary_directory() as directory:
