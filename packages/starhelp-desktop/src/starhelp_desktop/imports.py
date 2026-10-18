@@ -164,6 +164,17 @@ class RapidOcrEngine:
         )
 
 
+def read_ocr_image(path: Path) -> bytes:
+    """Read a selected screenshot with a hard bound even if it grows after selection."""
+    with path.open("rb") as stream:
+        image_bytes = stream.read(RapidOcrEngine.MAX_IMAGE_BYTES + 1)
+    if not image_bytes:
+        raise ValueError("截图文件为空")
+    if len(image_bytes) > RapidOcrEngine.MAX_IMAGE_BYTES:
+        raise ValueError("截图超过 16 MiB 本机 OCR 限制")
+    return image_bytes
+
+
 def proposal_from_ocr_mapping(draft: OcrDraft, mapping: dict[str, int]) -> ImportProposal:
     """Map player-selected text rows to explicit field paths; no automatic semantic guess."""
     fields: dict[str, FieldFact] = {}

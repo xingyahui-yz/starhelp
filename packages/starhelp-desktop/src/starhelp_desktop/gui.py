@@ -38,6 +38,7 @@ from .imports import (
     StructuredImportAdapter,
     confirm_import,
     proposal_from_ocr_mapping,
+    read_ocr_image,
 )
 from .lifecycle import ProfileLifecycle
 from .models import EquipmentIdentity, ImportProposal
@@ -1031,10 +1032,7 @@ class AccountsPage(_Page):
         )
         if path:
             try:
-                image_path = Path(path)
-                if image_path.stat().st_size > RapidOcrEngine.MAX_IMAGE_BYTES:
-                    raise ValueError("截图超过 16 MiB 本机 OCR 限制")
-                image_bytes = image_path.read_bytes()
+                image_bytes = read_ocr_image(Path(path))
             except OSError as exc:
                 self.preview.setPlainText(f"无法读取所选截图：{type(exc).__name__}")
                 return

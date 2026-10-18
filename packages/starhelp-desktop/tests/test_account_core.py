@@ -37,9 +37,11 @@ from starhelp_desktop.gui import (
 from starhelp_desktop.imports import (
     OcrDraft,
     OcrTextLine,
+    RapidOcrEngine,
     StructuredImportAdapter,
     confirm_import,
     proposal_from_ocr_mapping,
+    read_ocr_image,
 )
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.merge import merge_import
@@ -399,6 +401,21 @@ class ProgressPageTests(unittest.TestCase):
 
 
 class ImportAndPrivacyTests(unittest.TestCase):
+    def test_ocr_image_file_read_is_bounded_without_a_size_check_race(self) -> None:
+        with temporary_directory() as directory:
+            image_path = Path(directory) / "synthetic.png"
+            with patch.object(RapidOcrEngine, "MAX_IMAGE_BYTES", 8):
+                image_path.write_bytes(b"12345678")
+                self.assertEqual(read_ocr_image(image_path), b"12345678")
+
+                image_path.write_bytes(b"123456789")
+                with self.assertRaisesRegex(ValueError, "16 MiB"):
+                    read_ocr_image(image_path)
+
+                image_path.write_bytes(b"")
+                with self.assertRaisesRegex(ValueError, "为空"):
+                    read_ocr_image(image_path)
+
     def test_public_uid_redirects_are_rejected(self) -> None:
         handler = _RejectRedirects()
         request = urllib.request.Request(
