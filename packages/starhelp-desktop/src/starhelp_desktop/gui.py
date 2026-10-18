@@ -706,6 +706,8 @@ class AccountsPage(_Page):
         self.link_equipment_button.clicked.connect(self.link_equipment_identity)
         self.save_auto_refresh_button.clicked.connect(self.save_auto_refresh_setting)
         self.uid.textChanged.connect(self._auto_refresh_uid_edited)
+        self.uid.textChanged.connect(self._invalidate_public_query_consent)
+        self.server.textChanged.connect(self._invalidate_public_query_consent)
         self.equipment_list.currentIndexChanged.connect(self._update_equipment_confirmation_enabled)
         self.equipment_list.currentIndexChanged.connect(self._reload_equipment_link_targets)
         self.equipment_link_target.currentIndexChanged.connect(self._update_equipment_link_enabled)
@@ -717,6 +719,13 @@ class AccountsPage(_Page):
         self.auto_refresh_timer.timeout.connect(self._run_due_auto_refreshes)
         self.auto_refresh_timer.start()
         QTimer.singleShot(0, self._run_due_auto_refreshes)
+
+    def _invalidate_public_query_consent(self, *_args: object) -> None:
+        if self.confirm_consent.isChecked():
+            self.confirm_consent.setChecked(False)
+            self.preview.setPlainText(
+                "UID 或区服已变化；发送前请重新确认公开档案服务、查询用途和数据范围。"
+            )
 
     def _reload_profiles(self) -> None:
         selected = self.profile_list.currentData()

@@ -242,6 +242,26 @@ class ProgressPageTests(unittest.TestCase):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         cls.app = QApplication.instance() or QApplication([])
 
+    def test_public_query_consent_expires_when_uid_or_server_changes(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            page = AccountsPage(profiles, lifecycle, _ProgressBus())
+            page.uid.setText("100000999")
+            page.server.setText("fixture-server")
+
+            page.confirm_consent.setChecked(True)
+            page.uid.setText("100000998")
+            self.assertFalse(page.confirm_consent.isChecked())
+            self.assertIn("重新确认", page.preview.toPlainText())
+
+            page.confirm_consent.setChecked(True)
+            page.server.setText("another-fixture-server")
+            self.assertFalse(page.confirm_consent.isChecked())
+            page.close()
+
     def test_progress_page_keeps_only_bounded_session_history(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

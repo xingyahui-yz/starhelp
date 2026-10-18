@@ -493,3 +493,9 @@ Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest m
 | A→B→C 完整回放 | `rel_fixture_0001` 只有单 mode 且无设备约束；C handoff 明确完整技术接受未通过 | 新 immutable fixture 版本（三 mode，各 main/complete alternate/no-match；装备 type/slot requirement、ambiguous/confirmed 实例、锁定冲突、跨角色调装、材料覆盖/成本、withdrawal），随附原始 hashes 和预期 B/C 输出 |
 
 交接基线仍是共同契约 `0.1-draft`、A 合成 release `rel_fixture_0001`、C 固定 wheel 0.3.0；保持这些字节和版本不变。协调方冻结新接口后，A/C 发布新版本产物，B 再以黑盒方式消费并验证。来源/内容人工批准、生产 signing trust、服务部署和用户本机真实账号验收分别设 gate。现有合成回放不能证明生产 M0/M5/M6 或完整 MVP 完成。
+
+### UID/区服编辑后重置公开查询同意（2026-10-18）
+
+AccountsPage 的公开档案同意现绑定到当时展示的 UID 与区服：编辑任一字段会立即撤销勾选，并提示重新确认服务来源、查询用途和数据范围，避免把针对旧 UID/区服的同意沿用到新请求。新增合成 Qt 回归覆盖已勾选后分别修改 UID 和区服的情形。
+
+本轮验证：57 项 package unittest、`compileall` 与 `git diff --check` 通过。重建的 unsigned PyInstaller 候选包 919 项 SHA-256 与完整文件集一致；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、双向回滚和篡改拒绝通过。没有查询真实 UID。候选仍未签名；生产 M0 映射/信任、完整三模式和装备 fixture、目标 Windows 与真实账号验收仍未完成。
