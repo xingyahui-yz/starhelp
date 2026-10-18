@@ -23,7 +23,11 @@ from starhelp_desktop.bundles import (
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
 from starhelp_desktop.models import ProfileAuthorization
-from starhelp_desktop.profiles import _snapshot_from_dict, _snapshot_to_dict
+from starhelp_desktop.profiles import _snapshot_from_dict
+from starhelp_desktop.producer_request import (
+    build_producer_analysis_request,
+    select_public_task,
+)
 from starhelp_desktop.storage import EncryptedPrivateStore
 from test_account_core import TestProtector
 
@@ -87,70 +91,43 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             bundle = cached.payload()
 
         snapshot = _snapshot_from_dict(json.loads(snapshot_fixture_bytes.decode("utf-8")))
-        snapshot_bytes = json.dumps(
-            _snapshot_to_dict(snapshot), ensure_ascii=False, separators=(",", ":"), allow_nan=False
-        ).encode("utf-8")
         planner_bundle = bundle["objects"]["planner-view:rel_fixture_0001"]["bundle"]
         stage = planner_bundle["stages"][0]
         template = planner_bundle["templates"][0]
         request_id = "fixture:desktop-process-interop"
-        task = {
-            "scope": stage["scope"],
-            "public_goal": template["public_goals"][0],
-            "fixed_character_ids": [],
-            "excluded_character_ids": [],
-            "locked_local_instance_ids": [],
-            "allow_rearrangement": False,
-        }
-        producer_request = {
-            "schema_id": "ProducerAnalysisRequest",
-            "schema_version": "0.1",
-            "adapter_profile": "starhelp.producers.v0.1",
-            "request_id": request_id,
-            "public_bundle": {
-                "producer": "starhelp_knowledge",
-                "producer_commit": PUBLICATION_COMMIT,
-                "format_profile": "starhelp.b-publicbundle-envelope.v1",
-                "expected_release_id": validated.release_id,
-                "raw_json": bundle_bytes.decode("utf-8"),
-                "sha256": hashlib.sha256(bundle_bytes).hexdigest(),
-            },
-            "account_snapshot": {
-                "producer": "starhelp_desktop",
-                "producer_commit": SNAPSHOT_SERIALIZER_COMMIT,
-                "format_profile": "starhelp.desktop.snapshot.045965b",
-                "raw_json": snapshot_bytes.decode("utf-8"),
-                "sha256": hashlib.sha256(snapshot_bytes).hexdigest(),
-            },
-            "authorization_context": {
-                "profile_id": str(PROFILE_ID),
-                "active": True,
-                "generation": AUTHORIZATION_GENERATION,
-            },
-            "distribution_trust": {
-                "purpose": "synthetic-test",
-                "public_keys": {"starhelp-fixture-ed25519-v1": public_key.hex()},
-            },
+        task = select_public_task(
+            bundle,
+            stage_id=stage["stage_id"],
+            template_id=template["id"],
+            goal_kind=template["public_goals"][0]["kind"],
+        )
+        with self.assertRaisesRegex(ValueError, "missing or ambiguous"):
+            select_public_task(
+                bundle,
+                stage_id="fixture:stage:unpublished",
+                template_id=template["id"],
+                goal_kind=template["public_goals"][0]["kind"],
+            )
+        request_args = {
+            "validated_bundle": validated,
             "task": task,
-            "evaluation_time": "2026-10-16T00:10:00Z",
-            "latest_known_validity": {"withdrawn_public_refs": []},
-        }
-        wrapper = {
-            "contract_version": "0.1-draft",
-            "schema_id": "AnalysisRequest",
-            "schema_version": "0.1-draft",
-            "request_id": request_id,
+            "snapshot": snapshot,
             "authorization_generation": AUTHORIZATION_GENERATION,
-            "public_bundle": bundle,
-            "account_snapshot": {
-                "profile_id": str(PROFILE_ID),
-                "snapshot_revision": snapshot.revision,
-                "authorization_generation": AUTHORIZATION_GENERATION,
-                "authorization_state": "active",
-            },
-            "task": task,
-            "producer_request": producer_request,
+            "distribution_trust_purpose": "synthetic-test",
+            "distribution_public_keys": {"starhelp-fixture-ed25519-v1": public_key},
+            "bundle_producer_commit": PUBLICATION_COMMIT,
+            "bundle_format_profile": "starhelp.b-publicbundle-envelope.v1",
+            "snapshot_producer_commit": SNAPSHOT_SERIALIZER_COMMIT,
+            "snapshot_format_profile": "starhelp.desktop.snapshot.045965b",
+            "evaluation_time": datetime(2026, 10, 16, 0, 10, tzinfo=UTC),
+            "request_id": request_id,
         }
+        wrapper = build_producer_analysis_request(**request_args)
+        with self.assertRaisesRegex(ValueError, "does not include the bundle's signing key"):
+            build_producer_analysis_request(**{
+                **request_args,
+                "distribution_public_keys": {"unrelated-test-key": public_key},
+            })
 
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
             root = Path(directory)
@@ -196,6 +173,11 @@ class ProducerPlannerInteropTests(unittest.TestCase):
         self.assertEqual(result.result["snapshot_revision"], snapshot.revision)
         self.assertEqual(result.result["authorization_generation"], AUTHORIZATION_GENERATION)
         self.assertEqual(result.result["index_release_id"], validated.release_id)
+        self.assertEqual(wrapper["task"]["scope"], stage["scope"])
+        self.assertEqual(
+            wrapper["producer_request"]["public_bundle"]["sha256"],
+            hashlib.sha256(bundle_bytes).hexdigest(),
+        )
         self.assertEqual(len(result.result["current_equipment_plans"]), 2)
         self.assertTrue(result.result["citations"])
         self.assertTrue(result.result["adapter_metadata"])

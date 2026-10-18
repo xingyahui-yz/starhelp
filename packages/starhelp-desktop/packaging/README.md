@@ -16,9 +16,12 @@ Run the synthetic installer smoke flow with
 `pwsh -File tests/Install-Candidate.Smoke.ps1`; it exercises install, upgrade, two-way rollback, and
 tamper rejection in a temporary directory.
 
-The worker is included for the local adapter interface, but TaskPage remains disabled until a
-production-trusted public bundle and complete request builder are available. Its integration test
-uses only the synthetic signed fixture under `tests/fixtures/producer-interop-v1/`.
+The worker and a reusable producer request builder are included for the local adapter interface.
+TaskPage currently saves only an encrypted goal draft; it does not submit requests or generate a
+recommendation. Production submission remains unavailable until M0 task mappings, the snapshot/
+request contract, and a separately provisioned production trust anchor are frozen. The integration
+test replays the builder using only the synthetic signed fixture under
+`tests/fixtures/producer-interop-v1/`.
 
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release
