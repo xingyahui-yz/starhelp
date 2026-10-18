@@ -285,16 +285,24 @@ class ProfileRepository:
                         generated_at=utc_now(),
                     )
                 result = merge_import(current, proposal, confirmed_conflict_values=conflict_choices)
-            self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(result.snapshot))
+            self._lifecycle.run_authorized(
+                profile_id,
+                generation,
+                lambda: self._store.save(
+                    self._snapshot_key(profile_id), _snapshot_to_dict(result.snapshot)
+                ),
+            )
             return result
 
     def load_snapshot(self, profile_id: UUID, generation: int) -> AccountSnapshot:
-        self._lifecycle.require_active(profile_id, generation)
-        data = self._store.load(self._snapshot_key(profile_id))
-        snapshot = _snapshot_from_dict(data)
-        if snapshot.profile_id != profile_id:
-            raise ValueError("snapshot belongs to a different profile")
-        return snapshot
+        def load() -> AccountSnapshot:
+            data = self._store.load(self._snapshot_key(profile_id))
+            snapshot = _snapshot_from_dict(data)
+            if snapshot.profile_id != profile_id:
+                raise ValueError("snapshot belongs to a different profile")
+            return snapshot
+
+        return self._lifecycle.run_authorized(profile_id, generation, load)
 
     def confirm_equipment_instance(
         self, profile_id: UUID, generation: int, local_instance_id: UUID
@@ -304,7 +312,13 @@ class ProfileRepository:
             snapshot = self.load_snapshot(profile_id, generation)
             confirmed = EquipmentIdentityService().confirm_instance(snapshot, local_instance_id)
             if confirmed is not snapshot:
-                self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(confirmed))
+                self._lifecycle.run_authorized(
+                    profile_id,
+                    generation,
+                    lambda: self._store.save(
+                        self._snapshot_key(profile_id), _snapshot_to_dict(confirmed)
+                    ),
+                )
             return confirmed
 
     def link_equipment_instances(
@@ -327,7 +341,13 @@ class ProfileRepository:
                 player_confirmed_same_copy=player_confirmed_same_copy,
                 conflict_choices=conflict_choices,
             )
-            self._store.save(self._snapshot_key(profile_id), _snapshot_to_dict(linked))
+            self._lifecycle.run_authorized(
+                profile_id,
+                generation,
+                lambda: self._store.save(
+                    self._snapshot_key(profile_id), _snapshot_to_dict(linked)
+                ),
+            )
             return linked
 
     def set_auto_refresh(

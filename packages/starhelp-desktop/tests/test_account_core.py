@@ -896,6 +896,60 @@ class StorageLifecycleTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 store.load(f"profile-{profile.profile_id.hex}-snapshot")
 
+    def test_lifecycle_revoke_cannot_be_followed_by_a_late_snapshot_write(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            profile = repository.begin_profile(
+                label="Synthetic profile", provider_id="local-import", server_label="fixture-region"
+            )
+            proposal = confirm_import(StructuredImportAdapter().preview_object({
+                "schema_id": StructuredImportAdapter.SCHEMA_ID,
+                "schema_version": StructuredImportAdapter.SCHEMA_VERSION,
+                "observed_at": "2026-10-15T00:00:00Z",
+                "fields": {"character:fixture.level": {"value": 80}},
+            }).proposal)
+            snapshot_key = f"profile-{profile.profile_id.hex}-snapshot"
+            save_entered = threading.Event()
+            allow_save = threading.Event()
+            revoke_started = threading.Event()
+            revoke_done = threading.Event()
+            original_save = store.save
+
+            def slow_snapshot_save(key: str, value: dict[str, object]) -> Path:
+                if key == snapshot_key:
+                    save_entered.set()
+                    if not allow_save.wait(2):
+                        raise TimeoutError("synthetic snapshot-save gate timed out")
+                return original_save(key, value)
+
+            store.save = slow_snapshot_save  # type: ignore[method-assign]
+            saver = threading.Thread(
+                target=repository.save_confirmed_import,
+                args=(profile.profile_id, profile.generation, proposal),
+            )
+
+            def revoke() -> None:
+                revoke_started.set()
+                lifecycle.revoke(profile.profile_id)
+                revoke_done.set()
+
+            revoker = threading.Thread(target=revoke)
+            saver.start()
+            self.assertTrue(save_entered.wait(2))
+            revoker.start()
+            self.assertTrue(revoke_started.wait(2))
+            self.assertFalse(revoke_done.wait(0.05))
+            allow_save.set()
+            saver.join(2)
+            revoker.join(2)
+            self.assertFalse(saver.is_alive())
+            self.assertFalse(revoker.is_alive())
+            self.assertFalse((root / "private" / f"{snapshot_key}.bin").exists())
+            self.assertFalse(lifecycle.accepts_result(profile.profile_id, profile.generation))
+
     def test_revoke_tombstone_prevents_catalog_write_failure_from_resurrecting_profile(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)
