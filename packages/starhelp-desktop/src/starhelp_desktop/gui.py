@@ -51,6 +51,12 @@ class _Signals(QObject):
     failed = Signal(str)
 
 
+class _ProfileFetchSignals(QObject):
+    completed = Signal(object, object)
+    failed = Signal(str, object)
+    cancelled = Signal(object)
+
+
 class _ProgressBus(QObject):
     updated = Signal(str, int)
 
@@ -62,19 +68,24 @@ class _ProfileFetchWorker(QRunnable):
         self.client = client
         self.selection = selection
         self.cancelled = cancelled
-        self.signals = _Signals()
+        self.signals = _ProfileFetchSignals()
 
     def run(self) -> None:
         if self.cancelled.is_set():
+            self.signals.cancelled.emit(self.cancelled)
             return
         try:
             proposal = self.client.fetch(self.selection)
         except Exception as exc:
-            self.signals.failed.emit(str(exc))
+            if self.cancelled.is_set():
+                self.signals.cancelled.emit(self.cancelled)
+            else:
+                self.signals.failed.emit(str(exc), self.cancelled)
             return
         if self.cancelled.is_set():
+            self.signals.cancelled.emit(self.cancelled)
             return
-        self.signals.completed.emit(proposal)
+        self.signals.completed.emit(proposal, self.cancelled)
 
 
 class _OcrWorker(QRunnable):
@@ -290,6 +301,8 @@ class AccountsPage(_Page):
         )
         self.save_auto_refresh_button = QPushButton("保存自动刷新授权")
         self.fetch_button = QPushButton("确认并读取公开档案")
+        self.cancel_fetch_button = QPushButton("取消读取")
+        self.cancel_fetch_button.setEnabled(False)
         self.local_button = QPushButton("创建本地空档案")
         self.import_button = QPushButton("预览结构化 JSON")
         self.manual_path = QLineEdit()
@@ -323,7 +336,8 @@ class AccountsPage(_Page):
         refresh_row.addWidget(self.save_auto_refresh_button)
         self.content.addLayout(refresh_row)
         row = QHBoxLayout()
-        for button in (self.fetch_button, self.local_button, self.import_button, self.manual_button,
+        for button in (self.fetch_button, self.cancel_fetch_button, self.local_button,
+                       self.import_button, self.manual_button,
                        self.ocr_button, self.map_ocr_button,
                        self.save_button, self.revoke_button):
             row.addWidget(button)
@@ -342,6 +356,7 @@ class AccountsPage(_Page):
         self.content.addWidget(self.progress)
         self.content.addWidget(self.preview, 1)
         self.fetch_button.clicked.connect(self.fetch_public)
+        self.cancel_fetch_button.clicked.connect(self.cancel_public_fetch)
         self.local_button.clicked.connect(self.create_local)
         self.import_button.clicked.connect(self.preview_structured)
         self.manual_button.clicked.connect(self.preview_manual)
@@ -711,6 +726,7 @@ class AccountsPage(_Page):
         self.pending_auto_refresh = automatic
         self.auto_refresh_running = automatic
         self.fetch_button.setEnabled(False)
+        self.cancel_fetch_button.setEnabled(True)
         self.save_button.setEnabled(False)
         self.progress.setRange(0, 0)
         if automatic:
@@ -722,13 +738,55 @@ class AccountsPage(_Page):
         worker = _ProfileFetchWorker(MihomoPublicProfileClient(), selection, cancel)
         worker.signals.completed.connect(self._fetch_completed)
         worker.signals.failed.connect(self._fetch_failed)
+        worker.signals.cancelled.connect(self._fetch_cancelled)
         self.thread_pool.start(worker)
         self.confirm_consent.setChecked(False)
 
-    def _fetch_completed(self, proposal: object) -> None:
+    def cancel_public_fetch(self) -> None:
+        cancel = self.pending_cancel
+        if cancel is None:
+            return
+        cancel.set()
+        self.cancel_fetch_button.setEnabled(False)
+        self.preview.setPlainText(
+            "已请求取消读取。若 HTTP 请求已经发出，公开服务仍可能完成处理；"
+            "本机会丢弃返回数据，不会创建导入预览。"
+        )
+        self.progress_bus.updated.emit("正在取消公开档案读取；返回数据将被丢弃。", -1)
+
+    def _fetch_cancelled(self, cancel: object) -> None:
+        if cancel is not self.pending_cancel:
+            return
+        self.progress.setRange(0, 1)
+        self.progress.setValue(0)
+        self.fetch_button.setEnabled(True)
+        self.cancel_fetch_button.setEnabled(False)
+        cancelled_profile = self.fetch_profile
+        self.pending_cancel = None
+        self.pending = None
+        self.pending_profile = None
+        self.fetch_profile = None
+        self.pending_auto_refresh = False
+        self.auto_refresh_running = False
+        self.progress_bus.updated.emit("公开档案读取已取消；返回数据已丢弃。", 0)
+        if cancelled_profile is not None:
+            self.lifecycle.unregister_task(
+                cancelled_profile.profile_id, cancelled_profile.generation, cancel
+            )
+        self.preview.setPlainText(
+            "公开档案读取已取消。若请求已经发出，服务端仍可能完成处理；本机已丢弃其返回数据。"
+        )
+
+    def _fetch_completed(self, proposal: object, cancel: object) -> None:
+        if cancel is not self.pending_cancel:
+            return
+        if cancel.is_set():
+            self._fetch_cancelled(cancel)
+            return
         self.progress.setRange(0, 1)
         self.progress.setValue(1)
         self.fetch_button.setEnabled(True)
+        self.cancel_fetch_button.setEnabled(False)
         fetched_profile = self.fetch_profile
         completed_cancel = self.pending_cancel
         self.pending_cancel = None
@@ -758,10 +816,16 @@ class AccountsPage(_Page):
         self.pending_auto_refresh = False
         self.save_button.setEnabled(True)
 
-    def _fetch_failed(self, message: str) -> None:
+    def _fetch_failed(self, message: str, cancel: object) -> None:
+        if cancel is not self.pending_cancel:
+            return
+        if cancel.is_set():
+            self._fetch_cancelled(cancel)
+            return
         self.progress.setRange(0, 1)
         self.progress.setValue(0)
         self.fetch_button.setEnabled(True)
+        self.cancel_fetch_button.setEnabled(False)
         failed_profile = self.fetch_profile
         failed_cancel = self.pending_cancel
         self.pending_cancel = None
@@ -967,6 +1031,7 @@ class AccountsPage(_Page):
         self.pending_auto_refresh = False
         self.auto_refresh_running = False
         self.fetch_button.setEnabled(True)
+        self.cancel_fetch_button.setEnabled(False)
         self._reload_profiles()
         self.preview.setPlainText("档案授权已撤销，关联本地资料已清理。")
 

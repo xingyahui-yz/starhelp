@@ -23,7 +23,7 @@ from starhelp_desktop.bundles import (
     PublicBundleSynchronizer,
 )
 from starhelp_desktop.equipment import EquipmentIdentityService, EquipmentMergeConflictError
-from starhelp_desktop.gui import _ProgressBus, _ProgressPage
+from starhelp_desktop.gui import AccountsPage, _ProfileFetchWorker, _ProgressBus, _ProgressPage
 from starhelp_desktop.imports import (
     OcrDraft,
     OcrTextLine,
@@ -241,6 +241,65 @@ class ProgressPageTests(unittest.TestCase):
         ])
         self.assertIn("进行中", page.history.item(0).text())
         page.close()
+
+    def test_account_page_cancellation_discards_late_public_profile_result(self) -> None:
+        class EmptyRepository:
+            def list_profiles(self):
+                return []
+
+        class Lifecycle:
+            def __init__(self) -> None:
+                self.unregistered = []
+
+            def unregister_task(self, profile_id, generation, cancel) -> None:
+                self.unregistered.append((profile_id, generation, cancel))
+
+        lifecycle = Lifecycle()
+        page = AccountsPage(EmptyRepository(), lifecycle, _ProgressBus())
+        event = threading.Event()
+        profile_id = uuid4()
+        page.fetch_profile = type("Profile", (), {"profile_id": profile_id, "generation": 4})()
+        page.pending_cancel = event
+        page.cancel_fetch_button.setEnabled(True)
+
+        page.cancel_fetch_button.click()
+        self.assertTrue(event.is_set())
+        self.assertFalse(page.cancel_fetch_button.isEnabled())
+        self.assertIn("请求已经发出", page.preview.toPlainText())
+
+        page._fetch_cancelled(event)
+        self.assertIsNone(page.pending_cancel)
+        self.assertIsNone(page.fetch_profile)
+        self.assertEqual(lifecycle.unregistered, [(profile_id, 4, event)])
+        cancelled_text = page.preview.toPlainText()
+        page._fetch_completed(object(), event)
+        self.assertEqual(page.preview.toPlainText(), cancelled_text)
+        self.assertFalse(page.cancel_fetch_button.isEnabled())
+        page.close()
+
+    def test_profile_fetch_worker_emits_cancelled_after_network_result(self) -> None:
+        class Client:
+            def __init__(self, event: threading.Event) -> None:
+                self.event = event
+
+            def fetch(self, _selection):
+                self.event.set()
+                return object()
+
+        client = MihomoPublicProfileClient()
+        event = threading.Event()
+        worker = _ProfileFetchWorker(
+            Client(event), PublicProfileSelection("100000999", "CN", client.PROVIDER_ID, True), event
+        )
+        cancelled = []
+        completed = []
+        worker.signals.cancelled.connect(cancelled.append)
+        worker.signals.completed.connect(lambda *_args: completed.append(True))
+
+        worker.run()
+
+        self.assertEqual(cancelled, [event])
+        self.assertEqual(completed, [])
 
 
 class ImportAndPrivacyTests(unittest.TestCase):
