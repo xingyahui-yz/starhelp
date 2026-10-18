@@ -478,3 +478,18 @@ The public-profile client now requests the documented V2 default with only `lang
 Verification: all 56 package tests pass; `compileall` and `git diff --check` pass. Candidate rebuild and frozen-package checks are recorded after this source change below.
 
 Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest matches the exact candidate file set; isolated 8-second startup loaded Qt6Core/Qt6Widgets; synthetic install, upgrade, two-way rollback and tamper rejection passed. No real UID request was made.
+
+### M0/M6 生产集成待输入清单（2026-10-18）
+
+以下是 B 当前被阻的具体流程和所需冻结输入；不改变共同契约、A/C 文件或固定测试产物。
+
+| B 流程 | 当前限制 | 最小所需决定/产物 |
+|---|---|---|
+| TaskPage 生产分析 | 任务只在本档案加密记忆，不能构造生产 AnalysisRequest | 固定 `game_version`/`environment`/三种 `mode_id`/`cycle_id`/`stage_id`/`stage_revision`/`public_goal`；表单标签到规范目标映射；snapshot 与 C task 字段、能力及错误枚举 |
+| Progress 三模式 | 只显示 Mihomo `player.memory_data.level`、`chaos_id`、`chaos_level` 原字段，不映射周期/关卡/星数或完整历史 | 版本化的三模式 `mode_records` 结构、来源覆盖和时间语义、实际 ID 映射及固定验收期样例 |
+| 公共包同步与撤回 | 有验证/缓存/双 release 抽象，无生产 source/trust/revocation transport | A 的发现/下载/撤回协议、canonical bytes/hash/signature envelope/key ID/purpose、生产信任锚配置、manifest closure/capability rules、禁用状态 freshness/offline 语义 |
+| UID 公开档案 | 已有 consent-gated Mihomo 读取、返回 UID 匹配及预览；未做真实账号查询 | 获准 provider/许可依据和来源版本、端点/字段覆盖、UID/区服映射、限流/失败政策；不需要真实 UID 样本 |
+| 本地服务/邀请维护 | SettingsPage 如实标出本地服务 lifecycle 与邀请维护未接入 | A 可运行服务产物与 start/stop/health contract；部署身份提供方、邀请和只读权限 provisioning、secret distribution、服务端 ACL/TLS 与审计策略 |
+| A→B→C 完整回放 | `rel_fixture_0001` 只有单 mode 且无设备约束；C handoff 明确完整技术接受未通过 | 新 immutable fixture 版本（三 mode，各 main/complete alternate/no-match；装备 type/slot requirement、ambiguous/confirmed 实例、锁定冲突、跨角色调装、材料覆盖/成本、withdrawal），随附原始 hashes 和预期 B/C 输出 |
+
+交接基线仍是共同契约 `0.1-draft`、A 合成 release `rel_fixture_0001`、C 固定 wheel 0.3.0；保持这些字节和版本不变。协调方冻结新接口后，A/C 发布新版本产物，B 再以黑盒方式消费并验证。来源/内容人工批准、生产 signing trust、服务部署和用户本机真实账号验收分别设 gate。现有合成回放不能证明生产 M0/M5/M6 或完整 MVP 完成。
