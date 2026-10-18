@@ -292,14 +292,43 @@ class StructuredImportAdapter:
         for item in equipment_raw:
             if not isinstance(item, dict) or not item.get("public_type_id") or not item.get("slot"):
                 raise ValueError("each equipment record needs a type ID and slot")
+            public_type_id = _validated_import_identifier(item["public_type_id"], "equipment type ID")
+            slot = _validated_import_identifier(item["slot"], "equipment slot")
+            owner_character_id = item.get("owner_character_id")
+            if owner_character_id is not None:
+                owner_character_id = _validated_import_identifier(
+                    owner_character_id, "equipment owner character ID"
+                )
+            facts_raw = item.get("facts", {})
+            if not isinstance(facts_raw, dict):
+                raise ValueError("equipment facts must be an object keyed by local field path")
+            facts: dict[str, FieldFact] = {}
+            for field_path, raw in facts_raw.items():
+                if (not isinstance(field_path, str) or not _FIELD_PATH.fullmatch(field_path)
+                        or "uid" in field_path.lower()):
+                    raise ValueError("invalid equipment field path")
+                if not isinstance(raw, dict) or "value" not in raw:
+                    raise ValueError(f"equipment field {field_path} must contain an explicit value")
+                scope = raw.get("scope")
+                if scope is not None and not isinstance(scope, str):
+                    raise ValueError(f"equipment field {field_path} scope must be a string")
+                facts[field_path] = FieldFact(
+                    value=raw["value"],
+                    status=FieldStatus.NEEDS_REVIEW,
+                    source_kind=SourceKind.STRUCTURED_IMPORT,
+                    source_id=source_id,
+                    observed_at=observed,
+                    scope=scope,
+                )
             # A type ID describes a kind of item; it never establishes copy identity.
             equipment.append(
                 EquipmentInstance(
                     local_instance_id=uuid4(),
-                    public_type_id=str(item["public_type_id"]),
-                    slot=str(item["slot"]),
+                    public_type_id=public_type_id,
+                    slot=slot,
                     identity=EquipmentIdentity.UNCONFIRMED,
-                    owner_character_id=item.get("owner_character_id"),
+                    owner_character_id=owner_character_id,
+                    facts=facts,
                 )
             )
         proposal = ImportProposal.create(
@@ -312,7 +341,24 @@ class StructuredImportAdapter:
             coverage=frozenset(coverage_raw),
             warnings=("导入内容尚未确认；装备实例身份需要单独确认。",),
         )
-        return ImportPreview(proposal, source_name, len(fields))
+        return ImportPreview(
+            proposal,
+            source_name,
+            len(fields) + sum(len(item.facts) for item in equipment),
+        )
+
+
+def _validated_import_identifier(value: object, label: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or len(value) > 160
+        or any(ord(char) < 32 for char in value)
+        or _UID_LIKE.search(value)
+    ):
+        raise ValueError(f"{label} is invalid or contains a UID-like value")
+    return value
 
 
 class ManualImportAdapter:

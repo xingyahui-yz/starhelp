@@ -517,3 +517,11 @@ AccountsPage 的公开档案同意现绑定到当时展示的 UID 与区服：�
 TaskPage 创建任务前现会重新读取当前授权档案快照，并要求每个固定角色 ID 明确具有 `owned` 状态；未拥有、未知、过期档案或没有快照均拒绝，且不会覆盖之前保存的有效任务。角色选择框的文字也改为提示必须来自 `owned` 快照记录。此检查防止直接编辑文本框绕过只允许确认拥有角色的选择器。
 
 验证：59 项 package unittest、`compileall`、`git diff --check` 通过。重建候选包的 919 项 SHA-256 与完整文件集一致，隔离启动加载 Qt6Core/Qt6Widgets，安装/升级/双向回滚/篡改拒绝 smoke 通过；固定 A 签名 fixture + B snapshot + 新打包 C worker 回放通过。M0 映射/信任和其他生产/人工验收门槛仍未完成。
+
+### 结构化导入保留装备字段事实（2026-10-18）
+
+`starhelp.account-import` `0.1-draft` 现在接受装备条目的可选 `facts` 对象。每项必须是受限本地字段路径及显式 `value`，可带字符串 `scope`；生成的事实保留导入来源和观测时间，状态为 `needs_review`，仍须玩家确认后才合并。装备类型、槽位和持有者标识均拒绝格式错误、控制字符、超长值与 UID-like 内容，装备事实路径拒绝 `uid`。`ImportPreview.raw_field_count` 现计入装备事实。物品实例身份继续保持 `unconfirmed`，不会从类型 ID 推断。
+
+合成回归覆盖来源/时间/scope/待确认语义，以及损坏事实、UID 路径和 UID-like 装备标识拒绝。该格式仍是本地草案，不代表生产来源字段映射已冻结。
+
+本轮验证：61 项 package unittest、`compileall` 与 `git diff --check` 通过；独立 A 签名 fixture + B snapshot + 打包 C worker 回放通过。重建 unsigned PyInstaller 6.22.3 候选后，919 项 SHA-256 与实际文件集合完全吻合；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、双向回滚和篡改拒绝通过。未查询真实 UID。M0 映射/信任、发布签名、目标 Windows 与真实账号验收仍未完成。

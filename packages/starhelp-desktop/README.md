@@ -17,6 +17,12 @@ error when PySide6 Essentials is unavailable.
 Tests are standard-library `unittest` tests under `tests/` and use synthetic data. DPAPI integration
 requires Windows; the encryption contract is injected in platform-independent unit tests.
 
+Structured local imports use `starhelp.account-import` version `0.1-draft`. Equipment entries may
+include a `facts` object keyed by local field paths; each fact has an explicit `value` and optional
+string `scope`. These facts keep the import source and observation time and remain `needs_review`
+until the player confirms the preview. An imported public equipment type never establishes the
+identity of a physical copy.
+
 ## Integration status
 
 - Public profile provider: Mihomo parsed HSR endpoint normalization is covered by synthetic fixtures,
@@ -45,6 +51,10 @@ requires Windows; the encryption contract is injected in platform-independent un
   it does not call a planner or present a recommendation.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
+- Structured import equipment facts preserve each field's source, observation time, optional scope,
+  and review state alongside the type ID and slot; malformed paths and UID-like equipment IDs are
+  rejected before preview. This local draft schema does not claim to be a frozen production source
+  mapping.
 - Equipment instances appear in the selected account profile. Each can be individually confirmed
   by the player and the identity decision is saved in the encrypted snapshot. Automatic UID refresh
   is off by default. Per-profile opt-in stores the UID in current-user DPAPI storage, runs while the

@@ -966,6 +966,66 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(preview.proposal.fields["character:fixture.level"].value, 80)
         self.assertFalse(preview.proposal.confirmed)
 
+    def test_structured_import_preserves_equipment_facts_as_unconfirmed_local_facts(self) -> None:
+        adapter = StructuredImportAdapter()
+        preview = adapter.preview_object({
+            "schema_id": adapter.SCHEMA_ID,
+            "schema_version": adapter.SCHEMA_VERSION,
+            "source_id": "fixture-export",
+            "observed_at": "2026-10-17T12:30:00+08:00",
+            "fields": {"character:fixture.level": {"value": 80}},
+            "equipment": [{
+                "public_type_id": "fixture:relic-type",
+                "slot": "fixture:body",
+                "owner_character_id": "fixture:character",
+                "facts": {
+                    "attribute:fixture.speed": {
+                        "value": 12,
+                        "scope": "synthetic-main-affix",
+                    },
+                    "attribute:fixture.crit": {"value": 0.1},
+                },
+            }],
+        })
+
+        equipment = preview.proposal.equipment[0]
+        self.assertEqual(preview.raw_field_count, 3)
+        self.assertEqual(equipment.public_type_id, "fixture:relic-type")
+        self.assertEqual(equipment.owner_character_id, "fixture:character")
+        self.assertEqual(equipment.identity, EquipmentIdentity.UNCONFIRMED)
+        self.assertEqual(equipment.facts["attribute:fixture.speed"].value, 12)
+        self.assertEqual(equipment.facts["attribute:fixture.speed"].scope,
+                         "synthetic-main-affix")
+        for fact in equipment.facts.values():
+            self.assertEqual(fact.source_kind, SourceKind.STRUCTURED_IMPORT)
+            self.assertEqual(fact.source_id, "fixture-export")
+            self.assertEqual(fact.observed_at.isoformat(), "2026-10-17T04:30:00+00:00")
+            self.assertIsNone(fact.confirmed_at)
+            self.assertEqual(fact.status, FieldStatus.NEEDS_REVIEW)
+        self.assertFalse(preview.proposal.confirmed)
+
+    def test_structured_import_rejects_invalid_equipment_fact_paths_and_identifiers(self) -> None:
+        adapter = StructuredImportAdapter()
+        base = {
+            "schema_id": adapter.SCHEMA_ID,
+            "schema_version": adapter.SCHEMA_VERSION,
+            "observed_at": "2026-10-17T00:00:00Z",
+            "fields": {},
+            "equipment": [{"public_type_id": "fixture:type", "slot": "fixture:body"}],
+        }
+        invalid_cases = (
+            {"facts": {"profile.uid": {"value": "hidden"}}},
+            {"facts": {"attribute:fixture.speed": 12}},
+            {"facts": {"attribute:fixture.speed": {"value": 12, "scope": []}}},
+            {"owner_character_id": "100000999"},
+            {"public_type_id": "fixture:100000999"},
+        )
+        for override in invalid_cases:
+            with self.subTest(override=override):
+                equipment = {**base["equipment"][0], **override}
+                with self.assertRaises(ValueError):
+                    adapter.preview_object({**base, "equipment": [equipment]})
+
     def test_structured_import_rejects_excessive_json_complexity(self) -> None:
         adapter = StructuredImportAdapter()
         base: object = {"schema_id": adapter.SCHEMA_ID,
