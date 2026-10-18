@@ -511,3 +511,9 @@ AccountsPage 的公开档案同意现绑定到当时展示的 UID 与区服：�
 主窗口关闭时停止公开档案自动刷新计时器，并通过 `ProfileLifecycle.begin_shutdown()` 原子地封闭新任务登记、向所有已注册的公开读取/OCR/本地规划任务发送取消信号。这样也覆盖窗口关闭与 worker 首次登记之间的竞态。取消只停止本次工作，不撤销授权，也不删除加密档案；正在传输的公开请求是否已被服务处理仍按页面提示处理。
 
 本轮验证：59 项 package unittest、`compileall` 与 `git diff --check` 通过；新增 Qt 回归验证窗口关闭触发任务取消、拒绝关闭后的新登记、停止计时器且档案授权/目录保留。重建 unsigned PyInstaller 候选的 919 项哈希与文件集一致，隔离启动加载 Qt6Core/Qt6Widgets，安装/升级/双向回滚/篡改拒绝 smoke 通过；固定签名 fixture + B snapshot + 新打包 C worker 的正常规划与 withdrawal 错误回放通过。生产 M0/服务部署、签名、目标机和真实账号验收仍未完成。
+
+### 固定角色任务约束绑定档案快照（2026-10-18）
+
+TaskPage 创建任务前现会重新读取当前授权档案快照，并要求每个固定角色 ID 明确具有 `owned` 状态；未拥有、未知、过期档案或没有快照均拒绝，且不会覆盖之前保存的有效任务。角色选择框的文字也改为提示必须来自 `owned` 快照记录。此检查防止直接编辑文本框绕过只允许确认拥有角色的选择器。
+
+验证：59 项 package unittest、`compileall`、`git diff --check` 通过。重建候选包的 919 项 SHA-256 与完整文件集一致，隔离启动加载 Qt6Core/Qt6Widgets，安装/升级/双向回滚/篡改拒绝 smoke 通过；固定 A 签名 fixture + B snapshot + 新打包 C worker 回放通过。M0 映射/信任和其他生产/人工验收门槛仍未完成。

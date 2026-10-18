@@ -572,6 +572,18 @@ class ProgressPageTests(unittest.TestCase):
             saved = tasks.load_last(profile.profile_id, profile.generation)
             self.assertEqual(saved.fixed_character_ids, (owned_id,))
             self.assertEqual(saved.excluded_character_ids, (not_owned_id,))
+
+            page.excluded.clear()
+            for invalid_fixed_id in (not_owned_id, "fixture-character-unknown"):
+                page.fixed.setText(invalid_fixed_id)
+                with patch("starhelp_desktop.gui.QMessageBox.warning") as warning:
+                    page.create_task()
+                warning.assert_called_once()
+                self.assertIn("明确标记为 owned", warning.call_args.args[2])
+                self.assertEqual(
+                    tasks.load_last(profile.profile_id, profile.generation).fixed_character_ids,
+                    (owned_id,),
+                )
             page.close()
 
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:

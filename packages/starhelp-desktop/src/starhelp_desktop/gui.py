@@ -209,7 +209,7 @@ class TaskPage(_Page):
         self.goal.addItems(["先通关", "达到奖励档位", "提高成绩"])
         self.profile = QComboBox()
         self.fixed = QLineEdit()
-        self.fixed.setPlaceholderText("从档案中选择已明确拥有的角色，或输入公共 ID")
+        self.fixed.setPlaceholderText("仅限所选档案快照中明确标记 owned 的角色 ID")
         self.choose_fixed = QPushButton("选择角色…")
         self.excluded = QLineEdit()
         self.excluded.setPlaceholderText("从档案中选择已记录的角色，或输入公共 ID")
@@ -411,6 +411,18 @@ class TaskPage(_Page):
                 excluded_character_ids=self.excluded.text(),
                 locked_equipment_instance_ids=self.locked.text(),
             )
+            if task.fixed_character_ids:
+                try:
+                    snapshot = self.profiles.load_snapshot(profile.profile_id, profile.generation)
+                except FileNotFoundError:
+                    raise ValueError("固定角色必须由所选档案的已确认快照证明为 owned。") from None
+                if any(
+                    snapshot.ownership.get(character_id) is not Ownership.OWNED
+                    for character_id in task.fixed_character_ids
+                ):
+                    raise ValueError(
+                        "固定角色必须在所选档案当前快照中明确标记为 owned；请重新选择。"
+                    )
             self.tasks.save_last(task)
         except (PermissionError, ValueError) as exc:
             QMessageBox.warning(self, "无法创建任务", str(exc))
