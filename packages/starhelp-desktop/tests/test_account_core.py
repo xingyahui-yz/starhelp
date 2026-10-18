@@ -349,6 +349,63 @@ class ProgressPageTests(unittest.TestCase):
             task_page.close()
             report_page.close()
 
+    def test_pending_report_preview_marks_changed_snapshot_as_expired(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic report profile",
+                provider_id="synthetic-source",
+                server_label="fixture-server",
+            )
+            first_import = confirm_import(ImportProposal.create(
+                source_kind=SourceKind.MANUAL,
+                source_id="fixture-first-import",
+                observed_at=datetime.now(UTC),
+                fields={},
+                coverage=frozenset(),
+            ))
+            snapshot = profiles.save_confirmed_import(
+                profile.profile_id, profile.generation, first_import
+            ).snapshot
+            reports_page = ReportsPage(
+                profiles, lifecycle, store, PublicBundleCache(root / "public-cache")
+            )
+            report = reports_page.reports.make_temporary(
+                profile_id=profile.profile_id,
+                generation=profile.generation,
+                task={"fixture": "task"},
+                result={"fixture": "result"},
+                snapshot_revision=snapshot.revision,
+                public_release_id="fixture-release",
+                planner_version="fixture-planner",
+            )
+            reports_page.stage_temporary_report(report)
+            self.assertEqual(reports_page.pending_report.validity, ReportValidity.CURRENT)
+            self.assertIn('"状态": "current"', reports_page.detail.toPlainText())
+
+            next_import = confirm_import(ImportProposal.create(
+                source_kind=SourceKind.MANUAL,
+                source_id="fixture-second-import",
+                observed_at=datetime.now(UTC),
+                fields={},
+                coverage=frozenset(),
+            ))
+            profiles.save_confirmed_import(
+                profile.profile_id, profile.generation, next_import
+            )
+            reports_page.refresh_reports()
+
+            self.assertEqual(reports_page.pending_report.validity, ReportValidity.EXPIRED)
+            self.assertIn("快照已变化", reports_page.status.text())
+            self.assertIn("账号快照已更新", reports_page.status.text())
+            self.assertIn('"状态": "expired"', reports_page.detail.toPlainText())
+            self.assertIn("账号快照已更新", reports_page.detail.toPlainText())
+            self.assertEqual(store.list_profile_keys(profile.profile_id, "report"), ())
+            reports_page.close()
+
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

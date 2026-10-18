@@ -419,3 +419,18 @@ app remained alive for an 8-second startup under isolated `LOCALAPPDATA`; synthe
 install, upgrade, two-way rollback, and tamper rejection pass with temporary data under the
 component build directory. Production M0 mappings/trust, publisher signing, target-Windows
 acceptance, and real-account acceptance remain outstanding.
+
+### Unsaved report validity refresh (2026-10-18)
+
+An unsaved report preview is now reassessed whenever the Reports page refreshes. If its profile's
+snapshot revision changed, the preview is immediately labelled expired with the reason; a changed
+local public release is labelled as needing review. The assessment is in-memory only and does not
+persist the report. A synthetic Qt regression verifies that a pending report changes from current
+to expired as soon as a second confirmed import advances the snapshot.
+
+Verification: all 54 package tests pass, including the new pending-preview regression;
+`compileall` and `git diff --check` pass. The rebuilt unsigned PyInstaller 6.22.3 candidate has 919
+manifest entries with exact hashes and file set, stayed alive for an 8-second startup under isolated
+`LOCALAPPDATA`, and passed synthetic installer install, upgrade, two-way rollback, and tamper
+rejection. Production M0 mappings/trust, publisher signing, target-Windows acceptance, and
+real-account acceptance remain outstanding.

@@ -46,7 +46,7 @@ from .models import EquipmentIdentity, ImportProposal, SourceKind
 from .profiles import ProfileRepository, ProfileSummary
 from .planner import LocalPlannerProcess, bundled_planner_command
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
-from .reports import AnalysisReport, ReportLifecycle
+from .reports import AnalysisReport, ReportLifecycle, ReportValidity
 from .storage import EncryptedPrivateStore
 from .synthetic_demo import SyntheticDemoContext, prepare_synthetic_demo
 from .tasks import AnalysisTaskDraft, TaskRepository
@@ -1464,20 +1464,6 @@ class ReportsPage(_Page):
         self.pending_report = report
         self.profile_list.setCurrentIndex(index)
         self.refresh_reports()
-        demo_label = "（仅合成 fixture，不代表真实游戏建议）" \
-            if report.task.get("synthetic_demo") is True else ""
-        self.status.setText(
-            f"有一份未保存的本地分析结果{demo_label}。点击“主动保存当前分析结果”后才会加密留存。"
-        )
-        self.detail.setPlainText(json.dumps({
-            "状态": report.validity.value,
-            "快照修订": report.snapshot_revision,
-            "公共资料版本": report.public_release_id,
-            "规划器版本": report.planner_version,
-            "任务": report.task,
-            "结果": report.result,
-        }, ensure_ascii=False, indent=2))
-        self.save_pending_button.setEnabled(True)
 
     def _render_pending_report(self, selected_profile_id: str | None) -> None:
         report = self.pending_report
@@ -1488,13 +1474,47 @@ class ReportsPage(_Page):
             self.save_pending_button.setEnabled(False)
             self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
             return
+        try:
+            snapshot = self.profiles.load_snapshot(
+                report.profile_id, report.authorization_generation
+            )
+            revision: int | None = snapshot.revision
+        except FileNotFoundError:
+            revision = None
+        except PermissionError:
+            self.pending_report = None
+            self.save_pending_button.setEnabled(False)
+            self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
+            return
+        try:
+            report = self.reports.assess_for_display(
+                report,
+                current_snapshot_revision=revision,
+                current_public_release_id=self.public_cache.current_release_id(),
+            )
+        except PermissionError:
+            self.pending_report = None
+            self.save_pending_button.setEnabled(False)
+            self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
+            return
+        self.pending_report = report
         demo_label = "（仅合成 fixture，不代表真实游戏建议）" \
             if report.task.get("synthetic_demo") is True else ""
+        validity_labels = {
+            ReportValidity.CURRENT: "当前",
+            ReportValidity.NEEDS_REVIEW: "需要核对",
+            ReportValidity.EXPIRED: "快照已变化",
+            ReportValidity.EVIDENCE_WITHDRAWN: "证据已撤回",
+        }
+        validity = validity_labels[report.validity]
+        reason = report.validity_reason or "当前快照和公共资料版本与报告依据一致。"
         self.status.setText(
-            f"有一份未保存的本地分析结果{demo_label}。点击“主动保存当前分析结果”后才会加密留存。"
+            f"有一份未保存的本地分析结果{demo_label}状态：{validity}。{reason} "
+            "点击“主动保存当前分析结果”后才会加密留存。"
         )
         self.detail.setPlainText(json.dumps({
             "状态": report.validity.value,
+            "状态说明": report.validity_reason,
             "快照修订": report.snapshot_revision,
             "公共资料版本": report.public_release_id,
             "规划器版本": report.planner_version,

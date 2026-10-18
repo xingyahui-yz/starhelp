@@ -40,6 +40,25 @@ class ReportLifecycle:
         self._store = store
         self._lifecycle = lifecycle
 
+    def assess_for_display(
+        self,
+        report: AnalysisReport,
+        *,
+        current_snapshot_revision: int | None,
+        current_public_release_id: str | None = None,
+        withdrawn_refs: frozenset[str] = frozenset(),
+    ) -> AnalysisReport:
+        """Refresh an unsaved report's validity without persisting the report."""
+        self._lifecycle.require_active(
+            report.profile_id, report.authorization_generation
+        )
+        return self._assess_snapshot(
+            report,
+            current_snapshot_revision,
+            current_public_release_id=current_public_release_id,
+            withdrawn_refs=withdrawn_refs,
+        )
+
     def make_temporary(
         self,
         *,
