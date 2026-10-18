@@ -326,6 +326,43 @@ class PublicBundleCache:
         """Read a cached release by its validated identifier; callers must revalidate it."""
         return (self.root / self._filename(release_id)).read_bytes()
 
+    def inspect_cached_metadata(self, release_id: str) -> dict[str, Any]:
+        """Return bounded manifest display fields without authenticating or enabling the bundle.
+
+        UI callers must label this metadata as unverified. Analysis consumers must use
+        PublicBundleSynchronizer.load_release(), which checks the signature and object graph.
+        """
+        raw = self.read_release(release_id)
+        envelope = _decode_bundle_json(raw, max_bytes=BundleValidator.MAX_BUNDLE_BYTES)
+        _validate_bundle_tree(
+            envelope,
+            max_bytes=BundleValidator.MAX_BUNDLE_BYTES,
+            max_depth=BundleValidator.MAX_JSON_DEPTH,
+            max_nodes=BundleValidator.MAX_JSON_NODES,
+        )
+        manifest = envelope.get("manifest")
+        if not isinstance(manifest, dict):
+            raise BundleRejected("cached release manifest is unavailable")
+        coverage = manifest.get("coverage")
+        freshness_keys = (
+            "created_at", "published_at", "verified_at", "last_verified_at",
+            "valid_until", "expires_at", "freshness", "freshness_status",
+        )
+        freshness = {
+            key: manifest[key]
+            for key in freshness_keys
+            if key in manifest
+            and (isinstance(manifest[key], (str, int, float, bool)) or manifest[key] is None)
+        }
+        return {
+            "declared_release_id": manifest.get("index_release_id"),
+            "coverage": coverage if isinstance(coverage, dict) else None,
+            "freshness": freshness,
+            "cache_file_modified_at": datetime.fromtimestamp(
+                (self.root / self._filename(release_id)).stat().st_mtime, UTC
+            ).isoformat(),
+        }
+
     @staticmethod
     def _atomic_write(destination: Path, data: bytes) -> None:
         descriptor, name = tempfile.mkstemp(prefix=".bundle.", suffix=".tmp", dir=destination.parent)

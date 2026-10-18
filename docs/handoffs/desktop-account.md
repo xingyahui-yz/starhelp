@@ -263,6 +263,15 @@ and saved report labels carry a persistent `synthetic_demo` marker and visibly s
 The demo profile appears in Accounts and can be revoked there. The frozen app packages these
 fixtures under `demo-fixtures/`.
 
+The PublicKnowledge page now lists cache pointer/releases, bounded coverage and freshness metadata
+declared inside each cached bundle, and the local cache-file modification time. It labels those
+fields as unverified display metadata, not proof that the bundle is valid; malformed cache data is
+flagged and is not enabled. The page states that production trust is not provisioned, the last
+successful verification timestamp is not persisted, and latest withdrawal/disable status is
+unknown while offline. Usable analysis inputs must still pass `PublicBundleSynchronizer` signature,
+hash, capability, and dependency revalidation. This improves the offline cache view without
+claiming an unavailable production sync or revocation feed.
+
 An offscreen PySide6 regression clicks the demo button with synthetic approval, waits for the local
 C 0.3.0 worker result, confirms a distinct `synthetic-demo` profile and a staged report, verifies the
 encrypted report store remains empty before explicit save, and confirms one report exists after the
@@ -270,7 +279,7 @@ save click. No real profile, UID, or network request is involved. This makes a v
 synthetic substitute available while M0 remains `0.1-draft`; it does not enable production task
 mapping, trust, source coverage, or MVP acceptance.
 
-Verification on 2026-10-18: all 41 package `unittest` cases pass; `compileall` and `git diff --check`
+Verification on 2026-10-18: all 42 package `unittest` cases pass; `compileall` and `git diff --check`
 pass. A fresh PyInstaller 6.22.3 candidate has 919 manifest entries and all hashes match; archive
 inspection contains `starhelp_desktop.analysis`, `starhelp_desktop.producer_request`, and
 `starhelp_desktop.synthetic_demo`, while `_internal/demo-fixtures/` contains the pinned A bundle,

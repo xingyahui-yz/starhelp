@@ -22,11 +22,13 @@ from starhelp_desktop.bundles import (
     BundleValidator,
     PublicBundleCache,
     PublicBundleSynchronizer,
+    ValidatedBundle,
 )
 from starhelp_desktop.equipment import EquipmentIdentityService, EquipmentMergeConflictError
 from starhelp_desktop.gui import (
     AccountsPage,
     ReportsPage,
+    PublicKnowledgePage,
     TaskPage,
     _ProfileFetchWorker,
     _ProgressBus,
@@ -293,6 +295,35 @@ class ProgressPageTests(unittest.TestCase):
             )
             task_page.close()
             reports_page.close()
+
+    def test_public_knowledge_page_shows_cached_coverage_and_marks_it_unverified(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            cache = PublicBundleCache(root / "public-cache")
+            payload = {
+                "schema_id": "PublicBundle",
+                "manifest": {
+                    "index_release_id": "fixture-release-offline",
+                    "coverage": {"status": "synthetic", "reason": "fixture-only"},
+                    "published_at": "2026-10-18T00:00:00Z",
+                },
+            }
+            cache.activate(ValidatedBundle(
+                release_id="fixture-release-offline",
+                schema_version="0.1-draft",
+                payload_json=json.dumps(payload).encode("utf-8"),
+                coverage=payload["manifest"]["coverage"],
+                verified_at=datetime(2026, 10, 18, tzinfo=UTC),
+            ))
+
+            page = PublicKnowledgePage(cache)
+            text = page.status.toPlainText()
+            self.assertIn("fixture-release-offline", text)
+            self.assertIn("synthetic", text)
+            self.assertIn("未在本页验签", text)
+            self.assertIn("最近撤回/禁用状态：未知", text)
+            self.assertIn("文件修改时间不代表签名验证时间", text)
+            page.close()
 
     def test_account_page_cancellation_discards_late_public_profile_result(self) -> None:
         class EmptyRepository:

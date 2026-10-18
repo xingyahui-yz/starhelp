@@ -166,7 +166,10 @@ class TaskPage(_Page):
     def __init__(self, profiles: ProfileRepository, tasks: TaskRepository,
                  progress_bus: _ProgressBus, lifecycle: ProfileLifecycle,
                  store: EncryptedPrivateStore) -> None:
-        super().__init__("任务", "选择公开关卡和本地档案。目标记忆按档案加密保存；规划器未连接时不会生成推荐。")
+        super().__init__(
+            "任务",
+            "常规任务仅加密记忆目标；生产规划仍待 M0 接通。单独的合成联调按钮只运行内置 fixture。",
+        )
         self.profiles = profiles
         self.tasks = tasks
         self.progress_bus = progress_bus
@@ -357,7 +360,7 @@ class TaskPage(_Page):
             self._clear_task_selection(f"无法恢复上次任务：{exc}")
             return
         if task is None:
-            self._clear_task_selection("此档案还没有记忆的任务目标。规划器尚未接入。")
+            self._clear_task_selection("此档案还没有记忆的任务目标。生产规划尚待 M0 接通。")
             return
         mode_index = self.mode.findText(task.mode_label)
         goal_index = self.goal.findText(task.goal_label)
@@ -389,9 +392,11 @@ class TaskPage(_Page):
         self.progress.setValue(task.progress)
         self.status.setText(
             f"目标已按本地档案加密记忆（任务 {str(task.task_id)[:8]}）。"
-            "规划器尚未接入；账号数据未发送，也没有生成推荐。"
+            "生产分析尚待 M0 接通；账号数据未发送，也没有生成生产建议。"
         )
-        self.progress_bus.updated.emit("本地任务已记录，等待规划器接入；没有生成推荐。", task.progress)
+        self.progress_bus.updated.emit(
+            "本地任务已记录，等待生产分析接入；没有生成生产建议。", task.progress
+        )
 
 
 class AccountsPage(_Page):
@@ -1169,7 +1174,10 @@ class AccountsPage(_Page):
 class ReportsPage(_Page):
     def __init__(self, profiles: ProfileRepository, lifecycle: ProfileLifecycle,
                  store: EncryptedPrivateStore, public_cache: PublicBundleCache) -> None:
-        super().__init__("报告", "仅显示用户主动保存的加密报告；快照变化会使旧报告失效。")
+        super().__init__(
+            "报告",
+            "分析结果先在本机预览；只有用户主动保存后才加密留存。快照变化会使旧报告失效。",
+        )
         self.profiles = profiles
         self.lifecycle = lifecycle
         self.public_cache = public_cache
@@ -1249,7 +1257,7 @@ class ReportsPage(_Page):
             return
         if not reports:
             self.status.setText(
-                "没有已保存报告。规划器尚未接入；本组件不会生成模拟攻略或自动保存结果。"
+                "没有已保存报告。生产分析尚待 M0 接通；TaskPage 的单独联调演示只使用合成 fixture。"
             )
             self._render_pending_report(selected)
             return
@@ -1378,17 +1386,51 @@ class PublicKnowledgePage(_Page):
     def __init__(self, cache: PublicBundleCache) -> None:
         super().__init__("公共资料", "公开知识缓存与私有账号档案分开保存。")
         self.cache = cache
-        self.status = QLabel()
-        self.status.setWordWrap(True)
+        self.status = QTextEdit()
+        self.status.setReadOnly(True)
+        self.status.setAccessibleName("公共资料缓存与时效状态")
         self.content.addWidget(self.status)
         self.refresh_status()
 
     def refresh_status(self) -> None:
-        self.status.setText(
-            f"当前缓存版本：{self.cache.current_release_id() or '无'}\n"
-            f"本机已验证包：{', '.join(self.cache.available_release_ids()) or '无'}\n"
-            "签名公钥、生产包格式和发布方撤回清单尚待 M0/A 交付；未启用远端同步。"
-        )
+        current = self.cache.current_release_id()
+        releases = self.cache.available_release_ids()
+        lines = [
+            f"当前缓存指针：{current or '无'}",
+            f"本机缓存版本：{', '.join(releases) or '无'}",
+            "本页离线状态：生产签名信任与 A 撤回清单尚待 M0；当前没有在线同步。",
+            "本机最近撤回/禁用状态：未知（未取得在线确认或版本化撤回清单）。",
+            "本机最近成功验证时间：未持久化；文件修改时间不代表签名验证时间。",
+        ]
+        for release_id in releases:
+            role = "当前" if release_id == current else "保留旧版"
+            lines.append(f"\n[{role}] {release_id}")
+            try:
+                metadata = self.cache.inspect_cached_metadata(release_id)
+            except (OSError, ValueError, RecursionError) as exc:
+                lines.append(f"  缓存元数据不可读：{exc}")
+                lines.append("  该版本不得用于分析，直到同步器重新验证签名和成员依赖。")
+                continue
+            declared_id = metadata["declared_release_id"]
+            lines.append(f"  包内 release 声明：{declared_id or '缺失'}")
+            coverage = metadata["coverage"]
+            coverage_text = (
+                json.dumps(coverage, ensure_ascii=False, sort_keys=True, allow_nan=False)
+                if coverage is not None else "未声明"
+            )
+            lines.append(f"  包内覆盖声明（未在本页验签）：{coverage_text[:1200]}")
+            freshness = metadata["freshness"]
+            freshness_text = (
+                json.dumps(freshness, ensure_ascii=False, sort_keys=True, allow_nan=False)
+                if freshness else "未声明"
+            )
+            lines.append(f"  包内时效声明（未在本页验签）：{freshness_text[:1200]}")
+            lines.append(f"  本地缓存文件修改时间：{metadata['cache_file_modified_at']}")
+        lines.extend((
+            "",
+            "上列包内覆盖/时效仅供离线查看，不是当前有效性证明。分析前必须由配置了生产信任锚的同步器重新验证。",
+        ))
+        self.status.setPlainText("\n".join(lines))
 
 
 class SettingsPage(_Page):
