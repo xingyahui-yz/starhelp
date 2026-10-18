@@ -285,6 +285,70 @@ class ProgressPageTests(unittest.TestCase):
             self.assertIn("尚无已授权档案", page.mode_status.toPlainText())
             page.close()
 
+    def test_task_and_report_pages_clear_revoked_profile_data_on_reentry(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic revoked profile",
+                provider_id="synthetic-source",
+                server_label="fixture-server",
+            )
+            tasks = TaskRepository(store, lifecycle)
+            task = AnalysisTaskDraft.create(
+                profile_id=profile.profile_id,
+                authorization_generation=profile.generation,
+                mode_label="fixture-mode",
+                cycle_id="fixture-cycle-secret",
+                stage_id="fixture-stage-secret",
+                goal_label="fixture-goal",
+            )
+            tasks.save_last(task)
+
+            reports = ReportLifecycle(store, lifecycle)
+            report = reports.make_temporary(
+                profile_id=profile.profile_id,
+                generation=profile.generation,
+                task={"fixture": "task"},
+                result={"fixture": "synthetic-report-secret"},
+                snapshot_revision=1,
+                public_release_id="fixture-release",
+                planner_version="fixture-planner",
+            )
+            reports.save_explicitly(report, current_snapshot_revision=1)
+
+            task_page = TaskPage(profiles, tasks, _ProgressBus(), lifecycle, store)
+            report_page = ReportsPage(
+                profiles, lifecycle, store, PublicBundleCache(root / "public-cache")
+            )
+            task_page.show()
+            report_page.show()
+            self.app.processEvents()
+            report_page.report_list.setCurrentRow(0)
+            self.app.processEvents()
+            self.assertEqual(task_page.stage.text(), "fixture-stage-secret")
+            self.assertIn("synthetic-report-secret", report_page.detail.toPlainText())
+
+            task_page.hide()
+            report_page.hide()
+            profiles.revoke(profile.profile_id)
+            task_page.show()
+            report_page.show()
+            self.app.processEvents()
+
+            self.assertIsNone(task_page.profile.currentData())
+            self.assertEqual(task_page.cycle.text(), "")
+            self.assertEqual(task_page.stage.text(), "")
+            self.assertEqual(task_page.fixed.text(), "")
+            self.assertEqual(report_page.report_list.count(), 0)
+            self.assertEqual(report_page.detail.toPlainText(), "")
+            self.assertIsNone(report_page.pending_report)
+            self.assertNotIn("synthetic-report-secret", report_page.status.text())
+            task_page.close()
+            report_page.close()
+
     def test_task_page_runs_explicit_synthetic_demo_and_stages_unsaved_report(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

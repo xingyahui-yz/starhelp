@@ -331,6 +331,10 @@ class TaskPage(_Page):
         if index >= 0:
             self.profile.setCurrentIndex(index)
 
+    def showEvent(self, event: object) -> None:
+        super().showEvent(event)
+        self.reload_profiles()
+
     def create_task(self) -> None:
         if not self.cycle.text().strip() or not self.stage.text().strip():
             QMessageBox.information(self, "需要关卡范围", "请填写已核实的周期和关卡标识。")
@@ -1359,6 +1363,10 @@ class ReportsPage(_Page):
             if index >= 0:
                 self.profile_list.setCurrentIndex(index)
         self.refresh_reports()
+
+    def showEvent(self, event: object) -> None:
+        super().showEvent(event)
+        self.reload_profiles()
 
     def refresh_reports(self, *_args: object) -> None:
         self.report_list.clear()

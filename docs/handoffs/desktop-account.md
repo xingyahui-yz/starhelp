@@ -406,3 +406,16 @@ The progress-page Qt regression also now exercises the real hide/revoke/show pat
 revocation on another page, the next page entry reloads the profile list and removes the old summary
 from view. The full 52-test suite, `compileall`, and `git diff --check` passed; this follow-up changes
 only test coverage and handoff evidence, so the previously verified application candidate is unchanged.
+
+### Task and report page revocation refresh (2026-10-18)
+
+TaskPage and ReportsPage now reload their profile selection when shown. This clears stale task fields,
+saved report rows, rendered report details, and pending report state after authorization is revoked
+while the user is on another page. A synthetic Qt regression exercises the hide/revoke/show sequence.
+
+Verification: all 53 package tests, `compileall`, and `git diff --check` pass. The rebuilt unsigned
+PyInstaller 6.22.3 candidate has 919 manifest entries whose hashes and file set match exactly. The
+app remained alive for an 8-second startup under isolated `LOCALAPPDATA`; synthetic installer
+install, upgrade, two-way rollback, and tamper rejection pass with temporary data under the
+component build directory. Production M0 mappings/trust, publisher signing, target-Windows
+acceptance, and real-account acceptance remain outstanding.
