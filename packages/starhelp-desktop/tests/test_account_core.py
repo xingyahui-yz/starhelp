@@ -263,6 +263,44 @@ class ProgressPageTests(unittest.TestCase):
             self.assertFalse(page.confirm_consent.isChecked())
             page.close()
 
+    def test_import_preview_displays_equipment_identity_and_field_provenance(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            page = AccountsPage(repository, lifecycle, _ProgressBus())
+            proposal = StructuredImportAdapter().preview_object({
+                "schema_id": StructuredImportAdapter.SCHEMA_ID,
+                "schema_version": StructuredImportAdapter.SCHEMA_VERSION,
+                "source_id": "fixture-export",
+                "observed_at": "2026-10-17T12:30:00+08:00",
+                "fields": {},
+                "equipment": [{
+                    "public_type_id": "fixture:relic-type",
+                    "slot": "fixture:body",
+                    "owner_character_id": "fixture:character",
+                    "facts": {
+                        "attribute:fixture.speed": {
+                            "value": 12,
+                            "scope": "synthetic-main-affix",
+                        },
+                    },
+                }],
+            }).proposal
+
+            page._render_proposal(proposal)
+
+            rendered = page.preview.toPlainText()
+            self.assertIn("类型 fixture:relic-type", rendered)
+            self.assertIn("身份 unconfirmed", rendered)
+            self.assertIn("attribute:fixture.speed = 12", rendered)
+            self.assertIn("needs_review", rendered)
+            self.assertIn("structured_import", rendered)
+            self.assertIn("2026-10-17T04:30:00+00:00", rendered)
+            self.assertIn("synthetic-main-affix", rendered)
+            page.close()
+
     def test_window_close_cancels_background_tasks_without_revoking_profiles(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

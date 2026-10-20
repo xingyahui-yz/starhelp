@@ -525,3 +525,9 @@ TaskPage 创建任务前现会重新读取当前授权档案快照，并要求�
 合成回归覆盖来源/时间/scope/待确认语义，以及损坏事实、UID 路径和 UID-like 装备标识拒绝。该格式仍是本地草案，不代表生产来源字段映射已冻结。
 
 本轮验证：61 项 package unittest、`compileall` 与 `git diff --check` 通过；独立 A 签名 fixture + B snapshot + 打包 C worker 回放通过。重建 unsigned PyInstaller 6.22.3 候选后，919 项 SHA-256 与实际文件集合完全吻合；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets；合成安装、升级、双向回滚和篡改拒绝通过。未查询真实 UID。M0 映射/信任、发布签名、目标 Windows 与真实账号验收仍未完成。
+
+### 装备事实在确认前可见（2026-10-20）
+
+AccountsPage 的结构化导入预览现在逐件展示槽位、公共类型 ID、持有者、本地实例 ID 与身份状态，并逐字段展示装备事实值、待确认状态、来源、观测时间和范围。预览明确说明公共类型 ID 不等于副本身份，支持玩家在确认合并前检查字段和身份歧义。合成 Qt 回归锁定上述展示内容。
+
+验证：62 项 package unittest、`compileall` 与 `git diff --check` 通过。新建 unsigned PyInstaller 6.22.3 候选的 919 项 SHA-256 与完整文件集合吻合；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets。合成安装、升级、双向回滚、篡改拒绝和 A 签名 fixture + B snapshot + 打包 C worker 回放均通过。过程中首次构建会话句柄在上下文切换后不可读取；检查确认没有构建进程且 dist 未更新，随后从干净构建重跑成功。未查询真实 UID。

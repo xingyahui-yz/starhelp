@@ -1430,7 +1430,22 @@ class AccountsPage(_Page):
         lines.extend(f"• {path} = {fact.value!r} [{fact.source_kind.value}; {fact.observed_at.isoformat()}]"
                      for path, fact in proposal.fields.items())
         lines.append("\n已确认拥有（仅当前展示名单）：" + ", ".join(proposal.ownership) )
-        lines.append(f"设备候选：{len(proposal.equipment)} 件；实例身份需逐件确认。")
+        lines.append(f"\n装备候选：{len(proposal.equipment)} 件；类型 ID 不代表物品实例身份。")
+        for index, equipment in enumerate(proposal.equipment, start=1):
+            owner = equipment.owner_character_id or "未知"
+            lines.append(
+                f"• 装备 {index}: 槽位 {equipment.slot}；类型 {equipment.public_type_id}；"
+                f"持有者 {owner}；身份 {equipment.identity.value}；"
+                f"本地实例 {equipment.local_instance_id}"
+            )
+            if not equipment.facts:
+                lines.append("  （无可预览字段）")
+            for path, fact in equipment.facts.items():
+                scope = f"；范围 {fact.scope}" if fact.scope else ""
+                lines.append(
+                    f"  • {path} = {fact.value!r} [{fact.status.value}; {fact.source_kind.value}; "
+                    f"{fact.observed_at.isoformat()}{scope}]"
+                )
         self.preview.setPlainText("\n".join(lines))
 
     def save_preview(self) -> None:

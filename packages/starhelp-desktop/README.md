@@ -52,9 +52,10 @@ identity of a physical copy.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
 - Structured import equipment facts preserve each field's source, observation time, optional scope,
-  and review state alongside the type ID and slot; malformed paths and UID-like equipment IDs are
-  rejected before preview. This local draft schema does not claim to be a frozen production source
-  mapping.
+  and review state alongside the type ID and slot; the import preview displays those facts and
+  distinguishes the local instance ID from the public type ID. Malformed paths and UID-like
+  equipment IDs are rejected before preview. This local draft schema does not claim to be a frozen
+  production source mapping.
 - Equipment instances appear in the selected account profile. Each can be individually confirmed
   by the player and the identity decision is saved in the encrypted snapshot. Automatic UID refresh
   is off by default. Per-profile opt-in stores the UID in current-user DPAPI storage, runs while the
