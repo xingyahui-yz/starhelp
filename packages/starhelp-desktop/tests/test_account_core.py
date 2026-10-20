@@ -1064,6 +1064,37 @@ class ImportAndPrivacyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     adapter.preview_object({**base, "equipment": [equipment]})
 
+    def test_confirmed_import_confirms_equipment_facts_but_not_copy_identity(self) -> None:
+        adapter = StructuredImportAdapter()
+        proposal = adapter.preview_object({
+            "schema_id": adapter.SCHEMA_ID,
+            "schema_version": adapter.SCHEMA_VERSION,
+            "source_id": "fixture-export",
+            "observed_at": "2026-10-19T00:00:00Z",
+            "fields": {},
+            "equipment": [{
+                "public_type_id": "fixture:relic-type",
+                "slot": "fixture:body",
+                "facts": {"attribute:fixture.speed": {"value": 12}},
+            }],
+        }).proposal
+
+        confirmed = confirm_import(proposal)
+        fact = confirmed.equipment[0].facts["attribute:fixture.speed"]
+        self.assertTrue(confirmed.confirmed)
+        self.assertEqual(fact.status, FieldStatus.CONFIRMED)
+        self.assertIsNotNone(fact.confirmed_at)
+        self.assertEqual(confirmed.equipment[0].identity, EquipmentIdentity.UNCONFIRMED)
+
+        snapshot = AccountSnapshot(
+            profile_id=uuid4(), snapshot_id=uuid4(), revision=0,
+            generated_at=datetime.now(UTC),
+        )
+        merged = merge_import(snapshot, confirmed)
+        self.assertEqual(merged.snapshot.equipment[0].facts["attribute:fixture.speed"].status,
+                         FieldStatus.CONFIRMED)
+        self.assertEqual(merged.snapshot.equipment[0].identity, EquipmentIdentity.UNCONFIRMED)
+
     def test_structured_import_rejects_excessive_json_complexity(self) -> None:
         adapter = StructuredImportAdapter()
         base: object = {"schema_id": adapter.SCHEMA_ID,

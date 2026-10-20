@@ -398,4 +398,20 @@ def confirm_import(proposal: ImportProposal) -> ImportProposal:
         path: replace(fact, status=FieldStatus.CONFIRMED, confirmed_at=now)
         for path, fact in proposal.fields.items()
     }
-    return replace(proposal, fields=confirmed_fields, image_buffer=None, confirmed=True)
+    confirmed_equipment = tuple(
+        replace(
+            item,
+            facts={
+                path: replace(fact, status=FieldStatus.CONFIRMED, confirmed_at=now)
+                for path, fact in item.facts.items()
+            },
+        )
+        for item in proposal.equipment
+    )
+    return replace(
+        proposal,
+        fields=confirmed_fields,
+        equipment=confirmed_equipment,
+        image_buffer=None,
+        confirmed=True,
+    )

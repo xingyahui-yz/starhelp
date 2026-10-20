@@ -2,6 +2,20 @@
 
 Status: in progress. This is an implementation log, not an MVP acceptance statement.
 
+Current verification baseline (2026-10-20): the source changes in `imports.py` and its regression
+test passed 63 package tests plus `compileall` and `git diff --check`. The candidate was built from
+base commit `8aa39937672a03e3c4668f6aacad7a5ca8f26b19` plus the exact package source patch SHA-256
+`35edd65ad7a9dd56915b1bcaa8ab63a88388c1076f49ddf445e8c4e3ac11adb9`. PyInstaller 6.22.3 / Python
+3.12.14 produced 919 files; manifest SHA-256 is
+`1ffb65b7560ade002d4611a518bc83cab1ca2f0048d792035bf5a976a57cf2eb`, `StarHelp.exe` SHA-256 is
+`4c5cf94a2b42beddc24eee22f6ceee8dc8c6f26128ab7a384baa4a342b8a7448`, and packaged worker SHA-256
+is `ce7b6722b432a12030a88f8610d548f5c6cc25ab7b363a3445552b920266f2aa`. The local verification
+record is `packages/starhelp-desktop/build/candidate-verification-2026-10-20.txt` (SHA-256
+`01258da05b55e0fe757966cfa54a18fb9f04b8cccb039caa4d5ca4afbd3dd178`); PyInstaller warning logs are
+under the corresponding `build/StarHelp/` and `build/StarHelpPlannerWorker/` directories. The
+candidate is unsigned. Fixed A/B/C producer versions and artifact digests are recorded below and
+in the fixture README; these synthetic profiles are compatibility evidence, not a frozen contract.
+
 ## Boundary and current baseline
 
 - Repository: `parallel/desktop-account`; branch: `codex/mvp-desktop-account`.
@@ -9,6 +23,39 @@ Status: in progress. This is an implementation log, not an MVP acceptance statem
 - Shared contract, root dependencies, legacy `src/abyss_ai`, and other components remain unchanged.
 - Current implementation is isolated from the legacy offline simulation. The planner and knowledge
   service are not connected; local adapters must display that state.
+
+## Current local B/C exchange used by the synthetic fixture (draft only)
+
+These exact shapes describe the pinned synthetic replay. They are not a proposal to freeze the
+shared contract or unlock production TaskPage analysis.
+
+| Boundary | Current exact shape and semantics |
+|---|---|
+| B snapshot serializer | `AccountSnapshot` / `0.1-draft`: `profile_id`, `snapshot_id`, `revision`, `generated_at`, `fields`, `ownership`, `coverage`, and `equipment`. Each field fact has `value`, `status`, `source_kind`, `source_id`, `observed_at`, nullable `confirmed_at`, and nullable `scope`. Equipment has `local_instance_id`, `public_type_id`, `slot`, `identity`, nullable `owner_character_id`, and its own fact map. The fixture labels this producer profile `starhelp.desktop.snapshot.045965b` and source commit `045965bce4fbc38a3baa79b594535c9dd983d776`; neither is declared as a frozen shared format. |
+| B task selection | `select_public_task` reads only the exact release's `planner-view:<release_id>`. It requires exactly one matching stage and template, stage membership in the template, both objects tied to the active release, a stage `scope` object, and exactly one matching `public_goals[].kind`. It copies that scope and goal; it does not map UI labels to IDs or infer unsupported mappings. |
+| Producer request | Outer `AnalysisRequest` / `0.1-draft` contains request ID and authorization generation, full validated public bundle, local task, and an account snapshot authorization wrapper. Embedded `ProducerAnalysisRequest` / `0.1` / `starhelp.producers.v0.1` carries exact raw A bundle and B snapshot JSON plus SHA-256, producer commit and format profile, expected release, active local profile/generation, explicitly supplied distribution trust purpose/key material, task, UTC evaluation time, and latest-known withdrawn evidence refs. It is passed only to the local worker; the B adapter itself does not contact A or a remote model. |
+| Worker stdio | Protocol `starhelp-local-planner` / `0.1-draft`: one UTF-8 JSON `AnalysisRequest` on stdin (8 MiB maximum), one versioned JSON response on stdout (16 MiB maximum), default 30-second timeout. Response has `protocol`, `protocol_version`, `planner_version`, `capabilities`, and `result`. Result correlation requires `request_id`, `snapshot_revision`, and `authorization_generation`; eligible reports additionally require exact release ID and evidence `{id, revision}` references. Authorization revocation cancels/kills the worker and late results are rejected. |
+| Worker errors | Domain errors use a normal response with `result.status = error`, adapter `planner_error`/error details, and correlation fields. Malformed input or unexpected exceptions are silent on stderr and exit 3; oversized input exits 2; oversized response exits 4. The parent maps missing/invalid stdout and nonzero process exits to `PlannerUnavailable`; those process failures do not carry structured request correlation. |
+| Capabilities | Synthetic A envelope requires `starhelp.knowledge-distribution.v1`. C planner view validates `starhelp.local-profile.v0.2`. The worker reports `starhelp.producers.v0.1` and `starhelp.local-profile.v0.2`; B requires both. Pinned C artifact is package `0.3.0`, rules `0.2.0`, wheel SHA-256 `f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`, built from `b87e963c195acb236918b579d76d74a2853cc623`. |
+| Units and conditions | C requires an attribute definition with value type, unit, phase list, and loadout-dependence. Public conditions must use a registered attribute, supported finite operator, exact registered unit, and a measurement context with an allowed phase and explicit assumptions; unknown unit/context/attribute semantics reject the bundle/condition as unsupported. During matching, absent, unconfirmed, conflicting, stale, unit-mismatched, context-mismatched, or out-of-scope local facts yield `match_status = unknown` with a reason code, not a guessed numeric comparison. B has no production field/unit mapping. |
+
+The only replayed release remains A `rel_fixture_0001` (one mode, no equipment requirements), the fixed B snapshot fixture, and C wheel 0.3.0. The production contract remains `0.1-draft`; production field mappings, all three modes, equipment identity/allocation coverage, trust configuration, and API error semantics remain open M0 inputs.
+
+## B review of `starhelp.interop-min.v0.1` (2026-10-20; candidate only)
+
+This is B's implementation review of the shared candidate, not a freeze or an edit to that document.
+
+| Candidate area | B evidence and review | Producer/consumer impact and smallest follow-up |
+|---|---|---|
+| §1 versions and ownership | Supported for the pinned synthetic exchange: B names the exact A fixture, B serializer commit/profile, and C wheel/rule/profile in its replay test and local verification record. The old B serializer profile has only been exercised on this fixture. | A/C can use this as one reproducible compatibility tuple. It does not establish compatibility of later producer releases or production configuration. Keep any new profile explicit and pin its artifact digest. No new B schema proposed by this review. |
+| §2 raw bytes, distribution signature and closure | Supported for the pinned A artifact: B validates the original payload bytes and signature against explicitly supplied test trust, checks release/object/member closure and member digests, and the interop test reaches the packaged C worker. A's `sha256:`/`sha256-json-v1` projection digest remains distinct from B's raw transport SHA-256 and object digest; do not compare those layers as if they were the same digest. | A must keep shipping immutable originals and provenance; B must continue to provision trust out of band. Evidence is synthetic-test-only and does not satisfy production key trust. No format-version change proposed for the current successful fixture. |
+| §3 task and equipment semantics | Partly supported. `select_public_task` selects a unique stage/template from the validated same-release planner view, checks stage membership, and copies an explicitly declared goal and scope without UI-label inference. It does not enforce that `scope` has exactly the six candidate keys or validate their value types. The replayed A release has one mode and no equipment requirements, so B has no positive evidence for complete main/alternate or gear allocation semantics. | B's current function can consume a future scope by copying it, but cannot certify the candidate's exact scope semantics. Before accepting a new A release, validate the exact six keys, non-empty ID fields, and positive integer `stage_revision` at the B selection boundary; require C to confirm matching semantics. A's next fixture must exercise actual equipment allocation. No change to an existing signed schema is proposed. |
+| §4 snapshot and authorization | Serializer emits the documented `AccountSnapshot` draft fields, fact status/source/timestamps, ownership, coverage and equipment identity/facts; its synthetic fixture replays successfully. The current import confirmation fix confirms equipment facts but deliberately does not confirm the equipment instance identity. B stores authorization separately and checks profile/generation around worker execution. | Supported for the fixed fixture and identity rule. B does not serialize a standalone fact unit or measurement context, structured material completeness, or a final loadout panel; its `scope` string is not a substitute. The repository creates initial revision `0`, and `_validate_request_envelope` only requires an integer, so the candidate's positive-revision requirement is **not** met for that state. Smallest follow-up: do not submit revision 0 to C; first define an honest snapshot revision transition in B, without incrementing only to fit C. If the agreed semantics cannot map directly, propose a new snapshot profile before adding fields. |
+| §5 request, response and transport | Supported for the fixed exchange: B builds the producer request with raw A/B JSON, digests, explicit test trust, authorization context, task and withdrawn refs; the packaged worker checks the pinned capabilities and test proves request/revision/generation correlation for success and a withdrawn-evidence domain error. Correlated structured domain errors are distinct from transport failures (which surface as `PlannerUnavailable`). | B/C can replay the current pinned tuple. Production must settle trust provisioning and full error-code compatibility. Keep timeout, size, and transport behavior explicit; do not interpret process failure as a domain result. No schema change proposed by this review. |
+| §6 next immutable samples | Agreed as the necessary next fixture, not yet covered by B evidence. The present bundle cannot verify three modes, non-empty requirements, allocation/locks, ambiguous identity, or meaningful equipment-driven feasibility changes. | A must deliver a new immutable release; C must recognize and execute its exact producer shape; B then pins the new wheel/bundle/snapshot digests and replays the full positive and negative matrix. Keep `rel_fixture_0001` intact. |
+| §7 freeze and production gates | Agreed. This review does not mark the candidate or the M0 contract frozen. Synthetic keys, unsigned desktop candidate, one-mode fixture, and missing local mapping/trust details do not meet production acceptance. | Coordinator should reconcile A/B/C reviews and publish the effective candidate digest only after the remaining technical differences are addressed. Real-source, production trust, release signing, and real-account acceptance remain separate gates. |
+
+**B disposition:** accept §§1, 2, 5, 6 and 7 as coordination direction for the limited synthetic integration, with the evidence limits above; accept §4's shape and authorization separation but flag revision 0 and absent measurement context; partially accept §3 while requiring exact scope validation and new equipment replay. This is not a freeze vote for the whole MVP, and B has not changed the shared candidate. The next B work depends on the coordinator's fixed S3 A release and C adapter; the current S1 patch/candidate is closed after this review and push.
 
 ## M0 source and contract findings (checked 2026-10-18)
 
