@@ -1,0 +1,14 @@
+{
+  "build_source_commit": "f627590468154cc8622dad8647fefe9f6fd3c4ee",
+  "component_version": "0.4.0",
+  "errors": 0,
+  "failures": 0,
+  "module_path": ".tmp\\installed-c-0.4.0-final\\starhelp_planner\\__init__.py",
+  "native_rule_version": "0.2.0",
+  "runtime_kind": "isolated_installed_wheel",
+  "skipped": 0,
+  "successful": true,
+  "synthetic_only": true,
+  "tests_run": 88,
+  "wheel_sha256": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2"
+}

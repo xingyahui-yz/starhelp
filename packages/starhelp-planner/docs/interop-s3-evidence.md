@@ -2,6 +2,25 @@
 
 Date: 2026-10-21. Frozen technical scope: `starhelp.interop-min.v0.1`, raw SHA-256 `1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a`; reviewed semantic candidate `8116030eb600d58a091a52711b99d7788d45fed71fdbc1bfe02a01ca25233f68`. The shared MVP remains draft. This document records C implementation and observed gates, not production acceptance.
 
+## Fixed C wheel and isolated replay
+
+- Source commit: `f627590468154cc8622dad8647fefe9f6fd3c4ee`.
+- Wheel: `artifacts/starhelp_planner-0.4.0-py3-none-any.whl`, 45,152 bytes, SHA-256 `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`.
+- `artifacts/starhelp_planner-0.4.0.lock.json` fixes A/B1/C tuples, raw file hashes, dependency versions, report hashes and all 16 runtime Python file hashes. Every wheel runtime file was compared byte for byte with its exact source Git blob, and every isolated installed runtime file with the wheel.
+- Installed suite: `interop/reports/c-0.4.0-installed-suite.json`: **88 passed, 0 failures/errors/skips**.
+- New A/B1 installed replay: `c-0.4.0-b1-s3-installed.json`: **204 checks passed, 0 failed**, 21 actual requests, three modes, 12 separately recorded B1 builder refusals.
+- Separate old A/B1 installed measurement replay: `c-0.4.0-b1-measurement-installed.json`: **78 checks passed, 0 failed**, seven actual requests, four B1 builder refusals. This does not relabel the old A release as new S3 data.
+
+The wheel was built once with offline `pip wheel --no-deps --no-build-isolation` and installed with `pip install --no-index --no-deps --no-compile --target .tmp/installed-c-0.4.0-final`. An initial install used the sandbox OS temporary directory and failed with WinError 5; that process reached a terminal state before retry. Setting TEMP/TMP to C's existing `.tmp` directory resolved it. The final wheel was unchanged and was not rebuilt. No system permissions or external temporary files were modified.
+
+Installed replay command (use a new report filename):
+
+```powershell
+python -I -B tools/replay_b1_capture.py --installed-root .tmp/installed-c-0.4.0-final --wheel artifacts/starhelp_planner-0.4.0-py3-none-any.whl --wheel-sha256 3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2 --source-commit f627590468154cc8622dad8647fefe9f6fd3c4ee --capture interop/b-103741e-s3-v1 --dependency-root .tmp/interop-deps --report '<new report path>'
+```
+
+The report leaves B2 host/worker and complete material/final-panel positive coverage unexercised. Its condition-free new-A statistical gap is covered only by the explicitly separate old-A measurement report. Full three-party/M0 acceptance remains false.
+
 ## Source changes for component 0.4.0
 
 - Task scope requires exactly the six keys, five nonempty strings and a positive integer revision excluding bool. Public scope fields are type checked without rejecting unrelated producer metadata such as entity `release_status` or evidence `fixture_only`. Full goal matching compares canonical JSON values so Python's `True == 1` cannot accept a different goal.
@@ -56,6 +75,6 @@ Each capture requires a new output directory; historical raw inputs are never ov
 
 The actual seam is `profiles._snapshot_to_dict` plus `producer_request.build_producer_analysis_request`, importing `models`, `bundles`, and their fixed package dependencies. B2 can change its worker/vendor loading and fixture inputs while retaining these B1 Git blobs. C will compare B2 serializer/encoder and transitively loaded source files to B1, record the B2 host commit separately, verify the actual loaded C module against the final wheel, and inspect actual worker output. A matching fixture byte string alone does not establish the current program's source identity. A changed seam requires a new explicit producer tuple; the registry has no wildcard, caller-supplied allowlist or metadata-commit alias.
 
-New A and B1 identities are now locked; the source is ready for a single final 0.4.0 wheel build and isolated installed-wheel replay. B2 host/worker validation follows that delivery. Current B representation cannot express complete material inventory or final loadout panels; their positive coverage remains **not exercised**, even if native-only unit tests pass or an empty cultivation list totals zero. A statistical condition cannot be invented in the condition-free S3 release; the separate old-A measurement replay remains clearly identified.
+New A, B1 and the final C 0.4.0 wheel are locked and isolated-installed replay has passed. B2 host/worker validation follows this delivery. Current B representation cannot express complete material inventory or final loadout panels; their positive coverage remains **not exercised**, even if native-only unit tests pass or an empty cultivation list totals zero. A statistical condition cannot be invented in the condition-free S3 release; the separate old-A measurement replay remains clearly identified.
 
 Full M0/Goal acceptance also still requires real sources/IDs, human content review and production trust. No real account, UID, game input, remote model, public private-data log, main update, merge, rebase or PR is part of this delivery.

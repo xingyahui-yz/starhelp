@@ -1,5 +1,13 @@
 # Local planner handoff
 
+## Fixed S3 C delivery (2026-10-21)
+
+**C 0.4.0 wheel is fixed and isolated-installed verification passed.** Build source `f627590468154cc8622dad8647fefe9f6fd3c4ee`; wheel `packages/starhelp-planner/artifacts/starhelp_planner-0.4.0-py3-none-any.whl`; SHA-256 `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`. All 16 runtime Python files match exact source Git blobs and the isolated installation. Native rules/profile remain 0.2.0; producer profile remains starhelp.producers.v0.1.
+
+**Installed verification:** 88 tests pass, zero failures/errors/skips; new A/B1 S3 replay 204 checks pass; separate old-A/B1 measurement replay 78 checks pass. Artifact lock: `packages/starhelp-planner/artifacts/starhelp_planner-0.4.0.lock.json`; reports: `interop/reports/c-0.4.0-installed-suite.json`, `c-0.4.0-b1-s3-installed.json`, `c-0.4.0-b1-measurement-installed.json` under the package. They pin the same A source/artifact, actual B1 serializer/encoder and C wheel. Raw captures and old wheel/report baselines remain unchanged.
+
+B can now vendor this exact wheel without changing its fixed B1 serializer/encoder blobs. **Remaining:** actual B2 host/worker and vendor loading replay; complete material inventory/final-loadout panel positive coverage is unavailable in the current snapshot representation; real sources/IDs, human content review and production trust remain outside this synthetic technical acceptance. Full Goal/M0 is not complete. Detailed evidence and reproduction: [interop-s3-evidence.md](../../packages/starhelp-planner/docs/interop-s3-evidence.md). The earlier checkpoints below remain historical.
+
 ## S3 implementation checkpoint (2026-10-21)
 
 Latest source checkpoint: actual new A `dcb1e3ee220b85229bedc6c79d72ebe495825f37` / package 0.3.0 / artifact `4610573ee9720f2b5e4760a9336263362446b800` is explicitly admitted after actual export, independent verification and five-file Git blob equality. Release `rel_fixture_s3_0001`, raw SHA `f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772`. B1 newly emitted 21 requests/snapshots and rejected 12 malformed submissions. **88 source tests pass; final source S3 replay 204/204; separate B1/old-A measurement replay 78/78**. The reports assert expected status, full variant/team identity and actual lock-driven allocation change. Preliminary 134-check and v2 harness-layer failures are retained and superseded by v3. Final wheel build/isolated replay is the next step; B2 host remains a distinct subsequent pin. Full details and raw hashes are in the evidence document below.

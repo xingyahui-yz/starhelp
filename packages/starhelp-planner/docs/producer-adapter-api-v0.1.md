@@ -1,12 +1,12 @@
 # Producer adapter API v0.1
 
-Status: component 0.4.0 is in S3 development, with frozen scope/equipment validation corrections; final wheel publication follows isolated verification. Native rule/profile identifiers remain 0.2.0. New A `dcb1e3e` / package 0.3.0 / artifact `4610573e` and B1 `103741e` are admitted and source-replayed with three synthetic modes and nontrivial equipment. Full M0/MVP and B2 host acceptance are separate requirements.
+Status: component 0.4.0 is delivered with frozen scope/equipment validation corrections and isolated installed-wheel verification. Native rule/profile identifiers remain 0.2.0. New A `dcb1e3e` / package 0.3.0 / artifact `4610573e` and B1 `103741e` are admitted and source-replayed with three synthetic modes and nontrivial equipment. Full M0/MVP and B2 host acceptance are separate requirements.
 
 ## Separate versions and entry points
 
 | Constant / interface | Meaning |
 |---|---|
-| `COMPONENT_VERSION` / wheel | source `0.4.0` in development; published wheel remains `0.3.0` |
+| `COMPONENT_VERSION` / wheel | `0.4.0`, fixed wheel and source commit in the S3 artifact lock |
 | `PLANNER_VERSION` / native `analyze` | `0.2.0`, existing execution semantics with documented scope/equipment shape corrections |
 | `ADAPTER_PROFILE` | Native `starhelp.local.v0.2` |
 | `PRODUCER_ADAPTER_PROFILE` | New explicit `starhelp.producers.v0.1` |
