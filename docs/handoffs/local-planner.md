@@ -2,11 +2,15 @@
 
 ## Fixed S3 C delivery (2026-10-21)
 
+Source commit `f627590468154cc8622dad8647fefe9f6fd3c4ee` and artifact/report commit `8208c6c8611d6b7e471ed93816c7cf025b134331` were successfully pushed to the existing `codex/mvp-local-planner` branch at `https://github.com/xingyahui-yz/starhelp.git`. Local HEAD/upstream both matched 8208c6c after push. Initial automatic approval rejected the unverified destination; read-only GitHub connector checks established the authenticated owner xingyahui-yz, matching repository/clone URL and admin/push permission, after which the same scoped push was approved and succeeded. No alternative write path was used.
+
 **C 0.4.0 wheel is fixed and isolated-installed verification passed.** Build source `f627590468154cc8622dad8647fefe9f6fd3c4ee`; wheel `packages/starhelp-planner/artifacts/starhelp_planner-0.4.0-py3-none-any.whl`; SHA-256 `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`. All 16 runtime Python files match exact source Git blobs and the isolated installation. Native rules/profile remain 0.2.0; producer profile remains starhelp.producers.v0.1.
 
 **Installed verification:** 88 tests pass, zero failures/errors/skips; new A/B1 S3 replay 204 checks pass; separate old-A/B1 measurement replay 78 checks pass. Artifact lock: `packages/starhelp-planner/artifacts/starhelp_planner-0.4.0.lock.json`; reports: `interop/reports/c-0.4.0-installed-suite.json`, `c-0.4.0-b1-s3-installed.json`, `c-0.4.0-b1-measurement-installed.json` under the package. They pin the same A source/artifact, actual B1 serializer/encoder and C wheel. Raw captures and old wheel/report baselines remain unchanged.
 
 B can now vendor this exact wheel without changing its fixed B1 serializer/encoder blobs. **Remaining:** actual B2 host/worker and vendor loading replay; complete material inventory/final-loadout panel positive coverage is unavailable in the current snapshot representation; real sources/IDs, human content review and production trust remain outside this synthetic technical acceptance. Full Goal/M0 is not complete. Detailed evidence and reproduction: [interop-s3-evidence.md](../../packages/starhelp-planner/docs/interop-s3-evidence.md). The earlier checkpoints below remain historical.
+
+Prepared `tools/verify_b2_host.py` checks an explicitly supplied immutable B2 source against Git, the five models/profiles/producer_request/bundles/storage seam files against B1, the exact vendored C wheel, and actual isolated `_load_planner` module origin/version/hash. Only its Python syntax and child-program syntax have been checked; no B2 host is filled in or claimed executed yet. This tool reports source/load evidence separately from subsequent request/worker replay and candidate provenance. It does not rebuild C or change the fixed wheel/source tuple.
 
 ## S3 implementation checkpoint (2026-10-21)
 
