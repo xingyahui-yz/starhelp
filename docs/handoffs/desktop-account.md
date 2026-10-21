@@ -130,6 +130,15 @@ three templates, and six variants, with a separate equipment type table and synt
 ambiguous equipment identities in the snapshot. These bytes are A inputs only and have not yet been
 accepted in a B→C replay.
 
+B ran a read-only compatibility check against those exact files: the current `BundleValidator`
+verified the fixture Ed25519 signature, member hashes, object set, references, and supported
+capability; `select_public_task` selected all three scopes; and
+`build_producer_analysis_request` built one complete request for each mode. The B1-encoded snapshot
+SHA-256 was `e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58`, byte-for-byte equal
+to A's delivered snapshot. This confirms B-side loading, task selection, and request construction;
+it does not prove C execution, mode/equipment allocation outcomes, report lifecycle, or withdrawal
+behavior.
+
 At this check, C's branch still has uncommitted adapter changes and the distributable artifact
 directory still contains only wheel 0.3.0 (SHA-256
 `f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`). Therefore the S3 A/C tuple
