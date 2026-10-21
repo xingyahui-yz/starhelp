@@ -91,6 +91,32 @@ packaged C 0.3.0 synthetic replay. This is byte-compatibility evidence for the e
 shape, not a new three-mode/equipment sample. The B host commit that emits these bytes is recorded
 separately from the serializer source in the S3 lock when the new A/C artifact set is pinned.
 
+### S3 B1 producer source pin (2026-10-21)
+
+B1 is commit `103741e02c90ac672017f783058bdd8dacae982e`; the GitHub branch ref was verified to
+match. New S3 snapshot requests will identify this actual producer implementation with format
+profile `starhelp.desktop.snapshot.interop-min.v0.1`. The existing `starhelp.desktop.snapshot.045965b`
+profile remains only on the immutable legacy fixture. The `_snapshot_to_dict` schema implementation
+originated at `045965bce4fbc38a3baa79b594535c9dd983d776`; B1 separately pins its current host and
+encoding implementation. C must explicitly recognize the B1 commit/profile tuple before the new
+sample is replayed. No new schema or profile fields are added to the wire object.
+
+| B1 input | SHA-256 | Git blob at B1 |
+|---|---|---|
+| `src/starhelp_desktop/models.py` | `432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504` | `b102fc58254313e265090332387db0ae01001495` |
+| `src/starhelp_desktop/profiles.py` | `d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3` | `1449d8dab100de1d4255cdaf59c3acaab43a5411` |
+| `src/starhelp_desktop/producer_request.py` | `c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59` | `5f1a89db3588573537bfce9af09172deb70ba524` |
+| `src/starhelp_desktop/planner.py` | `96950c94a1554589e8cdfb7142eb61a08aca3d3dfe2ae5b360794b59d03a88ba` | `fb98ba2a8c6fc980b2ffe33691e590b04138c684` |
+| `src/starhelp_desktop/planner_worker.py` | `4a7053e9ff6db1426d83dbdeb9248b344bf68fe68933cf211e0b88b7d7af5930` | `b20c9e746758d358e4eecacd55e5eb7e70ca9509` |
+| `pyproject.toml` | `6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3` | `022d94a6393d6d5ab73504e0baee900d37adfa48` |
+
+The current B2 host vendors the legacy C wheel SHA-256
+`f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`; that is a worker dependency,
+not a change to B1 snapshot serialization. When C's B1-compatible wheel and the new A sample arrive,
+B2 will update the pinned vendor/worker inputs while preserving the B1 serializer and encoder blobs,
+then record the B2 host commit and prove the packaged worker loaded the pinned module. No candidate
+rebuild was performed at B1 publication; it will occur once after the fixed S3 source set is complete.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
