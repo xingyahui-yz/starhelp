@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "starhelp-knowledge"
-version = "0.2.0"
+version = "0.3.0"
 description = "Public-only, versioned knowledge backend for StarHelp"
 requires-python = ">=3.12"
 dependencies = []

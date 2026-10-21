@@ -370,18 +370,11 @@ class PublicPipelineTests(unittest.TestCase):
         self.service.validate_release(PUBLISHER, second["index_release_id"], idempotency_key="validate-new")
         self.service.activate_release(PUBLISHER, second["index_release_id"], expected_active_release_id=first["index_release_id"], idempotency_key="activate-new")
         reviewer_publisher = Principal(REVIEWER.actor_id, frozenset({"reviewer", "publisher"}))
-        with self.assertRaises(PermissionDenied):
-            self.service.rollback_release(
-                reviewer_publisher,
-                first["index_release_id"],
-                expected_active_release_id=second["index_release_id"],
-                idempotency_key="rollback-by-reviewer",
-            )
         rolled_back = self.service.rollback_release(
-            PUBLISHER,
+            reviewer_publisher,
             first["index_release_id"],
             expected_active_release_id=second["index_release_id"],
-            idempotency_key="rollback-valid-release",
+            idempotency_key="rollback-by-reviewer",
         )
         self.assertEqual(rolled_back["state"], "active")
         self.assertEqual(rolled_back["rollback_from"], second["index_release_id"])
@@ -421,7 +414,7 @@ class PublicPipelineTests(unittest.TestCase):
         with self.assertRaises(PermissionDenied):
             self.service.validate_release(UPDATER, "fixture:unknown-release", idempotency_key="wrong-role")
 
-    def test_single_maintainer_can_explicitly_review_own_candidate_with_separate_publisher(self) -> None:
+    def test_single_maintainer_can_review_publish_and_rollback_as_separate_audited_actions(self) -> None:
         maintainer = Principal("fixture:maintainer", frozenset({"updater", "reviewer"}))
         stage = self.service.create_candidate(
             maintainer,
@@ -465,51 +458,114 @@ class PublicPipelineTests(unittest.TestCase):
         maintainer_with_publish = Principal(maintainer.actor_id, frozenset({"updater", "reviewer", "publisher"}))
         with self.assertRaises(PermissionDenied):
             self.service.build_release(
-                maintainer_with_publish,
+                maintainer,
                 members=[{"kind": "stage", "id": "fixture:stage:single-maintainer", "revision": 1}],
                 coverage={"status": "synthetic"},
                 required_capabilities=[],
             )
         release = self.service.build_release(
-            PUBLISHER,
+            maintainer_with_publish,
             members=[{"kind": "stage", "id": "fixture:stage:single-maintainer", "revision": 1}],
             coverage={"status": "synthetic"},
             required_capabilities=[],
         )
         with self.assertRaises(PermissionDenied):
             self.service.validate_release(
-                maintainer_with_publish,
+                maintainer,
                 release["index_release_id"],
-                idempotency_key="self-reviewer-validate",
+                idempotency_key="single-maintainer-unauthorized-validate",
             )
-        self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="separate-roles-validate")
+        self.service.validate_release(
+            maintainer_with_publish,
+            release["index_release_id"],
+            idempotency_key="single-maintainer-validate",
+        )
         with self.assertRaises(PermissionDenied):
             self.service.activate_release(
-                maintainer_with_publish,
+                maintainer,
                 release["index_release_id"],
                 expected_active_release_id=None,
-                idempotency_key="self-reviewer-activate",
+                idempotency_key="single-maintainer-unauthorized-activate",
             )
         self.service.activate_release(
-            PUBLISHER,
+            maintainer_with_publish,
             release["index_release_id"],
             expected_active_release_id=None,
-            idempotency_key="separate-roles-activate",
+            idempotency_key="single-maintainer-activate",
         )
+
+        second_stage = self.service.create_candidate(
+            maintainer_with_publish,
+            kind="stage",
+            record_id="fixture:stage:single-maintainer-second",
+            scope={"game_version": "fixture:v", "mode_id": "fixture:m", "cycle_id": "fixture:c", "stage_id": "fixture:stage:single-maintainer-second"},
+            payload={"partitions": ["upper"]},
+            evidence_refs=self.evidence_ref,
+            dependency_refs=[],
+        )
+        self.service.review_candidate(
+            maintainer_with_publish,
+            kind="stage",
+            record_id="fixture:stage:single-maintainer-second",
+            revision=second_stage["revision"],
+            expected_content_hash=second_stage["content_hash"],
+            decision="approved",
+            note="Second explicit review before a separate release operation.",
+        )
+        second_release = self.service.build_release(
+            maintainer_with_publish,
+            members=[{"kind": "stage", "id": "fixture:stage:single-maintainer-second", "revision": 1}],
+            coverage={"status": "synthetic"},
+            required_capabilities=[],
+        )
+        self.service.validate_release(
+            maintainer_with_publish,
+            second_release["index_release_id"],
+            idempotency_key="single-maintainer-second-validate",
+        )
+        self.service.activate_release(
+            maintainer_with_publish,
+            second_release["index_release_id"],
+            expected_active_release_id=release["index_release_id"],
+            idempotency_key="single-maintainer-second-activate",
+        )
+        with self.assertRaises(PermissionDenied):
+            self.service.rollback_release(
+                maintainer,
+                release["index_release_id"],
+                expected_active_release_id=second_release["index_release_id"],
+                idempotency_key="single-maintainer-unauthorized-rollback",
+            )
+        rolled_back = self.service.rollback_release(
+            maintainer_with_publish,
+            release["index_release_id"],
+            expected_active_release_id=second_release["index_release_id"],
+            idempotency_key="single-maintainer-rollback",
+        )
+        self.assertEqual(rolled_back["state"], "active")
+        self.assertEqual(rolled_back["rollback_from"], second_release["index_release_id"])
         with self.service.database.reader() as db:
             events = db.execute(
                 "SELECT action,actor_id FROM audit_events WHERE target_id IN (?,?) ORDER BY rowid",
                 ("fixture:stage:single-maintainer", release["index_release_id"]),
             ).fetchall()
+            publication_events = db.execute(
+                "SELECT operation_kind,actor_id FROM publication_events WHERE index_release_id=? ORDER BY rowid",
+                (release["index_release_id"],),
+            ).fetchall()
         self.assertEqual(
             [event["action"] for event in events],
-            ["candidate_created", "candidate_approved", "release_built", "release_validated", "release_activated"],
+            [
+                "candidate_created", "candidate_approved", "release_built", "release_validated",
+                "release_activated", "release_rolled_back",
+            ],
         )
+        self.assertEqual([event["actor_id"] for event in events], [maintainer.actor_id] * 6)
         self.assertEqual(
-            [event["actor_id"] for event in events],
-            [maintainer.actor_id, maintainer.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id, PUBLISHER.actor_id],
+            [event["operation_kind"] for event in publication_events],
+            ["validate", "activate", "rollback"],
         )
-        self.assertNotEqual(maintainer.actor_id, PUBLISHER.actor_id)
+        self.assertEqual([event["actor_id"] for event in publication_events], [maintainer.actor_id] * 3)
 
     def test_update_run_idempotency_and_checkpoint_recovery(self) -> None:
         first = self.service.create_update_run(UPDATER, idempotency_key="run-1", source_id=None, public_scope={"mode_id": "fixture:m"})

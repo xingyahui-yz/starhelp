@@ -24,6 +24,7 @@ from starhelp_knowledge.errors import KnowledgeError
 from starhelp_knowledge.fixture import build_fixture_artifacts
 from starhelp_knowledge.http import KnowledgeApplication
 from starhelp_knowledge.policy import ROLE_PERMISSIONS, TokenAuthenticator
+from starhelp_knowledge.s3_fixture import build_s3_fixture_artifacts
 from starhelp_knowledge.service import KnowledgeService
 
 
@@ -113,6 +114,11 @@ def _parser() -> argparse.ArgumentParser:
     fixture.add_argument("--output-dir", required=True, type=Path)
     fixture.add_argument("--b-root", required=True, type=Path)
     fixture.add_argument("--overwrite", action="store_true")
+    s3_fixture = subcommands.add_parser(
+        "build-s3-interop-fixture", help="build the frozen three-mode S3 synthetic delivery"
+    )
+    s3_fixture.add_argument("--output-dir", required=True, type=Path)
+    s3_fixture.add_argument("--b-root", required=True, type=Path)
     return parser
 
 
@@ -230,6 +236,23 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         except Exception:
             print("synthetic fixture artifacts could not be created", file=sys.stderr)
+            return 2
+        print(json.dumps({**result, "fixture_only": True}, sort_keys=True))
+        return 0
+    if args.command == "build-s3-interop-fixture":
+        try:
+            result = build_s3_fixture_artifacts(args.output_dir, b_root=args.b_root)
+        except ImportError:
+            print("the optional cryptography package is required for fixture signing", file=sys.stderr)
+            return 2
+        except KnowledgeError as exc:
+            print(f"S3 synthetic fixture artifacts could not be created: {exc.code}", file=sys.stderr)
+            return 2
+        except FileExistsError:
+            print("S3 fixture output path already contains immutable artifacts", file=sys.stderr)
+            return 2
+        except Exception:
+            print("S3 synthetic fixture artifacts could not be created", file=sys.stderr)
             return 2
         print(json.dumps({**result, "fixture_only": True}, sort_keys=True))
         return 0

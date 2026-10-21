@@ -25,7 +25,15 @@ _B_ARCHIVE_PREFIX = "packages/starhelp-desktop/src/starhelp_desktop/"
 _FIXTURE_TIME = datetime(2026, 10, 16, 0, 0, tzinfo=UTC)
 
 
-def serialize_pinned_b_synthetic_snapshot(b_root: Path, *, temp_root: Path) -> dict[str, Any]:
+def serialize_pinned_b_synthetic_snapshot(
+    b_root: Path,
+    *,
+    temp_root: Path,
+    ownership_ids: tuple[str, ...] = (
+        "fixture:character:a", "fixture:character:b", "fixture:character:c",
+    ),
+    equipment: tuple[dict[str, str], ...] = (),
+) -> dict[str, Any]:
     """Call B's `_snapshot_to_dict` from exactly the pinned commit on fixture data."""
     b_root = b_root.resolve()
     commit_result = subprocess.run(
@@ -73,23 +81,30 @@ def serialize_pinned_b_synthetic_snapshot(b_root: Path, *, temp_root: Path) -> d
             models = importlib.import_module("starhelp_desktop.models")
             profiles = importlib.import_module("starhelp_desktop.profiles")
             profile_id = UUID("11111111-1111-4111-8111-111111111111")
+            ownership = {identifier: models.Ownership.OWNED for identifier in ownership_ids}
+            b_equipment = tuple(
+                models.EquipmentInstance(
+                    local_instance_id=UUID(item["local_instance_id"]),
+                    public_type_id=item["public_type_id"],
+                    slot=item["slot"],
+                    identity=models.EquipmentIdentity(item["identity"]),
+                    owner_character_id=item["owner_character_id"],
+                    facts={},
+                )
+                for item in equipment
+            )
             snapshot = models.AccountSnapshot(
                 profile_id=profile_id,
                 snapshot_id=UUID("22222222-2222-4222-8222-222222222222"),
                 revision=4,
                 generated_at=_FIXTURE_TIME,
                 fields={},
-                ownership={
-                    "fixture:character:a": models.Ownership.OWNED,
-                    "fixture:character:b": models.Ownership.OWNED,
-                    "fixture:character:c": models.Ownership.OWNED,
-                },
-                equipment=(),
-                coverage=frozenset({
-                    "ownership:fixture:character:a",
-                    "ownership:fixture:character:b",
-                    "ownership:fixture:character:c",
-                }),
+                ownership=ownership,
+                equipment=b_equipment,
+                coverage=frozenset(
+                    [*(f"ownership:{identifier}" for identifier in ownership_ids)]
+                    + [f"equipment:{item.local_instance_id}" for item in b_equipment]
+                ),
             )
             serialized = profiles._snapshot_to_dict(snapshot)
             # Round-trip through JSON to match the serializer's public byte boundary.
@@ -100,8 +115,19 @@ def serialize_pinned_b_synthetic_snapshot(b_root: Path, *, temp_root: Path) -> d
             sys.path.remove(str(source_root))
 
 
-def write_pinned_b_synthetic_snapshot(b_root: Path, *, temp_root: Path, output: Path) -> bytes:
-    snapshot = serialize_pinned_b_synthetic_snapshot(b_root, temp_root=temp_root)
+def write_pinned_b_synthetic_snapshot(
+    b_root: Path,
+    *,
+    temp_root: Path,
+    output: Path,
+    ownership_ids: tuple[str, ...] = (
+        "fixture:character:a", "fixture:character:b", "fixture:character:c",
+    ),
+    equipment: tuple[dict[str, str], ...] = (),
+) -> bytes:
+    snapshot = serialize_pinned_b_synthetic_snapshot(
+        b_root, temp_root=temp_root, ownership_ids=ownership_ids, equipment=equipment
+    )
     body = json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8") + b"\n"
     temporary = output.with_suffix(output.suffix + ".tmp")
     temporary.write_bytes(body)

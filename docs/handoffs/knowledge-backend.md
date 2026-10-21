@@ -24,7 +24,9 @@ Status: implementation in progress. This is a public-only backend component; thi
 
 The repository contains no evidence sufficient to mark a live content source as both authorized and verified. Ingestion is therefore limited to the explicitly synthetic test adapter and manually supplied public evidence after an admin has recorded an allowed source policy. No production source has been activated. The next source decision needs: written/official permission or applicable terms for the intended storage and redistribution; approved API/domain/path; rate and freshness rules; actual fields and discovery/pagination bounds; a dated read-only sample; and stable game-version, environment, mode, cycle, stage, entity, and external-ID mappings.
 
-## Contract freeze still required
+## Earlier MVP draft notes (superseded)
+
+The notes below record the A-side proposal before the coordinated S2 freeze. The authoritative S3 scope is now frozen in `docs/contracts/interop-min-v0.1.md` (raw SHA-256 `1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a`); this component does not edit that shared contract.
 
 `docs/contracts/mvp-v0.1.md` remains a draft. This package uses the following local proposal while keeping the shared contract untouched:
 
@@ -102,7 +104,7 @@ The independent command above reported `valid: true`, signature algorithm `ed255
 
 ## Implemented package areas
 
-The package currently provides SQLite migrations and tables for sources/policies/capability snapshots, entities and revisions, public records and immutable revisions, evidence, reviews, index releases, disabled references, audit events, command receipts, update runs, tasks, leases, and checkpoints. The service implements strict request validation, candidate creation, explicit hash-bound review, release build/validation/activation/rollback, same-release complete template retrieval, deterministic public search, empty-result search triggering, and idempotent update-task recovery. A least-privilege maintainer may hold updater and reviewer roles and explicitly review their own immutable candidate. Release build, validation, activation, and rollback enforce that the acting publisher ID differs from every included candidate author and approver; the publisher must also hold publish permission. The trusted `admin` role has all permissions but cannot bypass this actor-separation check. The CLI exports validated release bundles and verifies them without a database; bundle verification checks member hashes, manifest hash, dependencies, and evidence closure.
+The package currently provides SQLite migrations and tables for sources/policies/capability snapshots, entities and revisions, public records and immutable revisions, evidence, reviews, index releases, disabled references, audit events, command receipts, update runs, tasks, leases, and checkpoints. The service implements strict request validation, candidate creation, explicit hash-bound review, release build/validation/activation/rollback, same-release complete template retrieval, deterministic public search, empty-result search triggering, and idempotent update-task recovery. A least-privilege maintainer may hold updater, reviewer, and publisher permissions, explicitly review their own immutable candidate by exact content hash, and separately authorize each release operation. Build, validation, activation, and rollback remain explicit and audited; the service does not approve or publish automatically. Publisher permission is still required for each release operation, and the trusted `admin` role does not bypass review, state, or release-integrity checks. The CLI exports validated release bundles and verifies them without a database; bundle verification checks member hashes, manifest hash, dependencies, and evidence closure.
 
 ### Not yet proven or delivered
 
@@ -115,7 +117,7 @@ The package currently provides SQLite migrations and tables for sources/policies
 
 ## Verification evidence
 
-Verification run on 2026-10-16 from the A repository root: `python -m unittest discover -s packages/starhelp-knowledge/tests -v` passed all 21 tests. The suite exercised A lifecycle/review separation and pinned B/C interoperability, including signed-envelope reproducibility, role provisioning for a maintainer with updater and reviewer roles, explicit exact-hash self-review, publisher separation from candidate authors and approvers across build/validate/activate/rollback, successful rollback, all three planner outcomes, hash tampering, missing dependencies, cross-release references, revocation, unsupported semantics/capabilities, and permission failures. The standalone `verify-distribution` command accepted the artifact and reported `valid: true`; separate direct checks accepted the same saved artifact in B's pinned validator and produced the three stated outcomes in C's pinned planner. Tests use `fixture:` identifiers and simulated curator/reviewer/publisher/admin principals; their approvals do not approve any real game content. The test-only signing key is not production trust.
+Historical verification run on 2026-10-16 from the A repository root: `python -m unittest discover -s packages/starhelp-knowledge/tests -v` passed all 21 tests at the then-current baseline. That snapshot exercised the independent-publisher rule, which S3 later removed while preserving permission checks and explicit audit events. The committed `rel_fixture_0001` artifact from that baseline was accepted by B's pinned validator and produced the three recorded planner outcomes in C's pinned planner. Tests used only `fixture:` identifiers and simulated principals; synthetic approvals did not approve real content, and the test-only signing key is not production trust.
 
 ## Reference links
 
@@ -124,3 +126,19 @@ Verification run on 2026-10-16 from the A repository root: `python -m unittest d
 - [Nanoka community skill repository](https://github.com/Run2zZ/hsr-nanoka)
 - [StarRailRes repository](https://github.com/Mar-7th/StarRailRes)
 - [Enka API docs](https://github.com/EnkaNetwork/API-docs/blob/master/api.md)
+
+## S3 finite fixture delivery plan (2026-10-21)
+
+The new immutable A public delivery will live at `packages/starhelp-knowledge/artifacts/interop-min-v0.1-s3/`; the existing `rel_fixture_0001` artifact and its source files remain unchanged. Planned files:
+
+- `starhelp-interop-min-v0.1-s3.bpublic.json`: A-exported, Ed25519-signed public envelope for one new three-mode release.
+- `fixture-ed25519-public.pem`: public half of the deterministic synthetic-test key; never a production trust anchor.
+- `equipment-type-table.json`: finite sample mapping of `(kind, slot, public_type_id, entity_type)` for the synthetic cases.
+- `synthetic-b-snapshot-045965b.json`: private-shape but synthetic-only replay input produced by B's exact pinned serializer commit `045965bce4fbc38a3baa79b594535c9dd983d776`; it is not embedded in the A public envelope.
+- `SHA256SUMS.txt`: raw-byte SHA-256 for each delivered file other than the checksum list itself.
+
+The release will contain independent `fixture:mode:alpha`, `fixture:mode:beta`, and `fixture:mode:gamma` scopes, each with an explicit six-key planner scope, a complete two-partition stage, a public goal, a main variant, and a complete alternate. Alpha is the equipment case: its main and alternate have nonempty light-cone/relic requirements backed by same-release public type entities; the B serializer input has two distinct local UUIDs for the same light-cone type (one player-confirmed and movable, one ambiguous), plus a player-confirmed relic instance. The finite table will contain the exact type/slot pairs used by that release.
+
+Expected alpha replay cases are: normal task produces an observed main allocation using player-confirmed equipment; fixing the alternate-only character selects the complete alternate; locking the only movable required light cone leaves it unmoved and returns pending/confirmation-required under partial inventory; an unsupported exact goal returns no-reviewed-template. The latter is a known template miss, not an inference from partial inventory. Beta and gamma provide normal and alternate-selected complete-team cases without equipment requirements. Missing material/unit/panel representation remains unknown/not-calculated.
+
+The B snapshot is only generated by the pinned B serializer in the synthetic test harness. The A export command accepts no account snapshot. Artifact delivery, producer execution commit, and the B serializer commit will be recorded separately after implementation and verification; all S3 checksums and replay commands will then be added here. This plan does not claim B/C S3 consumption or production acceptance.

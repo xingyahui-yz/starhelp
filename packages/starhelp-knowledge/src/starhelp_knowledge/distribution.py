@@ -31,6 +31,13 @@ PLANNER_COLLECTIONS = {
     "troubleshooting": ("troubleshooting", "id"),
 }
 _PLANNER_OPERATORS = {"eq", "ne", "gt", "gte", "lt", "lte", "in"}
+_PLANNER_SCOPE_FIELDS = {
+    "game_version", "environment", "mode_id", "cycle_id", "stage_id", "stage_revision",
+}
+_EQUIPMENT_KINDS = {"light_cone", "relic"}
+_EQUIPMENT_REQUIREMENT_FIELDS = {
+    "kind", "slot", "public_type_id", "public_type_ids", "evidence_refs",
+}
 
 
 def canonical_bytes(value: Any) -> bytes:
@@ -69,9 +76,112 @@ def _scope(scope: Any, *, stage_revision: int | None = None) -> dict[str, Any]:
     keys = ("game_version", "environment", "mode_id", "cycle_id", "stage_id")
     if any(not isinstance(scope.get(key), str) or not scope[key] for key in keys):
         raise UnsupportedCapability("planner profile requires game, environment, mode, cycle and stage scope")
-    if stage_revision is None:
+    if type(stage_revision) is not int or stage_revision < 1:
         raise UnsupportedCapability("planner profile requires a stage revision")
-    return {**{key: scope[key] for key in keys}, "stage_revision": stage_revision}
+    result = {**{key: scope[key] for key in keys}, "stage_revision": stage_revision}
+    _validate_planner_scope(result, expected_stage_revision=stage_revision)
+    return result
+
+
+def _validate_planner_scope(scope: Any, *, expected_stage_revision: int | None = None) -> dict[str, Any]:
+    if not isinstance(scope, dict) or set(scope) != _PLANNER_SCOPE_FIELDS:
+        raise UnsupportedCapability("planner scope must contain exactly the six declared fields")
+    string_fields = _PLANNER_SCOPE_FIELDS - {"stage_revision"}
+    if any(type(scope.get(key)) is not str or not scope[key] for key in string_fields):
+        raise UnsupportedCapability("planner scope identifiers must be non-empty strings")
+    revision = scope.get("stage_revision")
+    if type(revision) is not int or revision < 1:
+        raise UnsupportedCapability("planner stage_revision must be a positive integer")
+    if expected_stage_revision is not None and revision != expected_stage_revision:
+        raise UnsupportedCapability("planner scope stage_revision does not match its stage")
+    return scope
+
+
+def _validate_equipment_requirements(
+    value: Any,
+    *,
+    entities_by_id: dict[str, dict[str, Any]],
+    evidence_by_id: dict[str, dict[str, Any]],
+    declared_dependencies: set[tuple[str, str, int]] | None = None,
+    expected_scope: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        raise UnsupportedCapability("equipment_requirements must be an explicit array")
+    result: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, str]] = set()
+    for requirement in value:
+        if not isinstance(requirement, dict) or set(requirement) - _EQUIPMENT_REQUIREMENT_FIELDS:
+            raise UnsupportedCapability("equipment requirement contains an unsupported matching field")
+        if not {"kind", "slot"}.issubset(requirement):
+            raise UnsupportedCapability("equipment requirement needs explicit kind and slot")
+        kind, slot = requirement["kind"], requirement["slot"]
+        if type(kind) is not str or kind not in _EQUIPMENT_KINDS or type(slot) is not str or not slot:
+            raise UnsupportedCapability("equipment requirement kind or slot is unsupported")
+        pair = (kind, slot)
+        if pair in seen_pairs:
+            raise InvalidPayload("equipment requirement repeats a kind and slot pair")
+        seen_pairs.add(pair)
+
+        has_single = "public_type_id" in requirement
+        has_many = "public_type_ids" in requirement
+        if has_single and has_many:
+            raise InvalidPayload("equipment type restrictions are mutually exclusive")
+        if has_single:
+            identifiers = [requirement["public_type_id"]]
+            if type(identifiers[0]) is not str or not identifiers[0]:
+                raise InvalidPayload("public_type_id must be a non-empty string")
+        elif has_many:
+            raw_identifiers = requirement["public_type_ids"]
+            if (
+                not isinstance(raw_identifiers, list)
+                or not raw_identifiers
+                or any(type(identifier) is not str or not identifier for identifier in raw_identifiers)
+                or len(raw_identifiers) != len(set(raw_identifiers))
+            ):
+                raise InvalidPayload("public_type_ids must be a non-empty list of unique IDs")
+            identifiers = list(raw_identifiers)
+        else:
+            identifiers = []
+
+        for identifier in identifiers:
+            entity = entities_by_id.get(identifier)
+            if entity is None:
+                raise MissingDependency("equipment public type is outside the exact release")
+            entity_type = entity.get("payload", {}).get("entity_type") if isinstance(entity.get("payload"), dict) else entity.get("entity_type")
+            if entity_type != kind:
+                raise UnsupportedCapability("equipment public type entity_type does not match requirement kind")
+            revision = entity.get("revision")
+            if declared_dependencies is not None and ("entity", identifier, revision) not in declared_dependencies:
+                raise MissingDependency("equipment public type must be an explicit same-release dependency")
+            if expected_scope is not None:
+                try:
+                    entity_scope = _scope(entity.get("scope"), stage_revision=expected_scope["stage_revision"])
+                except (KeyError, TypeError):
+                    raise UnsupportedCapability("equipment public type needs the exact planner scope") from None
+                if entity_scope != expected_scope:
+                    raise UnsupportedCapability("equipment public type scope does not match its variant")
+
+        if "evidence_refs" in requirement:
+            refs = requirement["evidence_refs"]
+            if not isinstance(refs, list):
+                raise InvalidPayload("equipment evidence_refs must be an array of revision references")
+            seen_refs: set[tuple[str, int]] = set()
+            for ref in refs:
+                if not isinstance(ref, dict) or set(ref) != {"id", "revision"}:
+                    raise InvalidPayload("equipment evidence_refs must contain only id and revision")
+                evidence_id, revision = ref["id"], ref["revision"]
+                if type(evidence_id) is not str or not evidence_id or type(revision) is not int or revision < 1:
+                    raise InvalidPayload("equipment evidence reference is malformed")
+                evidence = evidence_by_id.get(evidence_id)
+                evidence_revision = evidence.get("revision", 1) if evidence else None
+                if evidence is None or revision != evidence_revision:
+                    raise MissingDependency("equipment evidence reference is outside the exact release")
+                identity = (evidence_id, revision)
+                if identity in seen_refs:
+                    raise InvalidPayload("equipment evidence_refs contains a duplicate reference")
+                seen_refs.add(identity)
+        result.append(dict(requirement))
+    return result
 
 
 def _map_condition(
@@ -340,6 +450,12 @@ def project_planner_view(
         mapped_seats: set[tuple[str, str]] = set()
         roster_entity_ids: set[str] = set()
         roster_slot_ids: set[str] = set()
+        stage = stages_by_id[stage_id]
+        stage_scope = _scope(source["scope"], stage_revision=stage["revision"])
+        declared_dependencies = {
+            (ref["kind"], ref["id"], ref["revision"])
+            for ref in source["dependency_refs"]
+        }
         for slot in raw_team:
             if not isinstance(slot, dict):
                 raise UnsupportedCapability("planner team slots must be explicit objects")
@@ -357,14 +473,19 @@ def project_planner_view(
                 raise UnsupportedCapability("planner slot requires an explicit equipment_requirements list (empty means none)")
             team_slot = {
                 "slot_id": slot_id, "character_id": entity_id,
-                "equipment_requirements": slot["equipment_requirements"],
+                "equipment_requirements": _validate_equipment_requirements(
+                    slot["equipment_requirements"],
+                    entities_by_id=entities_by_id,
+                    evidence_by_id=evidence_by_id,
+                    declared_dependencies=declared_dependencies,
+                    expected_scope=stage_scope,
+                ),
             }
             if "evidence_refs" in slot:
                 team_slot["evidence_refs"] = slot["evidence_refs"]
             teams.setdefault(partition, []).append(team_slot)
         if mapped_seats != stage_seats[stage_id]:
             raise UnsupportedCapability("variant does not fill every exact stage seat")
-        stage = stages_by_id[stage_id]
         mapped_conditions = [
             _map_condition(
                 condition,
@@ -390,7 +511,6 @@ def project_planner_view(
         for field in ("steps", "mechanics", "failure_conditions", "risks", "cultivation_requirements"):
             if field in payload:
                 mapped[field] = payload[field]
-        stage_scope = _scope(source["scope"], stage_revision=stage["revision"])
         if stage_scope != _scope(template["scope"], stage_revision=stage["revision"]):
             raise UnsupportedCapability("variant and template scopes do not match their stage")
         mapped["scope"] = stage_scope
@@ -608,6 +728,43 @@ def verify_planner_view(view: dict[str, Any], *, supported_capabilities: set[str
             if identity in index:
                 raise IntegrityFailure("planner projection has duplicate member identity")
             index[identity] = item
+    entities_by_id = _unique(view.get("entities", []), "id", context="entity")
+    evidence_by_id = _unique(view.get("evidence", []), "id", context="evidence")
+    stages_by_id = _unique(view.get("stages", []), "stage_id", context="stage")
+    templates_by_id = _unique(view.get("templates", []), "id", context="template")
+    for stage in stages_by_id.values():
+        scope = _validate_planner_scope(stage.get("scope"), expected_stage_revision=stage.get("revision"))
+        if scope["stage_id"] != stage.get("stage_id"):
+            raise IntegrityFailure("planner stage scope does not match its stage identity")
+    for template in templates_by_id.values():
+        scope = _validate_planner_scope(template.get("scope"))
+        stage_ids = template.get("stage_ids")
+        if not isinstance(stage_ids, list) or len(stage_ids) != 1 or stage_ids[0] not in stages_by_id:
+            raise MissingDependency("planner template needs one exact stage")
+        if scope != stages_by_id[stage_ids[0]]["scope"]:
+            raise IntegrityFailure("planner template scope differs from its exact stage")
+    for variant in view.get("variants", []):
+        scope = _validate_planner_scope(variant.get("scope"))
+        template = templates_by_id.get(variant.get("template_id"))
+        if template is None:
+            raise MissingDependency("planner variant template is outside the exact release")
+        if scope != template["scope"]:
+            raise IntegrityFailure("planner variant scope differs from its exact template")
+        teams = variant.get("teams")
+        if not isinstance(teams, dict):
+            raise InvalidPayload("planner variant team mapping is malformed")
+        for slots in teams.values():
+            if not isinstance(slots, list):
+                raise InvalidPayload("planner variant partition slots are malformed")
+            for slot in slots:
+                if not isinstance(slot, dict) or "equipment_requirements" not in slot:
+                    raise UnsupportedCapability("planner slot needs an explicit equipment_requirements array")
+                _validate_equipment_requirements(
+                    slot["equipment_requirements"],
+                    entities_by_id=entities_by_id,
+                    evidence_by_id=evidence_by_id,
+                    expected_scope=scope,
+                )
     members = manifest.get("members")
     if not isinstance(members, list):
         raise InvalidPayload("planner manifest member list is missing")

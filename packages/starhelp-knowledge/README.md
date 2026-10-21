@@ -1,6 +1,6 @@
 # StarHelp Knowledge
 
-An independently installable Python package for StarHelp's **public-only** knowledge service. Version 0.2.0 uses the Python standard library and SQLite for the service; cross-version Ed25519 signing and verification are an optional `crypto` dependency. Supported Python is 3.12 or later.
+An independently installable Python package for StarHelp's **public-only** knowledge service. Version 0.3.0 uses the Python standard library and SQLite for the service; cross-version Ed25519 signing and verification are an optional `crypto` dependency. Supported Python is 3.12 or later.
 
 ## Local development
 
@@ -29,10 +29,10 @@ Create an identity with the minimum role needed:
 python -m starhelp_knowledge create-token --actor-id curator-1 --role updater
 python -m starhelp_knowledge create-token --actor-id reviewer-1 --role reviewer
 python -m starhelp_knowledge create-token --actor-id publisher-1 --role publisher
-python -m starhelp_knowledge create-token --actor-id maintainer-1 --role updater --role reviewer
+python -m starhelp_knowledge create-token --actor-id maintainer-1 --role updater --role reviewer --role publisher
 ```
 
-The command prints the random bearer token once and stores only its SHA-256 hash and role list in the auth config, normally `%USERPROFILE%\.starhelp-knowledge\auth.json`. Repeat `--role` to assign a least-privilege updater/reviewer identity for explicit self-review; use a separate publisher actor for release actions. The service enforces that every release publisher has a different actor ID from all included candidate authors and approvers. Keep the token out of source control and logs. The roles have separate permissions; `reader` is the default for invitees and cannot update, review, or publish. `admin` is a trusted override with every permission, including publish, but it cannot bypass the release actor-separation check. Self-review is permitted as an explicit hash-bound action; the package does not require a second reviewer. Restart the service after changing its auth config so the new identity set is loaded.
+The command prints the random bearer token once and stores only its SHA-256 hash and role list in the auth config, normally `%USERPROFILE%\.starhelp-knowledge\auth.json`. Repeat `--role` to grant one maintainer updater, reviewer, and publisher permissions. The maintainer must still explicitly approve the immutable content hash, then separately build, validate, activate, or roll back a release; each action is audited and requires the corresponding permission. No action is automatically approved or published. Keep the token out of source control and logs. The roles have separate permissions; `reader` is the default for invitees and cannot update, review, or publish. `admin` has every permission. Restart the service after changing its auth config so the new identity set is loaded.
 
 ## HTTP surface
 
@@ -45,7 +45,7 @@ The command prints the random bearer token once and stores only its SHA-256 hash
 - `GET /v1/admin/source-report` (latest recorded permission and capability snapshots; updater role)
 - `/v1/admin/*` (source policy, evidence, candidate, review, release, and update-task commands; bearer auth required)
 
-The request schema and route names are implementation drafts pending the shared M0 freeze. Unknown request fields are rejected, error responses do not include input values, and request bodies are not logged by the application. No request may contain account fields or derived account signals. Free-text public questions are used only for local keyword lookup while no authorized remote search provider is configured.
+The local HTTP request schema and route names remain implementation drafts. The separate A/B/C interoperability scope is frozen in the shared contract. Unknown request fields are rejected, error responses do not include input values, and request bodies are not logged by the application. No request may contain account fields or derived account signals. Free-text public questions are used only for local keyword lookup while no authorized remote search provider is configured.
 
 ## Content lifecycle
 
@@ -82,7 +82,7 @@ python -m starhelp_knowledge verify-distribution --path .\data\knowledge-distrib
 
 Keep signing and trust keys outside source control. The exporter requires an active or superseded release, exact approved review hashes, and an activation/rollback audit event. It refuses a C projection when public meanings such as stage seats, resource reuse, variant rosters, equipment requirements, public goals, or registered condition attributes are missing or ambiguous.
 
-The deterministic fixture command exercises the A lifecycle using only synthetic `fixture:` records, then calls the snapshot serializer and bundle validator from the exact pinned B source commit. Pass the read-only B repository path explicitly:
+The original deterministic fixture command remains the `rel_fixture_0001` compatibility sample. It exercises the A lifecycle using only synthetic `fixture:` records, then calls the snapshot serializer and bundle validator from the exact pinned B source commit. Pass the read-only B repository path explicitly:
 
 ```powershell
 python -m starhelp_knowledge build-fixture-distribution --output-dir .\artifacts --b-root ..\desktop-account --overwrite
@@ -90,6 +90,15 @@ python -m starhelp_knowledge verify-distribution --path .\artifacts\knowledge-pl
 ```
 
 This writes the signed envelope, a test-only public key, a synthetic B account snapshot, and `SHA256SUMS.txt`. The deterministic private fixture seed is test-only and is not a production trust anchor. The fixture contains synthetic approvals to exercise the exporter; it does not represent human approval or real game content. The interop tests load the exact pinned C planner source into a temporary directory and verify main, complete-alternate, and no-matching-goal outcomes without modifying B or C.
+
+The frozen S3 sample has a separate immutable output path and never overwrites that original fixture:
+
+```powershell
+python -m starhelp_knowledge build-s3-interop-fixture --output-dir .\artifacts\interop-min-v0.1-s3 --b-root ..\desktop-account
+python -m starhelp_knowledge verify-distribution --path .\artifacts\interop-min-v0.1-s3\starhelp-interop-min-v0.1-s3.bpublic.json --trusted-public-key .\artifacts\interop-min-v0.1-s3\fixture-ed25519-public.pem --trusted-key-id starhelp-fixture-ed25519-v1
+```
+
+The S3 output includes the A public bundle, public test key, finite equipment type table, B-pinned synthetic snapshot input, and raw-file checksums. The snapshot is generated only by B's pinned serializer. The three-mode alpha equipment case is partial-inventory coverage; a locked instance stays fixed and unresolved inventory is reported as pending, never as proof that no other item exists. All S3 records and approvals are synthetic and are not production trust or content approval.
 
 ## Verification
 

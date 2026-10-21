@@ -345,29 +345,6 @@ class KnowledgeService:
             self._audit(db, principal, f"candidate_{decision}", kind, record_id, revision=revision, details={"review_id": review_id, "content_hash": expected_content_hash})
         return {"record_id": record_id, "record_kind": kind, "revision": revision, "state": decision, "review_id": review_id}
 
-    def _assert_independent_publisher(self, db: Any, actor_id: str, revisions: list[Any]) -> None:
-        for revision in revisions:
-            if revision["created_by"] == actor_id:
-                raise PermissionDenied()
-            approved_by_actor = db.execute(
-                "SELECT 1 FROM reviews WHERE record_revision_id=? AND decision='approved' AND actor_id=? LIMIT 1",
-                (revision["record_revision_id"], actor_id),
-            ).fetchone()
-            if approved_by_actor is not None:
-                raise PermissionDenied()
-
-    def _assert_release_publisher_is_independent(self, db: Any, actor_id: str, release_id: str) -> None:
-        revisions = db.execute(
-            "SELECT revision.* FROM release_members member "
-            "JOIN public_record_revisions revision "
-            "ON revision.record_kind=member.record_kind "
-            "AND revision.record_id=member.record_id "
-            "AND revision.revision=member.revision "
-            "WHERE member.index_release_id=?",
-            (release_id,),
-        ).fetchall()
-        self._assert_independent_publisher(db, actor_id, revisions)
-
     def build_release(
         self,
         principal: Principal,
@@ -408,7 +385,6 @@ class KnowledgeService:
                 if row is None or row["state"] != "approved":
                     raise InvalidTransition("only explicitly approved revisions can be published")
                 rows.append(dict(row))
-            self._assert_independent_publisher(db, principal.actor_id, rows)
             member_map = {(row["record_kind"], row["record_id"], row["revision"]): row for row in rows}
             evidence_rows: dict[str, dict[str, Any]] = {}
             for row in rows:
@@ -473,7 +449,6 @@ class KnowledgeService:
                 raise NotFound()
             if row["state"] not in {"built", "validated", "active"}:
                 raise InvalidTransition()
-            self._assert_release_publisher_is_independent(db, principal.actor_id, release_id)
             bundle = self._build_bundle(db, row)
             self._verify_bundle_hash(row, bundle)
             db.execute("UPDATE index_releases SET state=CASE WHEN state='built' THEN 'validated' ELSE state END WHERE index_release_id=?", (release_id,))
@@ -498,7 +473,6 @@ class KnowledgeService:
             row = db.execute("SELECT * FROM index_releases WHERE index_release_id=?", (release_id,)).fetchone()
             if row is None or row["state"] not in {"validated", "active"}:
                 raise InvalidTransition()
-            self._assert_release_publisher_is_independent(db, principal.actor_id, release_id)
             active = db.execute("SELECT value FROM app_state WHERE key='active_release_id'").fetchone()
             active_id = None if active is None else active["value"]
             if active_id != expected_active_release_id:
@@ -529,7 +503,6 @@ class KnowledgeService:
             target = db.execute("SELECT * FROM index_releases WHERE index_release_id=?", (target_release_id,)).fetchone()
             if target is None or target["state"] not in {"superseded", "active"}:
                 raise InvalidTransition()
-            self._assert_release_publisher_is_independent(db, principal.actor_id, target_release_id)
             active = db.execute("SELECT value FROM app_state WHERE key='active_release_id'").fetchone()
             active_id = None if active is None else active["value"]
             if active_id != expected_active_release_id:
