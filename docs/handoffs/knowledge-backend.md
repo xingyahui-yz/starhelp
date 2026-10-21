@@ -1,6 +1,6 @@
 # StarHelp Knowledge Backend Handoff
 
-Status: implementation in progress. This is a public-only backend component; this handoff does not claim the StarHelp MVP is complete or production content is published.
+Status: S3 producer code and synthetic artifact delivery are committed. This is a public-only backend component; this handoff does not claim the StarHelp MVP is complete or production content is published.
 
 ## Ownership and boundary
 
@@ -112,7 +112,7 @@ The package currently provides SQLite migrations and tables for sources/policies
 - No real game template, complete production alternative, or no-match content case has been curated, reviewed, or published. Synthetic tests do not substitute for those human content gates.
 - No vector/semantic search or remote public-answer provider is active.
 - No shared server has been provisioned; current CLI uses a local WSGI server and bearer-token hash configuration. TLS, deployment hardening, backups, monitoring and recovery drills remain deployment work.
-- B and C interoperability has been exercised from their pinned commits using synthetic data. Production signing keys are not provisioned and the shared paths/schemas remain draft interfaces requiring coordination before production use.
+- The original `rel_fixture_0001` interoperability fixture was exercised against pinned B/C components. For S3, B's pinned outer-envelope validator and C's pinned core planner replay pass, while full B/C adapter acceptance remains pending explicit support for A producer version 0.3.0. Production signing keys are not provisioned, and frozen draft interfaces are not production acceptance.
 - M6 identity management is file-provisioned for local operation; invite workflow, secure secret distribution, storage ACL review and server identity provider selection remain outstanding.
 
 ## Verification evidence
@@ -127,18 +127,29 @@ Historical verification run on 2026-10-16 from the A repository root: `python -m
 - [StarRailRes repository](https://github.com/Mar-7th/StarRailRes)
 - [Enka API docs](https://github.com/EnkaNetwork/API-docs/blob/master/api.md)
 
-## S3 finite fixture delivery plan (2026-10-21)
+## S3 finite fixture delivery (2026-10-21)
 
-The new immutable A public delivery will live at `packages/starhelp-knowledge/artifacts/interop-min-v0.1-s3/`; the existing `rel_fixture_0001` artifact and its source files remain unchanged. Planned files:
+The S3 producer implementation is commit `dcb1e3ee220b85229bedc6c79d72ebe495825f37`, package `starhelp-knowledge` version `0.3.0`. The separate immutable artifact delivery is commit `4610573ee9720f2b5e4760a9336263362446b800` at `packages/starhelp-knowledge/artifacts/interop-min-v0.1-s3/`. The original `rel_fixture_0001` artifact and its source files remain unchanged. The new signed envelope identifies release `rel_fixture_s3_0001`, producer version `0.3.0`, producer commit `dcb1e3ee220b85229bedc6c79d72ebe495825f37`, and test-only signing key ID `starhelp-fixture-ed25519-v1`.
 
-- `starhelp-interop-min-v0.1-s3.bpublic.json`: A-exported, Ed25519-signed public envelope for one new three-mode release.
-- `fixture-ed25519-public.pem`: public half of the deterministic synthetic-test key; never a production trust anchor.
-- `equipment-type-table.json`: finite sample mapping of `(kind, slot, public_type_id, entity_type)` for the synthetic cases.
-- `synthetic-b-snapshot-045965b.json`: private-shape but synthetic-only replay input produced by B's exact pinned serializer commit `045965bce4fbc38a3baa79b594535c9dd983d776`; it is not embedded in the A public envelope.
-- `SHA256SUMS.txt`: raw-byte SHA-256 for each delivered file other than the checksum list itself.
+The artifact directory contains the A public envelope, the public half of the deterministic test key, a finite `(kind, slot, public_type_id, entity_type)` table, a separate synthetic B serializer snapshot, and a checksum list. The B snapshot was generated through serializer commit `045965bce4fbc38a3baa79b594535c9dd983d776`; it is not embedded in the A public envelope. The release contains `fixture:mode:alpha`, `fixture:mode:beta`, and `fixture:mode:gamma`. Each scope has an explicit six-field planner scope, a complete two-partition stage, a public goal, a main variant, and a complete alternate. Alpha's variants include explicit light-cone and relic requirements backed by same-release public type entities. The B snapshot contains two distinct UUIDs for the same light-cone type (one player-confirmed, one ambiguous), one player-confirmed relic, and one source-confirmed relic. The C replay does not move ambiguous or unconfirmed instances.
 
-The release will contain independent `fixture:mode:alpha`, `fixture:mode:beta`, and `fixture:mode:gamma` scopes, each with an explicit six-key planner scope, a complete two-partition stage, a public goal, a main variant, and a complete alternate. Alpha is the equipment case: its main and alternate have nonempty light-cone/relic requirements backed by same-release public type entities; the B serializer input has two distinct local UUIDs for the same light-cone type (one player-confirmed and movable, one ambiguous), plus a player-confirmed relic instance. The finite table will contain the exact type/slot pairs used by that release.
+| File | Raw-byte SHA-256 |
+|---|---|
+| `equipment-type-table.json` | `7ffda486ef1b00683d3b3279fb3f2bf802075c46a5f04dbe563fc60f6ed75380` |
+| `fixture-ed25519-public.pem` | `7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e` |
+| `starhelp-interop-min-v0.1-s3.bpublic.json` | `f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772` |
+| `synthetic-b-snapshot-045965b.json` | `e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58` |
 
-Expected alpha replay cases are: normal task produces an observed main allocation using player-confirmed equipment; fixing the alternate-only character selects the complete alternate; locking the only movable required light cone leaves it unmoved and returns pending/confirmation-required under partial inventory; an unsupported exact goal returns no-reviewed-template. The latter is a known template miss, not an inference from partial inventory. Beta and gamma provide normal and alternate-selected complete-team cases without equipment requirements. Missing material/unit/panel representation remains unknown/not-calculated.
+`SHA256SUMS.txt` itself has SHA-256 `1dd544e4974c38420cad1337ddcd365b59054f666eaf11bc404176fc9ea1188e`. Each listed hash was recomputed from the committed artifact files and matched. A's independent `verify-distribution` command returned `valid: true`, release `rel_fixture_s3_0001`, native release hash `a191204d9d76ec93f9027978c466d6e6e1f6fa754a07418f67126b6cfb2821a1`, planner manifest hash `aefd6708d724c2f98d26dc190eaec86ec3c4590f073b1d8b43166bbf4c62ce50`, and B member hashes `150e0eb4d8bd49fb41aaf3764e74faff417fe7903be50eec0cdc592c9a3bbb40` (native) and `66d9c842c3f83665cf038b4bd2be92ee5c975e21928ceae5cc601f08f8171edd` (planner view). B's `BundleValidator` from the pinned serializer commit independently accepted the signed envelope.
 
-The B snapshot is only generated by the pinned B serializer in the synthetic test harness. The A export command accepts no account snapshot. Artifact delivery, producer execution commit, and the B serializer commit will be recorded separately after implementation and verification; all S3 checksums and replay commands will then be added here. This plan does not claim B/C S3 consumption or production acceptance.
+The replay test loads C planner source from pinned commit `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` and calls its core `analyze` function with the fixture's explicit normalized input. Alpha produces a main allocation using the player-confirmed light cone and relic; fixing the alternate-only character selects the complete alternate; locking the only movable required light cone leaves it unmoved and returns `confirmation_required` with `inventory_coverage_incomplete`; an unsupported exact goal returns `no_reviewed_template` with no plans. Beta and gamma each return main and alternate plans. This checks the pinned planner core against the fixture semantics only. The pinned C baseline's compatibility record does not declare support for A version `0.3.0`; full C adapter acceptance and full B host-flow acceptance remain pending explicit evidence, and no production interoperability or production acceptance is claimed.
+
+Rebuild and verify from the A repository root using Python 3.12+ and the pinned B checkout:
+
+```powershell
+$env:PYTHONPATH = '.\packages\starhelp-knowledge\src'
+python -m starhelp_knowledge build-s3-interop-fixture --output-dir .\packages\starhelp-knowledge\artifacts\interop-min-v0.1-s3 --b-root ..\desktop-account
+python -m starhelp_knowledge verify-distribution --path .\packages\starhelp-knowledge\artifacts\interop-min-v0.1-s3\starhelp-interop-min-v0.1-s3.bpublic.json --trusted-public-key .\packages\starhelp-knowledge\artifacts\interop-min-v0.1-s3\fixture-ed25519-public.pem --trusted-key-id starhelp-fixture-ed25519-v1 --supported-capability starhelp.knowledge-distribution.v1 --planner-capability starhelp.local-profile.v0.2
+```
+
+The full A package suite passed 23 tests after the producer commit; `compileall` and `git diff --check` passed. Ruff was unavailable in the execution runtime. Tests, records, UUIDs, and signing identity are synthetic only; the fixture does not grant production trust, approve real game content, or establish real account or game coverage.

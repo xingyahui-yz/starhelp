@@ -98,7 +98,7 @@ python -m starhelp_knowledge build-s3-interop-fixture --output-dir .\artifacts\i
 python -m starhelp_knowledge verify-distribution --path .\artifacts\interop-min-v0.1-s3\starhelp-interop-min-v0.1-s3.bpublic.json --trusted-public-key .\artifacts\interop-min-v0.1-s3\fixture-ed25519-public.pem --trusted-key-id starhelp-fixture-ed25519-v1
 ```
 
-The S3 output includes the A public bundle, public test key, finite equipment type table, B-pinned synthetic snapshot input, and raw-file checksums. The snapshot is generated only by B's pinned serializer. The three-mode alpha equipment case is partial-inventory coverage; a locked instance stays fixed and unresolved inventory is reported as pending, never as proof that no other item exists. All S3 records and approvals are synthetic and are not production trust or content approval.
+The S3 output includes the A public bundle, public test key, finite equipment type table, B-pinned synthetic snapshot input, and raw-file checksums. The snapshot is generated only by B's pinned serializer. The three-mode alpha equipment case is partial-inventory coverage; a locked instance stays fixed and unresolved inventory is reported as pending, never as proof that no other item exists. The replay checks C's pinned core planner against normalized fixture input; it does not establish full C producer-adapter support for A 0.3.0 or full B host-flow acceptance. All S3 records and approvals are synthetic and are not production trust or content approval.
 
 ## Verification
 
