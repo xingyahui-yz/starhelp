@@ -117,6 +117,28 @@ B2 will update the pinned vendor/worker inputs while preserving the B1 serialize
 then record the B2 host commit and prove the packaged worker loaded the pinned module. No candidate
 rebuild was performed at B1 publication; it will occur once after the fixed S3 source set is complete.
 
+### S3 A immutable input delivery observed (2026-10-21)
+
+A committed its synthetic distribution at `4610573ee9720f2b5e4760a9336263362446b800` in
+`parallel/knowledge-backend/packages/starhelp-knowledge/artifacts/interop-min-v0.1-s3/`.
+The bundle is `rel_fixture_s3_0001`; its raw SHA-256 is
+`f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772`. The accompanying B snapshot
+raw SHA-256 is `e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58`, and the equipment
+type table SHA-256 is `7ffda486ef1b00683d3b3279fb3f2bf802075c46a5f04dbe563fc60f6ed75380`; both match
+the delivered `SHA256SUMS.txt`. The planner view contains three distinct synthetic mode scopes,
+three templates, and six variants, with a separate equipment type table and synthetic confirmed /
+ambiguous equipment identities in the snapshot. These bytes are A inputs only and have not yet been
+accepted in a B→C replay.
+
+At this check, C's branch still has uncommitted adapter changes and the distributable artifact
+directory still contains only wheel 0.3.0 (SHA-256
+`f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`). Therefore the S3 A/C tuple
+is not fixed: B has not changed its vendor, worker, demo input, or B1 serializer, and has not rebuilt
+the desktop candidate. Once C's compatible wheel and the matching immutable replay lock are
+officially delivered, B will validate the exact mode/equipment matrix, report lifecycle
+and withdrawal behavior, then make one candidate rebuild from that fixed set. No real UID or private
+account data was used.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
