@@ -729,3 +729,39 @@ TaskPage 创建任务前现会重新读取当前授权档案快照，并要求�
 AccountsPage 的结构化导入预览现在逐件展示槽位、公共类型 ID、持有者、本地实例 ID 与身份状态，并逐字段展示装备事实值、待确认状态、来源、观测时间和范围。预览明确说明公共类型 ID 不等于副本身份，支持玩家在确认合并前检查字段和身份歧义。合成 Qt 回归锁定上述展示内容。
 
 验证：62 项 package unittest、`compileall` 与 `git diff --check` 通过。新建 unsigned PyInstaller 6.22.3 候选的 919 项 SHA-256 与完整文件集合吻合；隔离 `LOCALAPPDATA` 启动 8 秒并加载 Qt6Core/Qt6Widgets。合成安装、升级、双向回滚、篡改拒绝和 A 签名 fixture + B snapshot + 打包 C worker 回放均通过。过程中首次构建会话句柄在上下文切换后不可读取；检查确认没有构建进程且 dist 未更新，随后从干净构建重跑成功。未查询真实 UID。
+
+### S3 B2 planner integration and candidate (2026-10-21)
+
+B2 source commit `c248daab22255a069464a6d277757d01df5d49f3` pins the official C 0.4.0 wheel
+byte-for-byte (SHA-256 `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`) and adds
+the immutable S3 bundle, synthetic B1 snapshot, equipment type table, and test-only public key.
+The fixture provenance is A producer `dcb1e3ee220b85229bedc6c79d72ebe495825f37`, B1 serializer
+`103741e02c90ac672017f783058bdd8dacae982e`, profile
+`starhelp.desktop.snapshot.interop-min.v0.1`, release `rel_fixture_s3_0001`, and C's committed
+0.4.0 lock at `parallel/local-planner/packages/starhelp-planner/artifacts/starhelp_planner-0.4.0.lock.json`
+(SHA-256 `f18a85dbb1258d76917e14566b8be0ed3f7e9e61adbc953d25e301e7603297d5`). B2 keeps the
+protected B1 serializers unchanged. The synthetic demo explicitly permits equipment rearrangement;
+the confirmation and progress copy disclose that behavior and the fixture-only result.
+
+The package suite passes all 65 tests, including signed S3 bundle validation, raw snapshot byte
+preservation, exact task scope checks, explicit report save, withdrawn-evidence rejection, report
+correlation, GUI synthetic demo staging, and revocation cleanup. B's real `LocalPlannerProcess`
+replayed the 21 committed C capture wrappers through the pinned vendor wheel. The packaged
+`StarHelpPlannerWorker.exe` replayed the same 21 cases. In both runs, status, available variant IDs,
+and pending variant IDs matched C's installed-wheel report 21/21. A separate packaged withdrawal
+run returned correlated `withdrawn_public_object` and produced no temporary or saved report.
+
+The single post-B2 PyInstaller build used Python 3.12.14 and PyInstaller 6.22.3. The candidate has
+920 manifest entries; the manifest hash is
+`30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3`, `StarHelp.exe` hash is
+`0370b6f93e095dbb59d22758c5fa1d50abfce7989ab9971d03726acbbdd91dc9`, and packaged worker hash is
+`989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a`. The manifest's exact file
+set and all hashes were independently checked, and the four embedded S3 fixtures match their
+pinned digests. The app stayed alive for an 8-second launch with isolated `LOCALAPPDATA`. Synthetic
+installer install, upgrade, two-way rollback, and tamper rejection passed. The local verification
+record is `packages/starhelp-desktop/build/candidate-verification-2026-10-21.txt` (SHA-256
+`c448ba6553c8fda45a253e802c42cca3030145b1db570e4d351d4e0149abe1b3`).
+
+This advances the synthetic B2 integration only. The candidate is unsigned; production mode/task
+mapping, production signing trust and revocation transport, publisher signing, target-machine
+review, and real-account acceptance remain open. No real UID or account was queried.
