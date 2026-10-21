@@ -165,6 +165,28 @@ The B-side bundle/signature/task/request checks recorded above are prerequisites
 named expected planner matrix, packaged-worker replay, report/withdrawal replay, and candidate /
 installer checks remain open until C's immutable artifact and replay lock are officially available.
 
+#### C source-only S3 preview (not an accepted artifact)
+
+A read-only preview of C's current working-tree capture lock
+`interop/b-103741e-s3-v1/producer-locks.json` (SHA-256
+`a6e8620bf242eb9598697de777c0f71d45f4cf7756c326371ad4151e218562d3`) confirms it points to the
+official A producer commit `dcb1e3ee220b85229bedc6c79d72ebe495825f37`, release
+`rel_fixture_s3_0001`, exact A bundle SHA-256 `f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772`,
+and B1 snapshot SHA-256 `e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58`. It contains
+21 captured per-mode requests and 12 recorded B-builder boundary rejections. The lock and capture
+files remain in C's uncommitted working tree; they are not vendored into B.
+
+C's development-only source report
+`interop/reports/c-0.4.0-dev-b1-s3-source-v2.json` (SHA-256
+`0677163d242de6db4a313557ecdb46babcfa3588ba2558bf99174733477a945f`) reports 202 checks passed
+and 2 failed, `full_three_party_acceptance=false`, and no wheel proof. Both failed cases expect an
+extra task scope key and boolean `stage_revision` to reach C for `invalid_payload`; B's current
+task-selection/request-builder boundary rejects both before C, as covered by the B interop tests.
+This is a gate-expectation mismatch in the development report, not evidence that either invalid task
+should cross B's boundary. The report also leaves B2 host/worker integration, positive complete
+inventory/material calculations, and final-loadout calculations unexercised. No C source report is
+treated as final package acceptance; repeat the relevant checks against the officially pinned wheel.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
