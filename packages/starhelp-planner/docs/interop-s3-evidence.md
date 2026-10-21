@@ -2,6 +2,22 @@
 
 Date: 2026-10-21. Frozen technical scope: `starhelp.interop-min.v0.1`, raw SHA-256 `1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a`; reviewed semantic candidate `8116030eb600d58a091a52711b99d7788d45fed71fdbc1bfe02a01ca25233f68`. The shared MVP remains draft. This document records C implementation and observed gates, not production acceptance.
 
+## Fixed B2 source and actual worker replay
+
+B2 host `c248daab22255a069464a6d277757d01df5d49f3` was extracted from Git into C's new `.tmp/producer-snapshots/b2-c248daa/` directory. All **45 package files** match that exact Git tree before/after execution. Models, profiles, producer_request, bundles and storage match the five independently pinned B1 file hashes. The actual isolated B2 `_load_planner` loads the exact 0.4.0 vendor wheel (SHA 3b5b8de8…52c47aea2), with native rule 0.2.0 and producer profile starhelp.producers.v0.1. B2 remains host identity; B1 `103741e` remains actual serializer/encoder identity.
+
+| Independent C observation | Result | Report raw SHA-256 |
+|---|---|---|
+| B2 source/load proof | 45 source files, 5 unchanged seam files, actual vendor load | `98378443779cabb2e1c594757c37e18c93a459411705b89089cfe6afac7a10af` |
+| New A/B1 set through B2 builder, LocalPlannerProcess, source worker and ReportLifecycle | **49 checks passed, 0 failed; 28 worker cases** | `8f3f1d6ab197401b8055667e3b376cf1eef9d157baba53f4cf05d47cdccad771` |
+| Separate old-A measurement set through the same B2 host | **21 checks passed, 0 failed; 14 worker cases** | `8aa238e6f036ebe4ed623f1c546f0e679da9f7e27861caf6b6158681fb965293` |
+
+Files are `interop/reports/c-0.4.0-b2-c248daa-source-load.json`, `c-0.4.0-b2-c248daa-source-worker.json`, and `c-0.4.0-b2-c248daa-measurement-source-worker.json`. Source lock `interop/b2-c248daa/source-lock.json` (SHA `5b7d5eecb92702dcfc9e493b2c0a1450f5784885aa22b3ef6a0335f7db82186e`) pins these reports, original C wheel source/delivery, actual A/B1 tuples and the independently committed C harness e3562f9. Existing artifact/capture locks are not backfilled or rewritten.
+
+The actual B2 builder reproduces all **21 S3** and, separately, **7 measurement** wrappers/snapshot bytes exactly. Worker results match the fixed installed-C evidence for status, full variant/allocation/pending results, citations and report eligibility. Available plans create unsaved reports; pending/infeasible/errors do not. Confirmed moves and the same snapshot under a lock retain their observed changed result. Native withdrawal, adapter digest tamper and unknown-key errors all preserve request/revision/generation and create no report. Wrong wrapper request/revision/generation is refused. A declared lifecycle test interposer calls actual B revoke at the second require_active check, after the real worker completes; both sets reject that completed result as PlannerCancelled. This is a deterministic synthetic race check, not real-account acceptance. **Private persistence calls: 0.**
+
+The Windows candidate is being built by B. No old `dist` executable was used for this source report; candidate manifest/worker replay and binary build attestation are not established by it. Full M0/production/material/final-panel limitations remain below.
+
 ## Fixed C wheel and isolated replay
 
 - Source commit: `f627590468154cc8622dad8647fefe9f6fd3c4ee`.
@@ -71,13 +87,13 @@ python -B -m unittest discover -s tests -p 'test_*.py' -q
 
 Each capture requires a new output directory; historical raw inputs are never overwritten. B's typed model also rejects duplicate instance UUIDs before serialization; a separately malformed transport test must report that distinction rather than call it actual serializer output.
 
-## Minimal B1/B2 seam and remaining delivery
+## B1/B2 seam and replay tooling
 
-`tools/verify_b2_host.py` is prepared for an explicitly fixed B2 commit. It verifies the whole source copy, compares models/profiles/producer_request/bundles/storage bytes to the independent B1 source proof, checks vendor wheel equality, and invokes the actual isolated B worker loader to verify C's origin and version. Syntax checks passed; actual B2 execution remains pending. Its output deliberately does not claim request replay or binary build provenance. The fixed C artifact/report delivery commit is `8208c6c8611d6b7e471ed93816c7cf025b134331`, source commit f627590 as above; both were pushed to C's existing branch.
+`tools/verify_b2_host.py` verifies the whole fixed source copy, compares models/profiles/producer_request/bundles/storage bytes to the independent B1 source proof, checks vendor wheel equality, and invokes the actual isolated B worker loader to verify C's origin and version. It passed on c248daa as above. Its standalone output deliberately does not claim request replay or binary build provenance. The fixed C artifact/report delivery commit is `8208c6c8611d6b7e471ed93816c7cf025b134331`, source commit f627590 as above; both were pushed to C's existing branch.
 
-`tools/replay_b2_host.py` is prepared for the next immutable B2 host. It uses that verifier, checks the C-installed expected report against the fixed artifact lock, and rebuilds every captured wrapper through the actual B2 builder. Exact B1 snapshot bytes, source/optional hash-pinned executable worker output, complete variant/equipment/pending results, correlation tuple, temporary-report eligibility and absence of persistence are asserted. Extra cases cover withdrawal, transport digest tamper, unknown key, wrapper identity/revision/generation mismatch, and an explicit test interposer calling actual B revoke at the post-worker authorization checkpoint. Binary source-build attestation is kept false. Only syntax checks have run so far; B2 is still preparing its source commit/candidate. No current uncommitted B code has been executed or labelled as B1.
+`tools/replay_b2_host.py` uses that verifier, checks the C-installed expected report against the fixed artifact lock, and rebuilds every captured wrapper through the actual B2 builder. Exact B1 snapshot bytes, source/optional hash-pinned executable worker output, complete variant/equipment/pending results, correlation tuple, temporary-report eligibility and absence of persistence are asserted. Extra cases cover withdrawal, transport digest tamper, unknown key, wrapper identity/revision/generation mismatch, and an explicit test interposer calling actual B revoke at the post-worker authorization checkpoint. Binary source-build attestation is kept false. Actual c248daa source replay passed as above; the new Windows candidate remains pending. No uncommitted B code is labelled as B1.
 
-Once B2 is fixed, extract its exact Git tree into a new C temporary directory, then run (each report path must be new):
+Reproduce after extracting B2's exact Git tree into a new C temporary directory (each report path must be new):
 
 ```powershell
 python -I -B tools/replay_b2_host.py --b-repository '<B repository>' --b-source '<fixed B2 copy>/packages/starhelp-desktop' --b-host-commit '<actual B2 commit>' --capture interop/b-103741e-s3-v1 --expected-report interop/reports/c-0.4.0-b1-s3-installed.json --dependency-root .tmp/interop-deps --wheel artifacts/starhelp_planner-0.4.0-py3-none-any.whl --report '<new B2 report>'

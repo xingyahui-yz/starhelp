@@ -1,0 +1,56 @@
+{
+  "B1_seam_files_unchanged": 5,
+  "a_artifact_commit": "4610573ee9720f2b5e4760a9336263362446b800",
+  "a_producer_commit": "dcb1e3ee220b85229bedc6c79d72ebe495825f37",
+  "actual_C_module_loaded_from_fixed_B2_vendor": true,
+  "b_host_commit": "c248daab22255a069464a6d277757d01df5d49f3",
+  "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "c_build_source_commit": "f627590468154cc8622dad8647fefe9f6fd3c4ee",
+  "c_replay_tool_commit": "e3562f9e98338b098fcedad38e4686875952f4b2",
+  "c_wheel_delivery_commit": "8208c6c8611d6b7e471ed93816c7cf025b134331",
+  "c_wheel_sha256": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2",
+  "candidate": null,
+  "coordination_id": "starhelp.interop-min.v0.1",
+  "date": "2026-10-21",
+  "full_M0_acceptance": false,
+  "lock_version": "0.1",
+  "new_a_capture_lock_sha256": "a6e8620bf242eb9598697de777c0f71d45f4cf7756c326371ad4151e218562d3",
+  "not_exercised": [
+    "new B2 Windows candidate manifest/worker replay",
+    "production source/ID/content/trust acceptance",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations"
+  ],
+  "reports": {
+    "c-0.4.0-b2-c248daa-measurement-source-worker.json": {
+      "raw_sha256": "8aa238e6f036ebe4ed623f1c546f0e679da9f7e27861caf6b6158681fb965293",
+      "summary": {
+        "checks_failed": 0,
+        "checks_passed": 21,
+        "transports": [
+          "fixed-B2-source-worker"
+        ],
+        "worker_cases": 14
+      }
+    },
+    "c-0.4.0-b2-c248daa-source-load.json": {
+      "raw_sha256": "98378443779cabb2e1c594757c37e18c93a459411705b89089cfe6afac7a10af",
+      "summary": null
+    },
+    "c-0.4.0-b2-c248daa-source-worker.json": {
+      "raw_sha256": "8f3f1d6ab197401b8055667e3b376cf1eef9d157baba53f4cf05d47cdccad771",
+      "summary": {
+        "checks_failed": 0,
+        "checks_passed": 49,
+        "transports": [
+          "fixed-B2-source-worker"
+        ],
+        "worker_cases": 28
+      }
+    }
+  },
+  "separate_old_a_measurement_capture_lock_sha256": "597d7947ee545880a3337827d5872838f506e17813533785b2dde35309281152",
+  "source_files_verified": 45,
+  "synthetic_only": true
+}

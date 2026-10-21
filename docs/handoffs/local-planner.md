@@ -1,5 +1,15 @@
 # Local planner handoff
 
+## B2 fixed source independently replayed (2026-10-21)
+
+Actual B2 host `c248daab22255a069464a6d277757d01df5d49f3`: all **45 package files** match immutable Git before/after; five models/profiles/producer_request/bundles/storage hashes equal B1. Actual isolated B2 loader imports C 0.4.0 from its exact vendor wheel SHA `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`. Serializer identity remains B1 `103741e02c90ac672017f783058bdd8dacae982e` / profile starhelp.desktop.snapshot.interop-min.v0.1; B2 is separately recorded as host.
+
+**Actual B2 source worker replay: 49 checks / 28 cases pass**, covering the 21 S3 captured wrappers plus withdrawal, digest tamper, unknown key, wrong request/revision/generation and completed-worker revoke rejection. **Separate old-A measurement replay: 21 checks / 14 cases pass.** Both rebuild snapshots/wrappers with B2's actual builder byte for byte, compare full variant/allocation/pending output with fixed installed C, verify correlated errors and unsaved-report eligibility, and call private persistence zero times. Revoke is explicitly tested with an interposer invoking actual B revoke at the post-worker require_active checkpoint.
+
+Locks: `packages/starhelp-planner/interop/b2-c248daa/source-lock.json`, SHA `5b7d5eecb92702dcfc9e493b2c0a1450f5784885aa22b3ef6a0335f7db82186e`. Reports under `interop/reports/`: `c-0.4.0-b2-c248daa-source-load.json`, `c-0.4.0-b2-c248daa-source-worker.json`, `c-0.4.0-b2-c248daa-measurement-source-worker.json`. Exact report hashes and observations: [interop-s3-evidence.md](../../packages/starhelp-planner/docs/interop-s3-evidence.md).
+
+Remaining: new B2 Windows candidate manifest/worker replay after B finishes its fixed build; no old dist executable was consumed. Full M0, production sources/IDs/content approval/trust and positive complete-material/final-panel coverage remain unproven. C wheel and original capture locks stay fixed. The earlier preparation/delivery checkpoints below are retained history.
+
 ## Fixed S3 C delivery (2026-10-21)
 
 Source commit `f627590468154cc8622dad8647fefe9f6fd3c4ee` and artifact/report commit `8208c6c8611d6b7e471ed93816c7cf025b134331` were successfully pushed to the existing `codex/mvp-local-planner` branch at `https://github.com/xingyahui-yz/starhelp.git`. Local HEAD/upstream both matched 8208c6c after push. Initial automatic approval rejected the unverified destination; read-only GitHub connector checks established the authenticated owner xingyahui-yz, matching repository/clone URL and admin/push permission, after which the same scoped push was approved and succeeded. No alternative write path was used.
