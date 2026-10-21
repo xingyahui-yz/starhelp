@@ -187,6 +187,20 @@ should cross B's boundary. The report also leaves B2 host/worker integration, po
 inventory/material calculations, and final-loadout calculations unexercised. No C source report is
 treated as final package acceptance; repeat the relevant checks against the officially pinned wheel.
 
+C later refreshed the source-only result as
+`interop/reports/c-0.4.0-dev-b1-s3-source-v3.json` (SHA-256
+`a86cc11302105ac6ffceefca9d32cc35ea315d187783f4fd7afd91aefabcadd4`), still against the same
+capture-lock SHA-256 above. That report has 204 checks passed, 0 failed, all three synthetic modes,
+but still sets `full_three_party_acceptance=false` and has no wheel proof. It still lists B2 host/worker
+integration, positive complete inventory/material calculations, and final-loadout calculations as
+not exercised; those remain open despite the source-only pass.
+
+The S3 preview also exposed the snapshot model's existing rejection of duplicate local equipment
+instance UUIDs. B now has an explicit regression constructing two distinct type/slot records with
+the same UUID and requiring `AccountSnapshot` to reject the snapshot before serialization. The full
+package suite passes 65 tests; `compileall` and `git diff --check` pass. This test-only change does
+not alter B1 serializer bytes or trigger a candidate rebuild.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and

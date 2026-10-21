@@ -172,6 +172,19 @@ class MergeTests(unittest.TestCase):
         self.assertEqual(len(result.snapshot.equipment), 2)
         self.assertFalse(any(item.may_be_reassigned for item in result.snapshot.equipment))
 
+    def test_snapshot_rejects_duplicate_local_equipment_instance_ids(self) -> None:
+        instance_id = uuid4()
+        first = EquipmentInstance(
+            instance_id, "fixture:light-cone", "light_cone", EquipmentIdentity.PLAYER_CONFIRMED,
+            "101",
+        )
+        duplicate = EquipmentInstance(
+            instance_id, "fixture:relic", "body", EquipmentIdentity.UNCONFIRMED, "102",
+        )
+
+        with self.assertRaisesRegex(ValueError, "duplicate local equipment instance identity"):
+            replace(self.snapshot, equipment=(first, duplicate))
+
     def test_only_player_action_establishes_equipment_identity(self) -> None:
         one = EquipmentInstance(uuid4(), "relic-type-9", "head", EquipmentIdentity.AMBIGUOUS,
                                 "101", {"crit": fact(0.1)})
