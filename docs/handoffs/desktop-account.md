@@ -148,6 +148,23 @@ officially delivered, B will validate the exact mode/equipment matrix, report li
 and withdrawal behavior, then make one candidate rebuild from that fixed set. No real UID or private
 account data was used.
 
+#### B2 execution checklist for the fixed S3 tuple
+
+| Gate | Required evidence before closing S3 |
+|---|---|
+| Input lock | Record the official A commit, every delivered A file SHA-256, release ID, C wheel commit/version/SHA-256, C producer profile/capabilities, and B2 host commit. Keep B1's serializer and encoder source hashes unchanged; require the delivered snapshot raw bytes to match B1 output. |
+| B request boundary | Revalidate the signed A envelope and complete same-release dependencies; build requests only from exact stage/template scopes and declared goals for alpha, beta, and gamma. Reject mutated scopes, cross-release references, missing members, and unsupported capabilities. |
+| Planner matrix | Replay C's named expected cases for each of the three modes: main result, complete alternate, and no-match/insufficient coverage. Record exact expected and actual status, plan IDs, evidence refs, and reasons; do not derive missing cases from UI labels. |
+| Equipment behavior | Verify equipment type/slot requirements against the separate type table; exercise confirmed and ambiguous B instances, explicit locks, a locked allocation conflict, and a confirmed cross-character move. Ambiguous identities may support the current loadout but must not enter rearrangement. Record current-loadout and rearrangement outputs separately. |
+| Materials and provenance | Confirm returned cultivation/material quantities, costs, and unknown coverage are displayed with their source refs; absent data stays unknown and is not rendered as zero. Check all planner citations resolve inside the pinned release. |
+| Withdrawal and reports | Replay a withdrawn-evidence domain error with request ID, snapshot revision, and authorization generation correlation. Confirm it is not treated as a transport failure and cannot be saved as a plan. For successful output, verify preview is unsaved by default, explicit save persists it, snapshot/release changes mark it for review, and revocation cancels work and removes reports. |
+| Packaged worker | Update only the pinned vendor wheel, worker-loading inputs, and S3 demo/replay inputs; prove the packaged worker loaded the pinned C version and ran the same matrix. Keep the legacy fixture unchanged. |
+| Candidate and installer | After all prior gates pass, run the full package tests and `compileall`, build one unsigned candidate from the fixed B2 commit, verify the manifest covers the exact file set, smoke the app with isolated `LOCALAPPDATA`, and test synthetic install, upgrade, both rollback directions, and tamper rejection. Record hashes and target-Windows limitations. |
+
+The B-side bundle/signature/task/request checks recorded above are prerequisites only. The C wheel,
+named expected planner matrix, packaged-worker replay, report/withdrawal replay, and candidate /
+installer checks remain open until C's immutable artifact and replay lock are officially available.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
