@@ -187,7 +187,19 @@ def main():
         base = wrappers["stage-0-normal"]
         public = base["public_bundle"]
         view = public["objects"]["planner-view:" + locks["a_release_id"]]["bundle"]
+        no_template = {item["name"]: item for item in expected["negative_cases"] if item["expected_code"] == "no_reviewed_template"}
+        normal_wrappers = {wrapper["task"]["scope"]["stage_id"]: wrapper for name, wrapper in wrappers.items() if name.endswith("-normal")}
         for transport, command in commands.items():
+            for stage_id, normal_wrapper in normal_wrappers.items():
+                expected_name = "no-reviewed-template/" + stage_id
+                if expected_name not in no_template or not no_template[expected_name]["passed"]:
+                    raise SystemExit("no-template protocol case lacks fixed installed C evidence")
+                unmatched = deepcopy(normal_wrapper)
+                task = {**unmatched["task"], "public_goal": {"kind": "fixture:consumer-no-template"}}
+                unmatched["task"] = deepcopy(task)
+                unmatched["producer_request"]["task"] = deepcopy(task)
+                run(transport, command, expected_name, unmatched, expected_case={"status": "no_reviewed_template", "available": [], "pending": []})
+                cases[-1]["origin"] = "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission."
             withdrawn = deepcopy(base)
             withdrawn["producer_request"]["latest_known_validity"]["withdrawn_public_refs"] = [{"id": view["evidence"][0]["id"], "revision": view["evidence"][0]["revision"]}]
             run(transport, command, "withdrawn-required-evidence", withdrawn, error="withdrawn_public_object")

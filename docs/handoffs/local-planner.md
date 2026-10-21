@@ -1,5 +1,11 @@
 # Local planner handoff
 
+## B2 packaged replay checkpoint (2026-10-21)
+
+The new candidate is explicitly pinned to manifest `30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3`, 920 files, worker `989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a`. Independent C source+Windows-worker replay passed **77 checks / 56 cases** on new A and **35 checks / 28 cases** on the separate old-A measurement set, with exact manifest/file-set verification before and after. These are `c-0.4.0-b2-c248daa-packaged-comparison.json` and `c-0.4.0-b2-c248daa-measurement-packaged-comparison.json` under package `interop/reports/`.
+
+The harness is being extended with per-mode no-template protocol negatives, grounded in the fixed installed-C negative results. Those deliberately mutate outer/inner task goals together while retaining A/B raw bytes; they are not claimed as B-builder output (the builder rejects undeclared goals first). No C wheel/B source/candidate rebuild or relabelling is involved. Final packaged locks follow that finite matrix completion. Full M0/production/material/final-panel limits remain open.
+
 ## B2 fixed source independently replayed (2026-10-21)
 
 Actual B2 host `c248daab22255a069464a6d277757d01df5d49f3`: all **45 package files** match immutable Git before/after; five models/profiles/producer_request/bundles/storage hashes equal B1. Actual isolated B2 loader imports C 0.4.0 from its exact vendor wheel SHA `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`. Serializer identity remains B1 `103741e02c90ac672017f783058bdd8dacae982e` / profile starhelp.desktop.snapshot.interop-min.v0.1; B2 is separately recorded as host.
