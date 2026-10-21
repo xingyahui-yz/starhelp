@@ -18,14 +18,14 @@ if ($LASTEXITCODE -ne 0) {
 }
 $pythonCommand = Get-Command $python -ErrorAction Stop
 $python = $pythonCommand.Source
-$plannerWheel = Join-Path $component 'packaging\vendor\starhelp_planner-0.3.0-py3-none-any.whl'
-$expectedPlannerHash = 'f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca'
+$plannerWheel = Join-Path $component 'packaging\vendor\starhelp_planner-0.4.0-py3-none-any.whl'
+$expectedPlannerHash = '3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2'
 if (-not (Test-Path -LiteralPath $plannerWheel)) { throw 'Pinned planner artifact is missing' }
 $actualPlannerHash = (Get-FileHash -LiteralPath $plannerWheel -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actualPlannerHash -ne $expectedPlannerHash) { throw 'Pinned planner artifact hash mismatch' }
 & $python -m pip install --no-index --no-deps --force-reinstall $plannerWheel
 if ($LASTEXITCODE -ne 0) { throw 'Pinned local planner wheel installation failed' }
-& $python -c "from starhelp_planner import COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE; assert (COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE) == ('0.3.0', 'starhelp.producers.v0.1')"
+& $python -c "from starhelp_planner import COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE; assert (COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE) == ('0.4.0', 'starhelp.producers.v0.1')"
 if ($LASTEXITCODE -ne 0) { throw 'Installed local planner artifact is incompatible' }
 $originalPath = $env:PATH
 try {

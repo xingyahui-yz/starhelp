@@ -9,7 +9,7 @@ from typing import Any
 
 from .planner import PROTOCOL_ID, PROTOCOL_VERSION, MAX_REQUEST_BYTES, MAX_RESPONSE_BYTES
 
-PLANNER_WHEEL_SHA256 = "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca"
+PLANNER_WHEEL_SHA256 = "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2"
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -42,7 +42,7 @@ def _load_planner() -> tuple[Any, str, str]:
         Path(__file__).resolve().parents[2]
         / "packaging"
         / "vendor"
-        / "starhelp_planner-0.3.0-py3-none-any.whl"
+        / "starhelp_planner-0.4.0-py3-none-any.whl"
     )
     if wheel.is_file():
         digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
@@ -52,7 +52,7 @@ def _load_planner() -> tuple[Any, str, str]:
     module = importlib.import_module("starhelp_planner")
     component_version = getattr(module, "COMPONENT_VERSION", None)
     adapter_profile = getattr(module, "PRODUCER_ADAPTER_PROFILE", None)
-    if component_version != "0.3.0" or adapter_profile != "starhelp.producers.v0.1":
+    if component_version != "0.4.0" or adapter_profile != "starhelp.producers.v0.1":
         raise RuntimeError("local planner artifact version or profile is unsupported")
     return module, component_version, adapter_profile
 

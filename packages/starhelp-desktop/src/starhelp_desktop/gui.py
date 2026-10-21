@@ -251,7 +251,8 @@ class TaskPage(_Page):
         self.analyze = QPushButton("创建分析任务")
         self.synthetic_demo = QPushButton("运行合成联调演示（仅 fixture）")
         self.synthetic_demo.setToolTip(
-            "只读取随应用分发并校验摘要的合成数据与测试公钥；不读取所选档案，不访问网络。"
+            "仅使用应用内固定的合成数据和测试公钥；演示任务会明确允许装备重排。"
+            "不读取所选档案，不访问网络，结果不代表真实游戏建议。"
         )
         row.addWidget(self.refresh_profiles)
         row.addWidget(self.analyze)
@@ -278,6 +279,7 @@ class TaskPage(_Page):
             "运行合成联调演示",
             "将只使用应用内置并校验摘要的 A 签名 fixture、测试公钥和合成 B 快照，"
             "创建或复用一个单独的加密演示档案；不会读取当前所选真实档案，也不会访问网络。"
+            "演示任务会允许装备重排，结果只用于合成联调，不代表真实游戏建议。"
             "演示档案可在“账号与导入”页撤权并删除。是否继续？",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
@@ -311,8 +313,8 @@ class TaskPage(_Page):
         index = self.profile.findData(str(context.profile.profile_id))
         if index >= 0:
             self.profile.setCurrentIndex(index)
-        self.status.setText("合成演示档案已准备；本地规划器正在分析 fixture 数据…")
-        self.progress_bus.updated.emit("仅合成 fixture：本地规划分析进行中。", -1)
+        self.status.setText("合成演示档案已准备；正在进行允许装备重排的 fixture 分析…")
+        self.progress_bus.updated.emit("仅合成 fixture，允许装备重排：本地规划分析进行中。", -1)
         worker = _SyntheticAnalysisWorker(context, self.lifecycle, self.store)
         worker.signals.completed.connect(self._synthetic_demo_completed)
         worker.signals.failed.connect(self._synthetic_demo_failed)

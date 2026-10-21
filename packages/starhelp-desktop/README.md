@@ -35,9 +35,9 @@ identity of a physical copy.
   No real UID has been requested; UID-to-region routing remains an M0 decision.
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: no source code is imported from their worktrees. The
-  desktop package vendors the pinned C 0.3.0 wheel as a black-box artifact and launches its worker
-  through the bounded local process bridge. A signed A fixture and the current B snapshot serializer
-  have passed the full synthetic bridge replay; the fixture key and bundle are test-only.
+  desktop package vendors the pinned C 0.4.0 wheel as a black-box artifact and launches its worker
+  through the bounded local process bridge. The S3 A bundle, B1 snapshot, and fixture key are
+  synthetic; the B2 bridge and packaged candidate are verified separately in the handoff.
 - The local planner process bridge sends one
   complete `AnalysisRequest` as UTF-8 JSON on stdin and accepts one versioned result envelope on
   stdout, checks declared capabilities, bounds payload sizes and runtime, discards stderr, and kills

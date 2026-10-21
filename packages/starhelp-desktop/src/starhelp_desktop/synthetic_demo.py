@@ -15,16 +15,18 @@ from .producer_request import build_producer_analysis_request, select_public_tas
 from .profiles import ProfileRepository, ProfileSummary, _snapshot_from_dict
 
 
-_A_PRODUCER_COMMIT = "00d4a5844e74050359227c274de712878bf9187c"
+_A_PRODUCER_COMMIT = "dcb1e3ee220b85229bedc6c79d72ebe495825f37"
 _A_FORMAT_PROFILE = "starhelp.b-publicbundle-envelope.v1"
-_B_SNAPSHOT_COMMIT = "045965bce4fbc38a3baa79b594535c9dd983d776"
-_B_SNAPSHOT_PROFILE = "starhelp.desktop.snapshot.045965b"
+_B_SNAPSHOT_COMMIT = "103741e02c90ac672017f783058bdd8dacae982e"
+_B_SNAPSHOT_PROFILE = "starhelp.desktop.snapshot.interop-min.v0.1"
 _SIGNING_KEY_ID = "starhelp-fixture-ed25519-v1"
 _EXPECTED_HASHES = {
-    "knowledge-planner-fixture-v1.bpublic.json":
-        "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+    "starhelp-interop-min-v0.1-s3.bpublic.json":
+        "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
     "synthetic-b-snapshot-045965b.json":
-        "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+        "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
+    "equipment-type-table.json":
+        "7ffda486ef1b00683d3b3279fb3f2bf802075c46a5f04dbe563fc60f6ed75380",
     "fixture-ed25519-public.pem":
         "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
 }
@@ -67,19 +69,43 @@ def prepare_synthetic_demo(profiles: ProfileRepository) -> SyntheticDemoContext:
     )
     keyring = Ed25519Keyring({_SIGNING_KEY_ID: public_key})
     bundle = BundleValidator().validate(
-        fixture_bytes["knowledge-planner-fixture-v1.bpublic.json"],
+        fixture_bytes["starhelp-interop-min-v0.1-s3.bpublic.json"],
         supported_capabilities=frozenset({
             "starhelp.knowledge-distribution.v1", "starhelp.local-profile.v0.2",
         }),
-        expected_release_id="rel_fixture_0001",
+        expected_release_id="rel_fixture_s3_0001",
         signature_verifier=keyring,
     )
+    payload = bundle.payload()
+    table = json.loads(fixture_bytes["equipment-type-table.json"].decode("utf-8"))
+    native = payload["objects"].get(f"native-release:{bundle.release_id}", {}).get("bundle")
+    entities = native.get("entities") if isinstance(native, dict) else None
+    entity_by_id = {
+        item.get("entity_id"): item for item in entities if isinstance(item, dict)
+    } if isinstance(entities, list) else {}
+    table_items = table.get("items") if isinstance(table, dict) else None
+    if (
+        not isinstance(table_items, list)
+        or table.get("release_id") != bundle.release_id
+        or not table_items
+        or any(
+            not isinstance(item, dict)
+            or not isinstance(item.get("public_type_id"), str)
+            or not isinstance(item.get("kind"), str)
+            or not isinstance(item.get("entity_type"), str)
+            or item["kind"] != item["entity_type"]
+            or not isinstance(item.get("slot"), str)
+            or (entity := entity_by_id.get(item.get("public_type_id"))) is None
+            or entity.get("entity_type") != item["entity_type"]
+            for item in table_items
+        )
+    ):
+        raise ValueError("the pinned equipment type table does not match the signed release")
     fixture_snapshot = _snapshot_from_dict(json.loads(
         fixture_bytes["synthetic-b-snapshot-045965b.json"].decode("utf-8")
     ))
     profile, snapshot = _get_or_create_demo_profile(profiles, fixture_snapshot)
 
-    payload = bundle.payload()
     planner_view = payload["objects"][f"planner-view:{bundle.release_id}"]["bundle"]
     stages = planner_view["stages"]
     templates = planner_view["templates"]
@@ -98,6 +124,7 @@ def prepare_synthetic_demo(profiles: ProfileRepository) -> SyntheticDemoContext:
         stage_id=stage["stage_id"],
         template_id=template["id"],
         goal_kind=goal["kind"],
+        allow_rearrangement=True,
     )
     request = build_producer_analysis_request(
         validated_bundle=bundle,
@@ -137,7 +164,7 @@ def _get_or_create_demo_profile(
 
     proposal = ImportProposal.create(
         source_kind=SourceKind.STRUCTURED_IMPORT,
-        source_id="synthetic-fixture:045965b",
+        source_id="synthetic-fixture:interop-min-v0.1-s3",
         observed_at=fixture_snapshot.generated_at,
         fields=dict(fixture_snapshot.fields),
         ownership=dict(fixture_snapshot.ownership),
@@ -174,7 +201,7 @@ def _fixture_root() -> Path:
     frozen_root = getattr(sys, "_MEIPASS", None)
     if getattr(sys, "frozen", False) and isinstance(frozen_root, str):
         return Path(frozen_root) / "demo-fixtures"
-    return Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "producer-interop-v1"
+    return Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "producer-interop-s3"
 
 
 def _read_pinned_fixture(root: Path, name: str, expected_hash: str) -> bytes:

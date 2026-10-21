@@ -5,10 +5,11 @@ from PyInstaller.utils.hooks import collect_all
 root = Path(SPECPATH).parent
 ocr_datas, ocr_binaries, ocr_hiddenimports = collect_all("rapidocr")
 runtime_datas, runtime_binaries, runtime_hiddenimports = collect_all("onnxruntime")
-fixture_root = root / "tests" / "fixtures" / "producer-interop-v1"
+fixture_root = root / "tests" / "fixtures" / "producer-interop-s3"
 demo_fixture_names = (
-    "knowledge-planner-fixture-v1.bpublic.json",
+    "starhelp-interop-min-v0.1-s3.bpublic.json",
     "synthetic-b-snapshot-045965b.json",
+    "equipment-type-table.json",
     "fixture-ed25519-public.pem",
 )
 demo_datas = [(str(fixture_root / name), "demo-fixtures") for name in demo_fixture_names]

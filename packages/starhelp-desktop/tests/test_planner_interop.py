@@ -36,14 +36,15 @@ from starhelp_desktop.storage import EncryptedPrivateStore
 from test_account_core import TestProtector
 
 
-FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "producer-interop-v1"
-PUBLIC_BUNDLE = FIXTURE_ROOT / "knowledge-planner-fixture-v1.bpublic.json"
+FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "producer-interop-s3"
+PUBLIC_BUNDLE = FIXTURE_ROOT / "starhelp-interop-min-v0.1-s3.bpublic.json"
 ACCOUNT_SNAPSHOT = FIXTURE_ROOT / "synthetic-b-snapshot-045965b.json"
 PUBLIC_KEY = FIXTURE_ROOT / "fixture-ed25519-public.pem"
 PROFILE_ID = UUID("11111111-1111-4111-8111-111111111111")
 AUTHORIZATION_GENERATION = 7
-PUBLICATION_COMMIT = "00d4a5844e74050359227c274de712878bf9187c"
-SNAPSHOT_SERIALIZER_COMMIT = "045965bce4fbc38a3baa79b594535c9dd983d776"
+PUBLICATION_COMMIT = "dcb1e3ee220b85229bedc6c79d72ebe495825f37"
+SNAPSHOT_SERIALIZER_COMMIT = "103741e02c90ac672017f783058bdd8dacae982e"
+SNAPSHOT_FORMAT_PROFILE = "starhelp.desktop.snapshot.interop-min.v0.1"
 
 
 @unittest.skipUnless(
@@ -56,11 +57,11 @@ class ProducerPlannerInteropTests(unittest.TestCase):
         key_bytes = PUBLIC_KEY.read_bytes()
         self.assertEqual(
             hashlib.sha256(bundle_bytes).hexdigest(),
-            "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+            "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
         )
         self.assertEqual(
             hashlib.sha256(snapshot_fixture_bytes).hexdigest(),
-            "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+            "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
         )
         self.assertEqual(
             hashlib.sha256(key_bytes).hexdigest(),
@@ -77,7 +78,7 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             }),
             signature_verifier=verifier,
         )
-        self.assertEqual(validated.release_id, "rel_fixture_0001")
+        self.assertEqual(validated.release_id, "rel_fixture_s3_0001")
         self.assertEqual(validated.payload_json, bundle_bytes)
         with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as cache_directory:
             cache = PublicBundleCache(Path(cache_directory))
@@ -95,7 +96,7 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             bundle = cached.payload()
 
         snapshot = _snapshot_from_dict(json.loads(snapshot_fixture_bytes.decode("utf-8")))
-        planner_bundle = bundle["objects"]["planner-view:rel_fixture_0001"]["bundle"]
+        planner_bundle = bundle["objects"][f"planner-view:{validated.release_id}"]["bundle"]
         stage = planner_bundle["stages"][0]
         template = planner_bundle["templates"][0]
         request_id = "fixture:desktop-process-interop"
@@ -104,19 +105,21 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             stage_id=stage["stage_id"],
             template_id=template["id"],
             goal_kind=template["public_goals"][0]["kind"],
+            allow_rearrangement=True,
         )
 
         def select_from_mutated_bundle(
             mutate: Callable[[dict[str, Any]], object],
         ) -> dict[str, Any]:
             changed = json.loads(json.dumps(bundle))
-            changed_view = changed["objects"]["planner-view:rel_fixture_0001"]["bundle"]
+            changed_view = changed["objects"][f"planner-view:{validated.release_id}"]["bundle"]
             mutate(changed_view)
             return select_public_task(
                 changed,
                 stage_id=stage["stage_id"],
                 template_id=template["id"],
                 goal_kind=template["public_goals"][0]["kind"],
+                allow_rearrangement=True,
             )
 
         malformed_scopes = (
@@ -147,8 +150,8 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             "bundle_producer_commit": PUBLICATION_COMMIT,
             "bundle_format_profile": "starhelp.b-publicbundle-envelope.v1",
             "snapshot_producer_commit": SNAPSHOT_SERIALIZER_COMMIT,
-            "snapshot_format_profile": "starhelp.desktop.snapshot.045965b",
-            "evaluation_time": datetime(2026, 10, 16, 0, 10, tzinfo=UTC),
+            "snapshot_format_profile": SNAPSHOT_FORMAT_PROFILE,
+            "evaluation_time": datetime(2026, 10, 21, 0, 0, tzinfo=UTC),
             "request_id": request_id,
         }
         wrapper = build_producer_analysis_request(**request_args)
@@ -210,7 +213,7 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             self.assertIsNotNone(execution.temporary_report)
             assert execution.temporary_report is not None
             self.assertEqual(store.list_profile_keys(PROFILE_ID, "report"), ())
-            self.assertIn("ev_fixture_0001@1", execution.temporary_report.public_refs)
+            self.assertIn("ev_fixture_s3_0001@1", execution.temporary_report.public_refs)
             reports.save_explicitly(
                 execution.temporary_report,
                 current_snapshot_revision=snapshot.revision,
@@ -240,7 +243,7 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             self.assertIsNone(withdrawn_execution.temporary_report)
 
         self.assertEqual(result.planner_version, "0.2.0")
-        self.assertEqual(result.result["component_version"], "0.3.0")
+        self.assertEqual(result.result["component_version"], "0.4.0")
         self.assertEqual(result.result["status"], "plans_available")
         self.assertEqual(result.result["snapshot_revision"], snapshot.revision)
         self.assertEqual(result.result["authorization_generation"], AUTHORIZATION_GENERATION)
@@ -250,7 +253,12 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             wrapper["producer_request"]["public_bundle"]["sha256"],
             hashlib.sha256(bundle_bytes).hexdigest(),
         )
-        self.assertEqual(len(result.result["current_equipment_plans"]), 2)
+        self.assertEqual(result.result["current_equipment_plans"], [])
+        self.assertEqual(len(result.result["rearrangement_plans"]), 2)
+        self.assertEqual(
+            {item["variant"]["id"] for item in result.result["rearrangement_plans"]},
+            {"fixture:s3:alpha:variant:main", "fixture:s3:alpha:variant:alternate"},
+        )
         self.assertTrue(result.result["citations"])
         self.assertTrue(result.result["adapter_metadata"])
         self.assertEqual(withdrawn_result.result["status"], "error")
@@ -262,51 +270,6 @@ class ProducerPlannerInteropTests(unittest.TestCase):
         self.assertEqual(
             withdrawn_result.result["authorization_generation"], AUTHORIZATION_GENERATION
         )
-
-        component_root = Path(__file__).resolve().parents[1]
-        bundled_worker = (
-            component_root / "dist" / "StarHelp" / "planner-worker" / "StarHelpPlannerWorker.exe"
-        )
-        if bundled_worker.is_file():
-            completed = subprocess.run(
-                [str(bundled_worker)],
-                input=(
-                    json.dumps(wrapper, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-                    + b"\n"
-                ),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                timeout=60,
-                check=False,
-            )
-            self.assertEqual(completed.returncode, 0, "bundled planner worker failed")
-            response = json.loads(completed.stdout.decode("utf-8"))
-            self.assertEqual(response["protocol"], "starhelp-local-planner")
-            self.assertEqual(response["result"]["status"], "plans_available")
-            self.assertEqual(response["result"]["request_id"], request_id)
-            self.assertTrue(response["result"]["citations"])
-
-            completed = subprocess.run(
-                [str(bundled_worker)],
-                input=(
-                    json.dumps(withdrawn_wrapper, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-                    + b"\n"
-                ),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                timeout=60,
-                check=False,
-            )
-            self.assertEqual(completed.returncode, 0, "bundled planner worker rejected withdrawal result")
-            withdrawn_response = json.loads(completed.stdout.decode("utf-8"))["result"]
-            self.assertEqual(withdrawn_response["status"], "error")
-            self.assertEqual(withdrawn_response["error"]["code"], "withdrawn_public_object")
-            self.assertEqual(withdrawn_response["request_id"], request_id)
-            self.assertEqual(withdrawn_response["snapshot_revision"], snapshot.revision)
-            self.assertEqual(
-                withdrawn_response["authorization_generation"], AUTHORIZATION_GENERATION
-            )
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -28,7 +28,9 @@ This UI is only a synthetic integration substitute. Regular task creation still 
 draft and does not submit a production request. Production submission remains unavailable until M0
 task mappings, the snapshot/request contract, complete representative fixtures, and a separately
 provisioned production trust anchor are frozen. The source fixture files are under
-`tests/fixtures/producer-interop-v1/` and are embedded in the candidate under `demo-fixtures/`.
+`tests/fixtures/producer-interop-s3/` and are embedded in the candidate under `demo-fixtures/`.
+The older `producer-interop-v1` fixture remains an immutable compatibility sample and is not used
+by the current demo.
 
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release
