@@ -15,10 +15,12 @@ from .projection import check_projection, consumption_view
 DISTRIBUTION_PROFILE = "starhelp.b-publicbundle-envelope.v1"
 DISTRIBUTION_CAPABILITY = "starhelp.knowledge-distribution.v1"
 # Actual export/independent A verification and fixed B Ed25519 validation passed.
-ACCEPTED_A_COMMITS = frozenset({
-    "b790a52aea4fabdb362d35c37d9b511b737e1fe4",
-    "00d4a5844e74050359227c274de712878bf9187c",
-})
+A_PRODUCERS = {
+    "b790a52aea4fabdb362d35c37d9b511b737e1fe4": "0.2.0",
+    "00d4a5844e74050359227c274de712878bf9187c": "0.2.0",
+    "dcb1e3ee220b85229bedc6c79d72ebe495825f37": "0.3.0",
+}
+ACCEPTED_A_COMMITS = frozenset(A_PRODUCERS)
 
 
 def _identity(item: dict[str, Any]) -> tuple[str, str, int]:
@@ -27,7 +29,7 @@ def _identity(item: dict[str, Any]) -> tuple[str, str, int]:
 
 def _approval_proof(view: dict[str, Any], native: dict[str, Any], commit: str, release: str, content_hash: str) -> dict[str, Any]:
     source = view["manifest"].get("source_proof")
-    if type(source) is not dict or source.get("source_profile") != "starhelp.knowledge.native.v0.1-draft" or source.get("source_schema_version") != "0.1-draft" or source.get("source_hash_algorithm") != "sha256-canonical-json-utf8" or source.get("source_release_id") != release or source.get("source_release_content_hash") != content_hash or source.get("producer_commit") != commit or source.get("producer_package_version") != "0.2.0":
+    if type(source) is not dict or source.get("source_profile") != "starhelp.knowledge.native.v0.1-draft" or source.get("source_schema_version") != "0.1-draft" or source.get("source_hash_algorithm") != "sha256-canonical-json-utf8" or source.get("source_release_id") != release or source.get("source_release_content_hash") != content_hash or source.get("producer_commit") != commit or source.get("producer_package_version") != A_PRODUCERS[commit]:
         fail("producer_provenance_mismatch", "planner source proof does not identify the pinned original producer/release")
     if source.get("publication_state") not in {"active", "superseded"}:
         fail("producer_approval_unproven", "release publication is not established")

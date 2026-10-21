@@ -1,4 +1,4 @@
-"""Conservative mapping of B's exact 045965b serializer output."""
+"""Conservative mapping of explicitly pinned B serializer/encoder tuples."""
 
 from __future__ import annotations
 
@@ -9,6 +9,9 @@ from uuid import UUID
 from .common import B_COMMIT, fail, original
 
 B_PROFILE = "starhelp.desktop.snapshot.045965b"
+B_INTEROP_COMMIT = "103741e02c90ac672017f783058bdd8dacae982e"
+B_INTEROP_PROFILE = "starhelp.desktop.snapshot.interop-min.v0.1"
+B_PRODUCERS = {B_COMMIT: B_PROFILE, B_INTEROP_COMMIT: B_INTEROP_PROFILE}
 STATES = {"confirmed": "confirmed", "needs_review": "unknown", "conflict": "conflict", "stale": "stale"}
 IDENTITIES = {"player_confirmed": "player_confirmed", "source_confirmed": "unconfirmed", "ambiguous": "ambiguous", "unconfirmed": "unconfirmed"}
 
@@ -36,7 +39,10 @@ def _field(raw: Any, path: str, diagnostics: list[dict[str, Any]]) -> dict[str, 
 
 
 def adapt_snapshot(envelope: Any, authorization: Any, entities: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
-    snapshot, proof = original(envelope, "starhelp_desktop", B_COMMIT, B_PROFILE)
+    commit = envelope.get("producer_commit") if type(envelope) is dict else None
+    if type(commit) is not str or commit not in B_PRODUCERS:
+        fail("unsupported_producer_version", "B snapshot producer commit/profile is not supported")
+    snapshot, proof = original(envelope, "starhelp_desktop", commit, B_PRODUCERS[commit])
     expected = {"schema_id", "schema_version", "profile_id", "snapshot_id", "revision", "generated_at", "fields", "ownership", "coverage", "equipment"}
     if set(snapshot) != expected or snapshot["schema_id"] != "AccountSnapshot" or snapshot["schema_version"] != "0.1-draft":
         fail("unsupported_snapshot_schema", "B snapshot keys/schema do not match the pinned serializer")

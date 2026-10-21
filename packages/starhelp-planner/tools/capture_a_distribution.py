@@ -21,6 +21,8 @@ def main() -> None:
     parser.add_argument("--b-repository", required=True, type=Path)
     parser.add_argument("--dependency-root", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--fixture-kind", choices=("legacy", "s3"), default="legacy")
+    parser.add_argument("--artifact-commit")
     args = parser.parse_args()
     package = Path(__file__).resolve().parents[1]
     source, output = args.a_source.resolve(), args.output.resolve()
@@ -38,10 +40,11 @@ def main() -> None:
     from starhelp_knowledge.cli import main as producer_main
     from starhelp_knowledge import __version__ as producer_version
     # This is the producer's own fixture publication/export entry, not C-made JSON.
-    result = producer_main(["build-fixture-distribution", "--output-dir", str(output), "--b-root", str(args.b_repository)])
+    command = "build-s3-interop-fixture" if args.fixture_kind == "s3" else "build-fixture-distribution"
+    result = producer_main([command, "--output-dir", str(output), "--b-root", str(args.b_repository)])
     if result != 0:
         raise SystemExit("A fixture/export command failed")
-    file = output / "knowledge-planner-fixture-v1.bpublic.json"
+    file = output / ("starhelp-interop-min-v0.1-s3.bpublic.json" if args.fixture_kind == "s3" else "knowledge-planner-fixture-v1.bpublic.json")
     public_key = output / "fixture-ed25519-public.pem"
     result = producer_main(["verify-distribution", "--path", str(file), "--trusted-public-key", str(public_key), "--trusted-key-id", "starhelp-fixture-ed25519-v1", "--supported-capability", "starhelp.knowledge-distribution.v1"])
     if result != 0:
@@ -55,7 +58,7 @@ def main() -> None:
     check_source(args.a_repository, args.a_commit, "packages/starhelp-knowledge", source)
     locks = {
         "synthetic_only": True, "a_producer_commit": args.a_commit, "a_package_version": producer_version,
-        "entry_point": "starhelp_knowledge.cli.main build-fixture-distribution",
+        "entry_point": "starhelp_knowledge.cli.main " + command,
         "independent_verifier": "starhelp_knowledge.cli.main verify-distribution",
         "distribution_profile": bundle["manifest"]["distribution_profile"], "release_id": release,
         "a_artifact": file.name, "a_raw_sha256": hashlib.sha256(file.read_bytes()).hexdigest(),
@@ -66,6 +69,15 @@ def main() -> None:
         "files": {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(output.iterdir()) if path.is_file() and path.suffix in {".json", ".txt", ".pem"}},
         "production_trust_established": False,
     }
+    if args.artifact_commit:
+        artifact_prefix = "packages/starhelp-knowledge/artifacts/" + ("interop-min-v0.1-s3/" if args.fixture_kind == "s3" else "")
+        matches = {}
+        for name, expected in locks["files"].items():
+            reference = subprocess.run(["git", "-C", str(args.a_repository), "show", f"{args.artifact_commit}:{artifact_prefix}{name}"], check=True, capture_output=True).stdout
+            if reference != (output / name).read_bytes():
+                raise SystemExit("regenerated artifact differs from its fixed delivery Git blob")
+            matches[name] = expected
+        locks.update(official_delivery_artifact_commit=args.artifact_commit, official_git_blob_bytes_match=matches)
     (output / "consumer-capture-locks.json").write_text(json.dumps(locks, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"a_producer_commit": args.a_commit, "a_raw_sha256": locks["a_raw_sha256"], "release": release}))
 

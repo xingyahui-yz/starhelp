@@ -1,0 +1,548 @@
+{
+  "M0_complete": false,
+  "a_producer_commit": "00d4a5844e74050359227c274de712878bf9187c",
+  "a_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "a_release_id": "rel_fixture_0001",
+  "b_host_commit": null,
+  "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "builder_boundary_results": {
+    "stage-0-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-0-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-0-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-0-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    }
+  },
+  "capture_lock_raw_sha256": "f457da712019b427bcbd648cfee0f211c1b88ec371268040246878b422f49d66",
+  "cases": [
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-missing_fields",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-normal",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-not_owned",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:character:a",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-unknown_ownership",
+      "native_error": null,
+      "pending": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "reasons": null,
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    }
+  ],
+  "checks": [
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-missing_fields/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-missing_fields/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-missing_fields/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-missing_fields/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-missing_fields/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-normal/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-normal/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-normal/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-normal/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-normal/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-not_owned/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-not_owned/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-not_owned/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-not_owned/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-not_owned/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-not_owned/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-unknown_ownership/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-unknown_ownership/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-unknown_ownership/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-unknown_ownership/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-unknown_ownership/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-unknown_ownership/coverage",
+      "passed": true
+    }
+  ],
+  "component_version": "0.4.0",
+  "full_three_party_acceptance": false,
+  "native_rule_version": "0.2.0",
+  "not_exercised": [
+    "new A S3 positive acceptance until an admitted immutable delivery is captured",
+    "B2 host/worker integration",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations"
+  ],
+  "runtime_kind": "source_only_development",
+  "source_file_sha256": {
+    "src/starhelp_planner/__init__.py": "af2640ab2c3b99ba81bed0511a067c1253694d68d85d786131dcc0491af79980",
+    "src/starhelp_planner/adapters/__init__.py": "11a00b4df333a4011c498f3144e543110c00ff1ef69ac7828193f85ecf206a76",
+    "src/starhelp_planner/adapters/a_distribution.py": "5b4e4ef802b9f90d9eeabc81affb877542a25040776e7267cc47c81656337c7d",
+    "src/starhelp_planner/adapters/a_legacy.py": "22a9683787496f241628328572b28081c91d8e038053951a49c3ca8f2299d6ca",
+    "src/starhelp_planner/adapters/b_snapshot.py": "17dab3f2f9683047fd8524ceb66dfe8147d535d590d2509f27a198a10eb6a574",
+    "src/starhelp_planner/adapters/common.py": "5e120cc718fe9d4ffba25ab75befb795f873f6103a6f8b7837c9abd55ed9a6d2",
+    "src/starhelp_planner/adapters/entry.py": "e40baae9d363888bf979180b9bfc6f09cd8afdca7e3971c540af644d83097e8c",
+    "src/starhelp_planner/adapters/projection.py": "331a8f92e3b6bc51447184f6c18c9b878d2ecb5768abb9d175497f077fb2ec22",
+    "src/starhelp_planner/adapters/signature.py": "c852de5ed6062ca4732bfbd7145c37d2d38888a43a723baa60390918e7d93171",
+    "src/starhelp_planner/api.py": "4a46f64b70093dcdfebd37c6b7f16bd754ec22ea62872ab8a4f6aa4197442740",
+    "src/starhelp_planner/conditions.py": "1cce8498ca32f6c1b1a4ad0ad14dc1267d13c029ca2469ff8d3a9e17e34a1ea2",
+    "src/starhelp_planner/cultivation.py": "ebb22080fc211117336577f1eee63ab7327b8066afe573ff8ce7c009473f55e7",
+    "src/starhelp_planner/demo.py": "92bbb81d488936dc6c17272ec8f49cbe880f7ff4278a4359872dc4f5f6387954",
+    "src/starhelp_planner/demo_data.py": "46965cc5b845976d19244850f65b9e1bc49fb232563e6db2f5786f9042fbbf25",
+    "src/starhelp_planner/engine.py": "d6214de0b0101e32256e9f934f66f7a1aed34cd59195a2f01d882da84f8c415f",
+    "src/starhelp_planner/validation.py": "ba34c35b747bf2d84d3d15651fce0b9407d9801b8bb4e47dc23f6e205186bf20"
+  },
+  "summary": {
+    "builder_rejections": 4,
+    "failed": 0,
+    "modes_observed": [
+      "fixture:mode:duo"
+    ],
+    "passed": 26
+  },
+  "synthetic_only": true,
+  "wheel_proof": null
+}

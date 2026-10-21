@@ -1,5 +1,7 @@
 # Producer compatibility matrix — round 2
 
+S3 update (2026-10-21): source component 0.4.0 explicitly accepts A `dcb1e3ee220b85229bedc6c79d72ebe495825f37` / package 0.3.0 and B1 `103741e02c90ac672017f783058bdd8dacae982e` / `starhelp.desktop.snapshot.interop-min.v0.1`. Its ten-key/seven-key snapshot semantics remain conservative; no units, complete inventory/materials or panels are added. Actual source/encoding capture, three-mode/equipment source replay and B1/B2 separation are in [interop-s3-evidence.md](interop-s3-evidence.md). The following round-2 baselines and reports remain historical evidence with their original identities. Final 0.4.0 wheel/installed replay and B2 host validation follow the locked source checkpoint.
+
 Status: first fixed producer delivery consumed, partial acceptance, 2026-10-16. This proposal does not change the shared contract. Technical interoperability uses synthetic producer outputs; it does not establish production content approval or complete the old M0/MVP Goal.
 
 ## Fixed baselines
@@ -10,7 +12,7 @@ Status: first fixed producer delivery consumed, partial acceptance, 2026-10-16. 
 | B desktop serializer | `045965bce4fbc38a3baa79b594535c9dd983d776` | Generate synthetic snapshots through `profiles._snapshot_to_dict`; no store/repository/account operations |
 | C native planner | `3133eda8ce571e4a58d217e52e28d6e3d3aa6bff` / wheel `0.2.0` | Preserve the native `analyze` entry and `starhelp.local.v0.2` semantics |
 
-B's working HEAD has advanced; it is not used. Producer sources are read from the specified Git commit and executed only from a temporary copy inside C. A's first new positive export is locked separately below, with its actual commit/profile/release/raw byte SHA-256. Developing A versions cannot be mixed into one acceptance result.
+B's working HEAD has advanced; it was not used for the round-2 evidence below. Producer sources are read from the specified Git commit and executed only from a temporary copy inside C. A's first new positive export is locked separately below, with its actual commit/profile/release/raw byte SHA-256. Developing A versions cannot be mixed into one acceptance result.
 
 ## Official delivery (kept separate from earlier regression inputs)
 

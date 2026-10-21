@@ -1,0 +1,156 @@
+{
+  "a_producer_commit": "00d4a5844e74050359227c274de712878bf9187c",
+  "a_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "a_release_id": "rel_fixture_0001",
+  "baseline_b1_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+  "baseline_bytes_equal_legacy": true,
+  "builder_entry_point": "starhelp_desktop.producer_request.build_producer_analysis_request",
+  "builder_rejections": {
+    "stage-0-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-0-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-0-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-0-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    }
+  },
+  "cases": {
+    "stage-0-missing_fields": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:duo",
+      "snapshot": "stage-0-missing_fields.snapshot.json",
+      "stage_id": "fixture:stage:one",
+      "wrapper": "stage-0-missing_fields.request.json"
+    },
+    "stage-0-normal": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:duo",
+      "snapshot": "stage-0-normal.snapshot.json",
+      "stage_id": "fixture:stage:one",
+      "wrapper": "stage-0-normal.request.json"
+    },
+    "stage-0-not_owned": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:duo",
+      "snapshot": "stage-0-not_owned.snapshot.json",
+      "stage_id": "fixture:stage:one",
+      "wrapper": "stage-0-not_owned.request.json"
+    },
+    "stage-0-unknown_ownership": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:duo",
+      "snapshot": "stage-0-unknown_ownership.snapshot.json",
+      "stage_id": "fixture:stage:one",
+      "wrapper": "stage-0-unknown_ownership.request.json"
+    }
+  },
+  "dependency_versions": {
+    "cryptography": "46.0.7"
+  },
+  "encoding": {
+    "allow_nan": false,
+    "ensure_ascii": false,
+    "separators": [
+      ",",
+      ":"
+    ],
+    "sort_keys": true,
+    "trailing_newline": true
+  },
+  "equipment_positive_coverage_present": false,
+  "files": {
+    "baseline-b1-snapshot.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+    "stage-0-missing_fields.request.json": "31f87d787a271aaaed9367ae7f37e0b5a71a9ebbbc5de4a6d273eecd35c2df4e",
+    "stage-0-missing_fields.snapshot.json": "be76cbdc831e6abcd64cbdc89e86b8edbaf2f03da4aa6ef037b8bacd436baba9",
+    "stage-0-normal.request.json": "9978e25a3b1ab4fb49896a1a3d771bbd8d8ad5c3ecc7b0ae8149585de6cfc212",
+    "stage-0-normal.snapshot.json": "be76cbdc831e6abcd64cbdc89e86b8edbaf2f03da4aa6ef037b8bacd436baba9",
+    "stage-0-not_owned.request.json": "fd6d4273e48e955ddccd3c8d3b009601a369afff510210c6e1c96a1efdb85029",
+    "stage-0-not_owned.snapshot.json": "a130aa0611dda25f63acfe11f46e127e906caa03f15ed4469faa5b6eb6e57457",
+    "stage-0-unknown_ownership.request.json": "61bbfa1eb5a0cbf704fd5067afdd309ed47709a972eb67e1db53dd64bd31906d",
+    "stage-0-unknown_ownership.snapshot.json": "fd4f63a6cd0b4060ac803f92e586adb8745e4dcb73bb39cd2aaffc78ee6d0ff8"
+  },
+  "format_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "full_three_party_acceptance": false,
+  "legacy_base_raw_sha256": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+  "loaded_modules": {
+    "starhelp_desktop.models": {
+      "path": "src/starhelp_desktop/models.py",
+      "sha256": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504"
+    },
+    "starhelp_desktop.producer_request": {
+      "path": "src/starhelp_desktop/producer_request.py",
+      "sha256": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59"
+    },
+    "starhelp_desktop.profiles": {
+      "path": "src/starhelp_desktop/profiles.py",
+      "sha256": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3"
+    }
+  },
+  "producer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "serializer_entry_point": "starhelp_desktop.profiles._snapshot_to_dict",
+  "source_proof": {
+    "all_files_verified": true,
+    "commit": "103741e02c90ac672017f783058bdd8dacae982e",
+    "file_sha256": {
+      "README.md": "52441541fd1da67ec431f171e8ed404a71949fbd5b3c04356478a30d2f07f66d",
+      "packaging/README.md": "ded56f4e2670983644817c483d080ba440ae497ad53014dc1235f9efb7772d63",
+      "packaging/StarHelp.spec": "552c7703b7a24e48828780eabb75ae7ff0fe87132eace61f17788beb1e8dbd26",
+      "packaging/StarHelpPlannerWorker.spec": "d222266ceeed655a32d34679c510cd8ba132da59d13df4afb9d282aaa7124a74",
+      "packaging/build-candidate.ps1": "4b540b930029851d8b84e2338601c189c753407b6e4f1214110c40f26f2dfbf1",
+      "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+      "packaging/install-candidate.ps1": "27f983035d8518b82e131c55c53fc52d85c61113b753b54f8051089678b34697",
+      "packaging/planner_worker_entrypoint.py": "b3e275b2303a457db7c80bbf7241f4a9dec4839b8db2cee1bb984bf963873e57",
+      "packaging/vendor/PLANNER-ARTIFACT.md": "4b375fd4cc2f413b14dc1661e849969fd16b41d096c4361741a739531728701c",
+      "packaging/vendor/starhelp_planner-0.3.0-py3-none-any.whl": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+      "pyproject.toml": "6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3",
+      "src/starhelp_desktop/__init__.py": "26761d0531e24e49a3c0dd3e8ac4888e832529a0da33ffcd5bc551e1009d3fc3",
+      "src/starhelp_desktop/__main__.py": "d21de9364b84039d30d4e397c712a49e6f1c6798819aff0f19b90849695aeff2",
+      "src/starhelp_desktop/analysis.py": "26845ba0facf8b73cee5dcbfb0ee2c441a74c84d06e5b0aab611b97c7414aa9a",
+      "src/starhelp_desktop/bundles.py": "dbfc4b6510897f2129ea8a7aa75fea484ced49b47bd8fb413fb89cfd3664d9af",
+      "src/starhelp_desktop/equipment.py": "72a5bff218cce068dd1e79cbfa769177682f0f984847aa1bbf2d27299ea28365",
+      "src/starhelp_desktop/gui.py": "f37a1b7231d552a20c8d8556da9d514a00b46d62f468300f1441549d8823d3e8",
+      "src/starhelp_desktop/imports.py": "c501403ff821f9f7799819ef45be471e04e8bda9d877b80865eb74ebdbfc8230",
+      "src/starhelp_desktop/lifecycle.py": "fae591136ce165ded3a305528a66ac5446cda4cb8b5b9eb6658946db3bedd43a",
+      "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+      "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+      "src/starhelp_desktop/planner.py": "96950c94a1554589e8cdfb7142eb61a08aca3d3dfe2ae5b360794b59d03a88ba",
+      "src/starhelp_desktop/planner_worker.py": "4a7053e9ff6db1426d83dbdeb9248b344bf68fe68933cf211e0b88b7d7af5930",
+      "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+      "src/starhelp_desktop/producer_request.py": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59",
+      "src/starhelp_desktop/profiles.py": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3",
+      "src/starhelp_desktop/public_profile.py": "234bdf000acac6d75780b5bf0521f574fb29a2afc6915aa2f8e89f3afd1d94ce",
+      "src/starhelp_desktop/reports.py": "8c9033cda4e4cfcce970abc959c1809bca54ef8f2af44bc74f024176056c4fc7",
+      "src/starhelp_desktop/storage.py": "02d6fbde5d0e234b9464816b9dc2e6093fb2a3c5dc9f94c3a8a9b01b8e0ea226",
+      "src/starhelp_desktop/synthetic_demo.py": "dbb74e6a0a25821f51c3cc2c4419e548de52363b0e915114ec5c5d2b22dd84d5",
+      "src/starhelp_desktop/tasks.py": "84d8d3fbe854b9bc7fa0a405584f1b68330efe703e9897f206bafa3546abf332",
+      "tests/Install-Candidate.Smoke.ps1": "09aa9d1faaffd7af1118e9250f4c1e8ac3b7931bc6351934a9de18991b1b8f32",
+      "tests/fixtures/producer-interop-v1/README.md": "59ae0fd5ac71d9d29a87f8319f5094e774c9ff92d88f510fc5cf4d52f3c7fcab",
+      "tests/fixtures/producer-interop-v1/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+      "tests/fixtures/producer-interop-v1/knowledge-planner-fixture-v1.bpublic.json": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "tests/test_account_core.py": "f506e7bb2850a8c9835aa2df1bf6478cb8d57f69384a25b1aad445f7cd291d27",
+      "tests/test_planner_interop.py": "741df33ed273c6825be54d4e56a34c05dd4ad2dd37c9cf787263b5bc603753d7"
+    },
+    "git_tree": "1d0b7fe610663188f5ea393aeb6772f233a88db5",
+    "package_subdir": "packages/starhelp-desktop"
+  },
+  "source_verified_before_and_after": true,
+  "synthetic_only": true
+}

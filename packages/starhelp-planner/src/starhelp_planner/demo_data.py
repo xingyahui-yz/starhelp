@@ -56,7 +56,7 @@ def synthetic_request() -> dict[str, Any]:
                 "equipment_requirements": [{"kind": "relic", "slot": "body", "public_type_id": "fixture:relic:type"}],
                 "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
             }],
-            "fixture:lower": [{"slot_id": "fixture:lower:1", "character_id": "fixture:char:b"}],
+            "fixture:lower": [{"slot_id": "fixture:lower:1", "character_id": "fixture:char:b", "equipment_requirements": []}],
         },
         "conditions": [condition],
         "steps": [
@@ -85,8 +85,8 @@ def synthetic_request() -> dict[str, Any]:
         "approval_status": "approved", "publication_status": "published", "variant_kind": "complete_alternate",
         "evidence_refs": [{"id": "fixture:evidence:1", "revision": 1}],
         "teams": {
-            "fixture:upper": [{"slot_id": "fixture:upper:1", "character_id": "fixture:char:c"}],
-            "fixture:lower": [{"slot_id": "fixture:lower:1", "character_id": "fixture:char:b"}],
+            "fixture:upper": [{"slot_id": "fixture:upper:1", "character_id": "fixture:char:c", "equipment_requirements": []}],
+            "fixture:lower": [{"slot_id": "fixture:lower:1", "character_id": "fixture:char:b", "equipment_requirements": []}],
         },
         "conditions": [],
     }

@@ -8,7 +8,7 @@ from copy import deepcopy
 from typing import Any
 
 ADAPTER_PROFILE = "starhelp.producers.v0.1"
-COMPONENT_VERSION = "0.3.0"
+COMPONENT_VERSION = "0.4.0"
 B_COMMIT = "045965bce4fbc38a3baa79b594535c9dd983d776"
 A_BASELINE = "313508f895cb422d4a309743eb7f8b99f45a7a91"
 

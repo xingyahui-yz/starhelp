@@ -1,0 +1,3672 @@
+{
+  "M0_complete": false,
+  "a_producer_commit": "dcb1e3ee220b85229bedc6c79d72ebe495825f37",
+  "a_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+  "a_release_id": "rel_fixture_s3_0001",
+  "b_host_commit": null,
+  "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "builder_boundary_results": {
+    "stage-0-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-0-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-0-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-0-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    },
+    "stage-1-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-1-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-1-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-1-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    },
+    "stage-2-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-2-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-2-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-2-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    }
+  },
+  "capture_lock_raw_sha256": "a6e8620bf242eb9598697de777c0f71d45f4cf7756c326371ad4151e218562d3",
+  "cases": [
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-ambiguous_move",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:c",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:a",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "confirmation_required"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-000000004e20",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:c",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-000000004e2b",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-complete_alternate",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:alpha:character:a",
+              "code": "excluded_character_used"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-locked_move",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:c",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:a",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "confirmation_required"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-main_current_equipment",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-missing_fields",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-normal",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-not_owned",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:alpha:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        },
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:alpha:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "no_feasible_variant"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-player_confirmed_move",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": null,
+                "local_instance_id": "00000000-0000-0000-0000-000000002328",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": null,
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-000000002328",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": null,
+                "local_instance_id": "00000000-0000-0000-0000-000000002328",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": null,
+                "kind": "relic",
+                "local_instance_id": "00000000-0000-0000-0000-000000002328",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:a",
+                "kind": "light_cone",
+                "local_instance_id": "00000000-0000-0000-0000-0000000007d1",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "plan_kind": "rearrangement",
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:main"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:alpha:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-same_type_distinct_instance",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "00000000-0000-0000-0000-0000000007d0",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-source_confirmed_move",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:c",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": null,
+          "equipment_status": "unknown",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "reason": "inventory_coverage_incomplete"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:a",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "confirmation_required"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:alpha",
+      "name": "stage-0-unknown_ownership",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "rearrangement",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:c",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:c"
+              }
+            ],
+            "search_truncated": false
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 2,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:c",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "rearrangement",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [
+              {
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "assignments": [
+              {
+                "character_id": "fixture:s3:alpha:character:b",
+                "from_character_id": "fixture:s3:alpha:character:d",
+                "kind": "relic",
+                "local_instance_id": "55555555-5555-4555-8555-555555555555",
+                "partition_id": "fixture:s3:alpha:lower",
+                "public_type_id": "fixture:s3:alpha:equipment:relic",
+                "requirement": {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                },
+                "slot_id": "fixture:s3:alpha:lower:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:b"
+              },
+              {
+                "character_id": "fixture:s3:alpha:character:a",
+                "from_character_id": "fixture:s3:alpha:character:b",
+                "kind": "light_cone",
+                "local_instance_id": "33333333-3333-4333-8333-333333333333",
+                "partition_id": "fixture:s3:alpha:upper",
+                "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                "requirement": {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                },
+                "slot_id": "fixture:s3:alpha:upper:slot-1",
+                "to_character_id": "fixture:s3:alpha:character:a"
+              }
+            ],
+            "search_truncated": false
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 2,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:alpha:character:b",
+              "equipment_requirements": [
+                {
+                  "kind": "relic",
+                  "public_type_ids": [
+                    "fixture:s3:alpha:equipment:relic"
+                  ],
+                  "slot": "body"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:lower",
+              "slot_id": "fixture:s3:alpha:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:alpha:character:a",
+              "equipment_requirements": [
+                {
+                  "kind": "light_cone",
+                  "public_type_id": "fixture:s3:alpha:equipment:light-cone",
+                  "slot": "light_cone"
+                }
+              ],
+              "partition_id": "fixture:s3:alpha:upper",
+              "slot_id": "fixture:s3:alpha:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:alpha:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:alpha",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:alpha",
+              "stage_id": "fixture:s3:alpha:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Alpha complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:alpha:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:alpha:template",
+            "title": "Synthetic Alpha main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:alpha:stage",
+      "status": "confirmation_required"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:beta",
+      "name": "stage-1-complete_alternate",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:beta:character:a",
+              "code": "excluded_character_used"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:beta:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:beta",
+      "name": "stage-1-missing_fields",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:beta:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:beta",
+      "name": "stage-1-normal",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:beta:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:beta",
+      "name": "stage-1-not_owned",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:beta:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:beta:variant:alternate"
+        },
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:beta:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:beta:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:beta:stage",
+      "status": "no_feasible_variant"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:beta",
+      "name": "stage-1-unknown_ownership",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:beta:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:beta:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:beta:lower",
+              "slot_id": "fixture:s3:beta:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:beta:character:c",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:beta:upper",
+              "slot_id": "fixture:s3:beta:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:beta:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:beta",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:beta",
+              "stage_id": "fixture:s3:beta:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Beta complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:beta:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:beta:template",
+            "title": "Synthetic Beta alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:beta:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:beta:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:beta:lower",
+              "slot_id": "fixture:s3:beta:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:beta:character:a",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:beta:upper",
+              "slot_id": "fixture:s3:beta:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:beta:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:beta",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:beta",
+              "stage_id": "fixture:s3:beta:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Beta complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:beta:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:beta:template",
+            "title": "Synthetic Beta main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:beta:stage",
+      "status": "confirmation_required"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:gamma",
+      "name": "stage-2-complete_alternate",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:gamma:character:a",
+              "code": "excluded_character_used"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:gamma:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:gamma",
+      "name": "stage-2-missing_fields",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:gamma:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        },
+        {
+          "conditions": [],
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:gamma",
+      "name": "stage-2-normal",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:gamma:stage",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:gamma",
+      "name": "stage-2-not_owned",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:gamma:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:gamma:variant:alternate"
+        },
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:s3:gamma:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:s3:gamma:variant:main"
+        }
+      ],
+      "stage_id": "fixture:s3:gamma:stage",
+      "status": "no_feasible_variant"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [
+        {
+          "local_instance_id": "66666666-6666-4666-8666-666666666666",
+          "reason": "source_confirmed_is_not_source_verified"
+        }
+      ],
+      "mode_id": "fixture:mode:gamma",
+      "name": "stage-2-unknown_ownership",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:gamma:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:gamma:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:gamma:lower",
+              "slot_id": "fixture:s3:gamma:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:gamma:character:c",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:gamma:upper",
+              "slot_id": "fixture:s3:gamma:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:gamma:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:gamma",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:gamma",
+              "stage_id": "fixture:s3:gamma:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Gamma complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:gamma:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:s3:gamma:template",
+            "title": "Synthetic Gamma alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": []
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_s3_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_s3_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:s3:gamma:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 0
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:s3:gamma:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:gamma:lower",
+              "slot_id": "fixture:s3:gamma:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:s3:gamma:character:a",
+              "equipment_requirements": [],
+              "partition_id": "fixture:s3:gamma:upper",
+              "slot_id": "fixture:s3:gamma:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:s3:gamma:template",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:gamma",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:gamma",
+              "stage_id": "fixture:s3:gamma:stage",
+              "stage_revision": 1
+            },
+            "title": "Synthetic Gamma complete planner template"
+          },
+          "variant": {
+            "id": "fixture:s3:gamma:variant:main",
+            "revision": 1,
+            "template_id": "fixture:s3:gamma:template",
+            "title": "Synthetic Gamma main",
+            "variant_kind": "main"
+          },
+          "warnings": []
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:s3:gamma:stage",
+      "status": "confirmation_required"
+    }
+  ],
+  "checks": [
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-ambiguous_move/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-ambiguous_move/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-ambiguous_move/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-ambiguous_move/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-ambiguous_move/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "lock or unreliable identity must prevent the required move",
+      "name": "stage-0-ambiguous_move/no_cross_character_move",
+      "passed": true
+    },
+    {
+      "detail": "partial inventory must not be promoted into a proof of global infeasibility",
+      "name": "stage-0-ambiguous_move/pending_partial_inventory",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-ambiguous_move/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-complete_alternate/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-complete_alternate/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-complete_alternate/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-complete_alternate/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-complete_alternate/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-complete_alternate/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-complete_alternate/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "the main-only character is excluded and only an independently approved full alternate is returned",
+      "name": "stage-0-complete_alternate/expected_alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-complete_alternate/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-locked_move/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-locked_move/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-locked_move/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-locked_move/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-locked_move/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "lock or unreliable identity must prevent the required move",
+      "name": "stage-0-locked_move/no_cross_character_move",
+      "passed": true
+    },
+    {
+      "detail": "partial inventory must not be promoted into a proof of global infeasibility",
+      "name": "stage-0-locked_move/pending_partial_inventory",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-locked_move/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-main_current_equipment/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-main_current_equipment/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-main_current_equipment/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-main_current_equipment/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-main_current_equipment/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-main_current_equipment/unique_instances/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-main_current_equipment/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-main_current_equipment/complete_reviewed_variant/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-main_current_equipment/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "the main variant's already-equipped assignment is selected with zero moves",
+      "name": "stage-0-main_current_equipment/current_main_without_moves",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-main_current_equipment/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-missing_fields/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-missing_fields/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-missing_fields/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-missing_fields/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-missing_fields/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-missing_fields/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-missing_fields/complete_reviewed_variant/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-missing_fields/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-missing_fields/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-normal/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-normal/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-normal/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-normal/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-normal/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-normal/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-normal/complete_reviewed_variant/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-normal/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-normal/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-not_owned/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-not_owned/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-not_owned/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-not_owned/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-not_owned/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "confirmed non-ownership excludes every affected complete roster",
+      "name": "stage-0-not_owned/expected_not_owned",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-not_owned/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-player_confirmed_move/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-player_confirmed_move/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-player_confirmed_move/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-player_confirmed_move/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-player_confirmed_move/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-player_confirmed_move/unique_instances/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-player_confirmed_move/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-player_confirmed_move/complete_reviewed_variant/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-player_confirmed_move/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "must produce at least one real cross-character move",
+      "name": "stage-0-player_confirmed_move/actual_move",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-player_confirmed_move/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-same_type_distinct_instance/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-same_type_distinct_instance/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-same_type_distinct_instance/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-same_type_distinct_instance/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-same_type_distinct_instance/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-same_type_distinct_instance/unique_instances/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-same_type_distinct_instance/unique_instances/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-same_type_distinct_instance/complete_reviewed_variant/fixture:s3:alpha:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-same_type_distinct_instance/complete_reviewed_variant/fixture:s3:alpha:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "a distinct unlocked UUID must be allocated",
+      "name": "stage-0-same_type_distinct_instance/spare_instance_used",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-same_type_distinct_instance/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-source_confirmed_move/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-source_confirmed_move/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-source_confirmed_move/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-source_confirmed_move/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-source_confirmed_move/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "lock or unreliable identity must prevent the required move",
+      "name": "stage-0-source_confirmed_move/no_cross_character_move",
+      "passed": true
+    },
+    {
+      "detail": "partial inventory must not be promoted into a proof of global infeasibility",
+      "name": "stage-0-source_confirmed_move/pending_partial_inventory",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-source_confirmed_move/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-unknown_ownership/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-unknown_ownership/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-unknown_ownership/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-unknown_ownership/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-unknown_ownership/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "unknown ownership is pending, while independent confirmed rosters may remain available",
+      "name": "stage-0-unknown_ownership/expected_unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-unknown_ownership/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-1-complete_alternate/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-1-complete_alternate/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-1-complete_alternate/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-1-complete_alternate/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-1-complete_alternate/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-1-complete_alternate/unique_instances/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-1-complete_alternate/complete_reviewed_variant/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "the main-only character is excluded and only an independently approved full alternate is returned",
+      "name": "stage-1-complete_alternate/expected_alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-1-complete_alternate/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-1-missing_fields/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-1-missing_fields/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-1-missing_fields/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-1-missing_fields/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-1-missing_fields/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-1-missing_fields/unique_instances/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-1-missing_fields/unique_instances/fixture:s3:beta:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-1-missing_fields/complete_reviewed_variant/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-1-missing_fields/complete_reviewed_variant/fixture:s3:beta:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-1-missing_fields/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-1-missing_fields/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-1-normal/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-1-normal/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-1-normal/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-1-normal/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-1-normal/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-1-normal/unique_instances/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-1-normal/unique_instances/fixture:s3:beta:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-1-normal/complete_reviewed_variant/fixture:s3:beta:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-1-normal/complete_reviewed_variant/fixture:s3:beta:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-1-normal/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-1-normal/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-1-not_owned/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-1-not_owned/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-1-not_owned/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-1-not_owned/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-1-not_owned/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "confirmed non-ownership excludes every affected complete roster",
+      "name": "stage-1-not_owned/expected_not_owned",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-1-not_owned/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-1-unknown_ownership/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-1-unknown_ownership/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-1-unknown_ownership/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-1-unknown_ownership/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-1-unknown_ownership/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "unknown ownership is pending, while independent confirmed rosters may remain available",
+      "name": "stage-1-unknown_ownership/expected_unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-1-unknown_ownership/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-2-complete_alternate/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-2-complete_alternate/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-2-complete_alternate/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-2-complete_alternate/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-2-complete_alternate/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-2-complete_alternate/unique_instances/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-2-complete_alternate/complete_reviewed_variant/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "the main-only character is excluded and only an independently approved full alternate is returned",
+      "name": "stage-2-complete_alternate/expected_alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-2-complete_alternate/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-2-missing_fields/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-2-missing_fields/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-2-missing_fields/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-2-missing_fields/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-2-missing_fields/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-2-missing_fields/unique_instances/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-2-missing_fields/unique_instances/fixture:s3:gamma:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-2-missing_fields/complete_reviewed_variant/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-2-missing_fields/complete_reviewed_variant/fixture:s3:gamma:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-2-missing_fields/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-2-missing_fields/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-2-normal/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-2-normal/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-2-normal/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-2-normal/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-2-normal/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-2-normal/unique_instances/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-2-normal/unique_instances/fixture:s3:gamma:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-2-normal/complete_reviewed_variant/fixture:s3:gamma:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-2-normal/complete_reviewed_variant/fixture:s3:gamma:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-2-normal/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-2-normal/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-2-not_owned/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-2-not_owned/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-2-not_owned/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-2-not_owned/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-2-not_owned/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "confirmed non-ownership excludes every affected complete roster",
+      "name": "stage-2-not_owned/expected_not_owned",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-2-not_owned/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-2-unknown_ownership/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-2-unknown_ownership/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-2-unknown_ownership/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-2-unknown_ownership/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-2-unknown_ownership/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "unknown ownership is pending, while independent confirmed rosters may remain available",
+      "name": "stage-2-unknown_ownership/expected_unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-2-unknown_ownership/coverage",
+      "passed": true
+    },
+    {
+      "detail": "the same snapshot moves before the lock; the lock removes all available moves and leaves partial-inventory pending candidates",
+      "name": "stage-0-locked_move/lock_changes_observed_allocation",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:alpha:stage",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:beta:stage",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:gamma:stage",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_producer_payload",
+      "name": "task-extra-scope-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_producer_payload",
+      "name": "task-boolean-scope-revision",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_digest_mismatch",
+      "name": "tampered-original-transport",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/unknown_signing_key",
+      "name": "unknown-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_signature",
+      "name": "wrong-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_release_mismatch",
+      "name": "requested-release-mismatch",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/withdrawn_public_object",
+      "name": "withdrawn-required-evidence",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_dependency_missing",
+      "name": "missing-signed-native-object",
+      "passed": true
+    }
+  ],
+  "component_version": "0.4.0",
+  "full_three_party_acceptance": false,
+  "native_rule_version": "0.2.0",
+  "negative_cases": [
+    {
+      "actual_code": null,
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:alpha:stage",
+      "origin": "C consumer task negative; B1 builder separately rejects this undeclared goal before C",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "no_reviewed_template"
+    },
+    {
+      "actual_code": null,
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:beta:stage",
+      "origin": "C consumer task negative; B1 builder separately rejects this undeclared goal before C",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "no_reviewed_template"
+    },
+    {
+      "actual_code": null,
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "no_reviewed_template",
+      "name": "no-reviewed-template/fixture:s3:gamma:stage",
+      "origin": "C consumer task negative; B1 builder separately rejects this undeclared goal before C",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "no_reviewed_template"
+    },
+    {
+      "actual_code": "invalid_producer_payload",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "invalid_producer_payload",
+      "name": "task-extra-scope-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "invalid_producer_payload",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "invalid_producer_payload",
+      "name": "task-boolean-scope-revision",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_digest_mismatch",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "producer_digest_mismatch",
+      "name": "tampered-original-transport",
+      "origin": "negative transport bytes changed; original expected hash and all captured files unchanged; no deeper gate claimed",
+      "passed": true,
+      "public_raw_sha256": "938816ca3d3cf15ae1cf4b7ebb79e4c109f19bf88a4e1625925d556c0020cc5f",
+      "status": "error"
+    },
+    {
+      "actual_code": "unknown_signing_key",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "unknown_signing_key",
+      "name": "unknown-signing-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "invalid_signature",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "invalid_signature",
+      "name": "wrong-signing-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_release_mismatch",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "producer_release_mismatch",
+      "name": "requested-release-mismatch",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "withdrawn_public_object",
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "expected_code": "withdrawn_public_object",
+      "name": "withdrawn-required-evidence",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_dependency_missing",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+      "declared_public_transport_sha256": "683282510f88386611b9833d77f41a06697a2b6ee650e4b4ddfb4f9d621e0133",
+      "expected_code": "producer_dependency_missing",
+      "name": "missing-signed-native-object",
+      "origin": "C-constructed negative transport, not A output: omitted object with untouched signed manifest/member hashes; fresh negative-input transport digest; original artifact bytes/hash retained",
+      "passed": true,
+      "public_raw_sha256": "683282510f88386611b9833d77f41a06697a2b6ee650e4b4ddfb4f9d621e0133",
+      "status": "error"
+    }
+  ],
+  "not_exercised": [
+    "B2 host/worker integration",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations",
+    "statistical conditions absent from this S3 A release; separate actual B1/old-A measurement replay required"
+  ],
+  "runtime_kind": "source_only_development",
+  "source_file_sha256": {
+    "src/starhelp_planner/__init__.py": "af2640ab2c3b99ba81bed0511a067c1253694d68d85d786131dcc0491af79980",
+    "src/starhelp_planner/adapters/__init__.py": "11a00b4df333a4011c498f3144e543110c00ff1ef69ac7828193f85ecf206a76",
+    "src/starhelp_planner/adapters/a_distribution.py": "54d9f5ca00308c3c1316b166b815ccae0ecef9f8895937aa20118cdead913e36",
+    "src/starhelp_planner/adapters/a_legacy.py": "22a9683787496f241628328572b28081c91d8e038053951a49c3ca8f2299d6ca",
+    "src/starhelp_planner/adapters/b_snapshot.py": "17dab3f2f9683047fd8524ceb66dfe8147d535d590d2509f27a198a10eb6a574",
+    "src/starhelp_planner/adapters/common.py": "5e120cc718fe9d4ffba25ab75befb795f873f6103a6f8b7837c9abd55ed9a6d2",
+    "src/starhelp_planner/adapters/entry.py": "e40baae9d363888bf979180b9bfc6f09cd8afdca7e3971c540af644d83097e8c",
+    "src/starhelp_planner/adapters/projection.py": "331a8f92e3b6bc51447184f6c18c9b878d2ecb5768abb9d175497f077fb2ec22",
+    "src/starhelp_planner/adapters/signature.py": "c852de5ed6062ca4732bfbd7145c37d2d38888a43a723baa60390918e7d93171",
+    "src/starhelp_planner/api.py": "4a46f64b70093dcdfebd37c6b7f16bd754ec22ea62872ab8a4f6aa4197442740",
+    "src/starhelp_planner/conditions.py": "1cce8498ca32f6c1b1a4ad0ad14dc1267d13c029ca2469ff8d3a9e17e34a1ea2",
+    "src/starhelp_planner/cultivation.py": "ebb22080fc211117336577f1eee63ab7327b8066afe573ff8ce7c009473f55e7",
+    "src/starhelp_planner/demo.py": "92bbb81d488936dc6c17272ec8f49cbe880f7ff4278a4359872dc4f5f6387954",
+    "src/starhelp_planner/demo_data.py": "46965cc5b845976d19244850f65b9e1bc49fb232563e6db2f5786f9042fbbf25",
+    "src/starhelp_planner/engine.py": "d6214de0b0101e32256e9f934f66f7a1aed34cd59195a2f01d882da84f8c415f",
+    "src/starhelp_planner/validation.py": "ba34c35b747bf2d84d3d15651fce0b9407d9801b8bb4e47dc23f6e205186bf20"
+  },
+  "summary": {
+    "builder_rejections": 12,
+    "failed": 0,
+    "modes_observed": [
+      "fixture:mode:alpha",
+      "fixture:mode:beta",
+      "fixture:mode:gamma"
+    ],
+    "passed": 204
+  },
+  "synthetic_only": true,
+  "wheel_proof": null
+}

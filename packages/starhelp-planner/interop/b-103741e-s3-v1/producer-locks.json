@@ -1,0 +1,357 @@
+{
+  "a_producer_commit": "dcb1e3ee220b85229bedc6c79d72ebe495825f37",
+  "a_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+  "a_release_id": "rel_fixture_s3_0001",
+  "baseline_b1_raw_sha256": "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
+  "baseline_bytes_equal_legacy": true,
+  "builder_entry_point": "starhelp_desktop.producer_request.build_producer_analysis_request",
+  "builder_rejections": {
+    "stage-0-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-0-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-0-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-0-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    },
+    "stage-1-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-1-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-1-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-1-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    },
+    "stage-2-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-2-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-2-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-2-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    }
+  },
+  "cases": {
+    "stage-0-ambiguous_move": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-ambiguous_move.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-ambiguous_move.request.json"
+    },
+    "stage-0-complete_alternate": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-complete_alternate.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-complete_alternate.request.json"
+    },
+    "stage-0-locked_move": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-locked_move.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-locked_move.request.json"
+    },
+    "stage-0-main_current_equipment": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-main_current_equipment.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-main_current_equipment.request.json"
+    },
+    "stage-0-missing_fields": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-missing_fields.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-missing_fields.request.json"
+    },
+    "stage-0-normal": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-normal.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-normal.request.json"
+    },
+    "stage-0-not_owned": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-not_owned.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-not_owned.request.json"
+    },
+    "stage-0-player_confirmed_move": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-player_confirmed_move.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-player_confirmed_move.request.json"
+    },
+    "stage-0-same_type_distinct_instance": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-same_type_distinct_instance.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-same_type_distinct_instance.request.json"
+    },
+    "stage-0-source_confirmed_move": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-source_confirmed_move.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-source_confirmed_move.request.json"
+    },
+    "stage-0-unknown_ownership": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:alpha",
+      "snapshot": "stage-0-unknown_ownership.snapshot.json",
+      "stage_id": "fixture:s3:alpha:stage",
+      "wrapper": "stage-0-unknown_ownership.request.json"
+    },
+    "stage-1-complete_alternate": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:beta",
+      "snapshot": "stage-1-complete_alternate.snapshot.json",
+      "stage_id": "fixture:s3:beta:stage",
+      "wrapper": "stage-1-complete_alternate.request.json"
+    },
+    "stage-1-missing_fields": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:beta",
+      "snapshot": "stage-1-missing_fields.snapshot.json",
+      "stage_id": "fixture:s3:beta:stage",
+      "wrapper": "stage-1-missing_fields.request.json"
+    },
+    "stage-1-normal": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:beta",
+      "snapshot": "stage-1-normal.snapshot.json",
+      "stage_id": "fixture:s3:beta:stage",
+      "wrapper": "stage-1-normal.request.json"
+    },
+    "stage-1-not_owned": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:beta",
+      "snapshot": "stage-1-not_owned.snapshot.json",
+      "stage_id": "fixture:s3:beta:stage",
+      "wrapper": "stage-1-not_owned.request.json"
+    },
+    "stage-1-unknown_ownership": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:beta",
+      "snapshot": "stage-1-unknown_ownership.snapshot.json",
+      "stage_id": "fixture:s3:beta:stage",
+      "wrapper": "stage-1-unknown_ownership.request.json"
+    },
+    "stage-2-complete_alternate": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:gamma",
+      "snapshot": "stage-2-complete_alternate.snapshot.json",
+      "stage_id": "fixture:s3:gamma:stage",
+      "wrapper": "stage-2-complete_alternate.request.json"
+    },
+    "stage-2-missing_fields": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:gamma",
+      "snapshot": "stage-2-missing_fields.snapshot.json",
+      "stage_id": "fixture:s3:gamma:stage",
+      "wrapper": "stage-2-missing_fields.request.json"
+    },
+    "stage-2-normal": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:gamma",
+      "snapshot": "stage-2-normal.snapshot.json",
+      "stage_id": "fixture:s3:gamma:stage",
+      "wrapper": "stage-2-normal.request.json"
+    },
+    "stage-2-not_owned": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:gamma",
+      "snapshot": "stage-2-not_owned.snapshot.json",
+      "stage_id": "fixture:s3:gamma:stage",
+      "wrapper": "stage-2-not_owned.request.json"
+    },
+    "stage-2-unknown_ownership": {
+      "builder_bytes_equal_independent_serializer": true,
+      "mode_id": "fixture:mode:gamma",
+      "snapshot": "stage-2-unknown_ownership.snapshot.json",
+      "stage_id": "fixture:s3:gamma:stage",
+      "wrapper": "stage-2-unknown_ownership.request.json"
+    }
+  },
+  "dependency_versions": {
+    "cryptography": "46.0.7"
+  },
+  "encoding": {
+    "allow_nan": false,
+    "ensure_ascii": false,
+    "separators": [
+      ",",
+      ":"
+    ],
+    "sort_keys": true,
+    "trailing_newline": true
+  },
+  "equipment_positive_coverage_present": true,
+  "files": {
+    "baseline-b1-snapshot.json": "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
+    "stage-0-ambiguous_move.request.json": "2542fe2accf6b19208feeba264c8aebb3f08a85a50718b0ff029548a9474a318",
+    "stage-0-ambiguous_move.snapshot.json": "74edb4c7c568556ea9fc6a62e757674db864a8e22387bd663b94576ad116375a",
+    "stage-0-complete_alternate.request.json": "93cc6f1459662d4880e89039cc8e34071420b42acbbc577ce3a424db91dcacb7",
+    "stage-0-complete_alternate.snapshot.json": "64a85800ae0b81c75d75d2fcddd401c8c88de5ad8e079d357c53ce6b9a701d1e",
+    "stage-0-locked_move.request.json": "36e4ab4f5799434db47b120bceb6bad5cc5f0b44045c72c840c3089f78cebfad",
+    "stage-0-locked_move.snapshot.json": "bd524df1ef9abdadff5398f61f3490c87ff6e30f7ad2fd17a74efcbcda6de134",
+    "stage-0-main_current_equipment.request.json": "53d88d2b3d20083ca7c9e04c79f976f6e601250c77ed16c9298d8050f011743d",
+    "stage-0-main_current_equipment.snapshot.json": "50ac347fe8e45ff5dfeb3bd291407e1001bfe1609e216bd8be503aabfbf96b2a",
+    "stage-0-missing_fields.request.json": "3f87acf45fc41d33bd6c75713fc4b96767b79e97e4048e5ec0db54f41072eb55",
+    "stage-0-missing_fields.snapshot.json": "baa07d50a2031fdb071a2a4fa3893372b7fe00faac49e7b206e98c3a49c985df",
+    "stage-0-normal.request.json": "26c7009ee7cd9a3d07d997599bc831ac50b1eb8062d6e57b285f89359efa6b06",
+    "stage-0-normal.snapshot.json": "baa07d50a2031fdb071a2a4fa3893372b7fe00faac49e7b206e98c3a49c985df",
+    "stage-0-not_owned.request.json": "83470c56559c1a1397fadc5d0d17d6f5fc30d181de8a331e75dd71efd09ecacb",
+    "stage-0-not_owned.snapshot.json": "db13075a24b7d4ef461b05fc5f2c84da6c3d35b491081bca1a298deaa2f2b663",
+    "stage-0-player_confirmed_move.request.json": "07ae6274cbfd956e812b253d88e6d5eb894c40e336591723e8d000582e593cfb",
+    "stage-0-player_confirmed_move.snapshot.json": "bd524df1ef9abdadff5398f61f3490c87ff6e30f7ad2fd17a74efcbcda6de134",
+    "stage-0-same_type_distinct_instance.request.json": "fe5ba20f69f38963fed84c96c662eaaf097ee74bfc6d819c46e67d2f88961e59",
+    "stage-0-same_type_distinct_instance.snapshot.json": "8b06245ac83685b815e955b121d51ce88b5631fd8f11c20ff96a7f0418007cda",
+    "stage-0-source_confirmed_move.request.json": "b79ac32160e50a248cad91c4529d05c24522270d43dd3f010d199c3b32efb269",
+    "stage-0-source_confirmed_move.snapshot.json": "1372d15a8fdcc716155763fc8802a154bd79f36e425b5bd2ade8c8daae0d76a9",
+    "stage-0-unknown_ownership.request.json": "377f60a998a02d2780b5a70feac1b84b706eeb0e389d9d83c1d60214312349d6",
+    "stage-0-unknown_ownership.snapshot.json": "719e9bc82842a531f876cad9f08bceb04910956a50da498ed1cd158242eeac13",
+    "stage-1-complete_alternate.request.json": "8289274424f1dcccc5629608ffe3f8035bb46e1772fb62f686722bb19a56b615",
+    "stage-1-complete_alternate.snapshot.json": "c983c1818fc87aa5cb309b47a7cd1f6ac072eaf1761722cda72d1a1f91fa55e1",
+    "stage-1-missing_fields.request.json": "2891217846fa279ccfcf380bd39476b8acdff2bc61c81c0fdc2cb49fc7a44493",
+    "stage-1-missing_fields.snapshot.json": "49c3c2c017c09bbffb26e9c3f47bce66a280362242fbc56034caa9d798e3253a",
+    "stage-1-normal.request.json": "1582ebcf97d109dd4d4fcdf801053e7e9360defa0eaf5e9777144148cf02d2a3",
+    "stage-1-normal.snapshot.json": "49c3c2c017c09bbffb26e9c3f47bce66a280362242fbc56034caa9d798e3253a",
+    "stage-1-not_owned.request.json": "f55faba4f5888fd0aa6a2ccfa19d38961815a3934ee9bfc8c8d7d7504eeb3f12",
+    "stage-1-not_owned.snapshot.json": "2a23bd5fca1e637ede39fc875230450c3cb94401afc646c1ba5a7023200656f5",
+    "stage-1-unknown_ownership.request.json": "d5b5999fa3b0f3ec436a4c9dfa5f1037714b60a4075db6494add5fdf1befa87c",
+    "stage-1-unknown_ownership.snapshot.json": "4a0d6603a11b04f07cf69aadfae40f19167095a1efb6028110f5d2c1228a89a7",
+    "stage-2-complete_alternate.request.json": "0bd16f62464bcdf6cd951df3f6cf1573b22178617557f3fbf7444404d791099b",
+    "stage-2-complete_alternate.snapshot.json": "4a6bc5375bafbaf5b56f555f7a23b7027181f5deaf065a3da3f57eb7b7c41c59",
+    "stage-2-missing_fields.request.json": "61fa8e2c580fc48abdfdb099f10ffe8069672a78d92fb7e2ef27ba64edf384cb",
+    "stage-2-missing_fields.snapshot.json": "f912c21c60e5624392b378438dc463be2f19ca7f52040cb22733b5edb280d711",
+    "stage-2-normal.request.json": "84a7510056bf9bc3c619eb7aace5cb127e092f545671aff0567206f188e86b14",
+    "stage-2-normal.snapshot.json": "f912c21c60e5624392b378438dc463be2f19ca7f52040cb22733b5edb280d711",
+    "stage-2-not_owned.request.json": "5e6e562e2f9236041bf7592f4beb0463a357e394ff94539be41446e821821fea",
+    "stage-2-not_owned.snapshot.json": "faa140ee05a532b50b09e9be99d712e4ee7dfd14f35f6f46aa26edb75b5dfc6a",
+    "stage-2-unknown_ownership.request.json": "74a44bf6f7edf4e3bca62b7d1715cde655dc6ca2c9eb3d9cc7ae4cf6adcd3ea0",
+    "stage-2-unknown_ownership.snapshot.json": "64435fe354637326cf9b3f3b20bcb2c8cd06c419962825d0459a0f8d60c48293"
+  },
+  "format_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "full_three_party_acceptance": false,
+  "legacy_base_raw_sha256": "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
+  "loaded_modules": {
+    "starhelp_desktop.models": {
+      "path": "src/starhelp_desktop/models.py",
+      "sha256": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504"
+    },
+    "starhelp_desktop.producer_request": {
+      "path": "src/starhelp_desktop/producer_request.py",
+      "sha256": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59"
+    },
+    "starhelp_desktop.profiles": {
+      "path": "src/starhelp_desktop/profiles.py",
+      "sha256": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3"
+    }
+  },
+  "producer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "serializer_entry_point": "starhelp_desktop.profiles._snapshot_to_dict",
+  "source_proof": {
+    "all_files_verified": true,
+    "commit": "103741e02c90ac672017f783058bdd8dacae982e",
+    "file_sha256": {
+      "README.md": "52441541fd1da67ec431f171e8ed404a71949fbd5b3c04356478a30d2f07f66d",
+      "packaging/README.md": "ded56f4e2670983644817c483d080ba440ae497ad53014dc1235f9efb7772d63",
+      "packaging/StarHelp.spec": "552c7703b7a24e48828780eabb75ae7ff0fe87132eace61f17788beb1e8dbd26",
+      "packaging/StarHelpPlannerWorker.spec": "d222266ceeed655a32d34679c510cd8ba132da59d13df4afb9d282aaa7124a74",
+      "packaging/build-candidate.ps1": "4b540b930029851d8b84e2338601c189c753407b6e4f1214110c40f26f2dfbf1",
+      "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+      "packaging/install-candidate.ps1": "27f983035d8518b82e131c55c53fc52d85c61113b753b54f8051089678b34697",
+      "packaging/planner_worker_entrypoint.py": "b3e275b2303a457db7c80bbf7241f4a9dec4839b8db2cee1bb984bf963873e57",
+      "packaging/vendor/PLANNER-ARTIFACT.md": "4b375fd4cc2f413b14dc1661e849969fd16b41d096c4361741a739531728701c",
+      "packaging/vendor/starhelp_planner-0.3.0-py3-none-any.whl": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+      "pyproject.toml": "6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3",
+      "src/starhelp_desktop/__init__.py": "26761d0531e24e49a3c0dd3e8ac4888e832529a0da33ffcd5bc551e1009d3fc3",
+      "src/starhelp_desktop/__main__.py": "d21de9364b84039d30d4e397c712a49e6f1c6798819aff0f19b90849695aeff2",
+      "src/starhelp_desktop/analysis.py": "26845ba0facf8b73cee5dcbfb0ee2c441a74c84d06e5b0aab611b97c7414aa9a",
+      "src/starhelp_desktop/bundles.py": "dbfc4b6510897f2129ea8a7aa75fea484ced49b47bd8fb413fb89cfd3664d9af",
+      "src/starhelp_desktop/equipment.py": "72a5bff218cce068dd1e79cbfa769177682f0f984847aa1bbf2d27299ea28365",
+      "src/starhelp_desktop/gui.py": "f37a1b7231d552a20c8d8556da9d514a00b46d62f468300f1441549d8823d3e8",
+      "src/starhelp_desktop/imports.py": "c501403ff821f9f7799819ef45be471e04e8bda9d877b80865eb74ebdbfc8230",
+      "src/starhelp_desktop/lifecycle.py": "fae591136ce165ded3a305528a66ac5446cda4cb8b5b9eb6658946db3bedd43a",
+      "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+      "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+      "src/starhelp_desktop/planner.py": "96950c94a1554589e8cdfb7142eb61a08aca3d3dfe2ae5b360794b59d03a88ba",
+      "src/starhelp_desktop/planner_worker.py": "4a7053e9ff6db1426d83dbdeb9248b344bf68fe68933cf211e0b88b7d7af5930",
+      "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+      "src/starhelp_desktop/producer_request.py": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59",
+      "src/starhelp_desktop/profiles.py": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3",
+      "src/starhelp_desktop/public_profile.py": "234bdf000acac6d75780b5bf0521f574fb29a2afc6915aa2f8e89f3afd1d94ce",
+      "src/starhelp_desktop/reports.py": "8c9033cda4e4cfcce970abc959c1809bca54ef8f2af44bc74f024176056c4fc7",
+      "src/starhelp_desktop/storage.py": "02d6fbde5d0e234b9464816b9dc2e6093fb2a3c5dc9f94c3a8a9b01b8e0ea226",
+      "src/starhelp_desktop/synthetic_demo.py": "dbb74e6a0a25821f51c3cc2c4419e548de52363b0e915114ec5c5d2b22dd84d5",
+      "src/starhelp_desktop/tasks.py": "84d8d3fbe854b9bc7fa0a405584f1b68330efe703e9897f206bafa3546abf332",
+      "tests/Install-Candidate.Smoke.ps1": "09aa9d1faaffd7af1118e9250f4c1e8ac3b7931bc6351934a9de18991b1b8f32",
+      "tests/fixtures/producer-interop-v1/README.md": "59ae0fd5ac71d9d29a87f8319f5094e774c9ff92d88f510fc5cf4d52f3c7fcab",
+      "tests/fixtures/producer-interop-v1/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+      "tests/fixtures/producer-interop-v1/knowledge-planner-fixture-v1.bpublic.json": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+      "tests/test_account_core.py": "f506e7bb2850a8c9835aa2df1bf6478cb8d57f69384a25b1aad445f7cd291d27",
+      "tests/test_planner_interop.py": "741df33ed273c6825be54d4e56a34c05dd4ad2dd37c9cf787263b5bc603753d7"
+    },
+    "git_tree": "1d0b7fe610663188f5ea393aeb6772f233a88db5",
+    "package_subdir": "packages/starhelp-desktop"
+  },
+  "source_verified_before_and_after": true,
+  "synthetic_only": true
+}

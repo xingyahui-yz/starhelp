@@ -9,7 +9,7 @@ from typing import Any
 
 from .conditions import UnsupportedSemantics, evaluate_conditions, validate_condition
 from .cultivation import cultivation
-from .validation import disabled_objects, objects, validate_bundle, validate_json_request
+from .validation import canonical_hash, disabled_objects, objects, validate_bundle, validate_json_request
 
 PLANNER_VERSION = "0.2.0"
 ADAPTER_PROFILE = "starhelp.local.v0.2"
@@ -114,7 +114,7 @@ def _analyze(request: Mapping[str, Any]) -> dict[str, Any]:
     evaluated: list[dict[str, Any]] = []
     pending: list[dict[str, Any]] = []
     rejection_reasons: list[dict[str, Any]] = []
-    matching_templates = [t for t in templates if _template_applies(t, stage, task_scope) and task["public_goal"] in t.get("public_goals", []) and not _is_unavailable(t, disabled, "template")]
+    matching_templates = [t for t in templates if _template_applies(t, stage, task_scope) and any(canonical_hash(task["public_goal"]) == canonical_hash(goal) for goal in t.get("public_goals", [])) and not _is_unavailable(t, disabled, "template")]
     matching_ids = {str(t.get("id")) for t in matching_templates}
 
     for variant in variants:
@@ -355,6 +355,11 @@ def _validate_variant(variant: Mapping[str, Any], stage: Mapping[str, Any], enti
             problems.append(f"unknown public character entity {character_id}")
         elif character_id and entities[character_id].get("entity_type") not in {"character", "character_entity"}:
             problems.append(f"team slot {slot_id} does not reference a character entity")
+        for requirement in _mapping_list(slot.get("equipment_requirements")):
+            type_ids = [requirement["public_type_id"]] if "public_type_id" in requirement else requirement.get("public_type_ids", [])
+            for type_id in type_ids:
+                if type_id not in entities or entities[type_id].get("entity_type") != requirement["kind"]:
+                    problems.append(f"equipment requirement {slot_id}/{requirement['slot']} does not reference a same-kind public entity")
         for ref in _mapping_list(slot.get("evidence_refs")):
             if not _valid_ref(ref, evidence):
                 problems.append(f"slot {slot_id} has an unresolved evidence reference")
@@ -522,13 +527,15 @@ def _equipment_options(slots: Sequence[Mapping[str, Any]], equipment: Sequence[M
 
 
 def _equipment_matches(item: Mapping[str, Any], requirement: Mapping[str, Any]) -> bool:
-    if requirement.get("kind") and item.get("kind") != requirement.get("kind"):
+    if item.get("kind") != requirement["kind"]:
         return False
-    if requirement.get("slot") and item.get("slot") != requirement.get("slot"):
+    if item.get("slot") != requirement["slot"]:
         return False
-    allowed = _string_list(requirement.get("public_type_ids"))
-    exact = requirement.get("public_type_id")
-    return not exact and not allowed or item.get("public_type_id") == exact or item.get("public_type_id") in allowed
+    if "public_type_id" in requirement:
+        return item.get("public_type_id") == requirement["public_type_id"]
+    if "public_type_ids" in requirement:
+        return item.get("public_type_id") in requirement["public_type_ids"]
+    return True
 
 
 def _first_assignment(requirements: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]], choices: Sequence[Sequence[Mapping[str, Any]]], equipment: Sequence[Mapping[str, Any]], locked: set[str], stage: Mapping[str, Any], *, allow_unconfirmed: bool) -> list[dict[str, Any]] | None:

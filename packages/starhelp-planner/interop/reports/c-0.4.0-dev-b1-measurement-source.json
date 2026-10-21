@@ -1,0 +1,1324 @@
+{
+  "M0_complete": false,
+  "a_producer_commit": "00d4a5844e74050359227c274de712878bf9187c",
+  "a_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+  "a_release_id": "rel_fixture_0001",
+  "b_host_commit": null,
+  "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "builder_boundary_results": {
+    "stage-0-boolean_scope_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope stage_revision must be a positive integer"
+    },
+    "stage-0-extra_scope_key": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope must contain exactly the six supported keys"
+    },
+    "stage-0-undeclared_goal": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "task scope and full public_goal do not match a template in the bundle"
+    },
+    "stage-0-zero_revision": {
+      "C_reached": false,
+      "actual_gate": "B1 request builder",
+      "exception": "ValueError",
+      "message": "account snapshot revision must be a positive integer"
+    }
+  },
+  "capture_lock_raw_sha256": "597d7947ee545880a3337827d5872838f506e17813533785b2dde35309281152",
+  "cases": [
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-complete_alternate",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:character:a",
+              "code": "excluded_character_used"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {
+                "confirmed_at": "2026-10-16T00:00:00+00:00",
+                "observed_at": "2026-10-16T00:00:00+00:00",
+                "sources": [
+                  {
+                    "local_source_id": "fixture:S3-local-model-input",
+                    "producer_path": "character:fixture:character:a.fixture:attack",
+                    "source_kind": "manual"
+                  }
+                ],
+                "state": "confirmed"
+              },
+              "local_field_refs": [
+                "characters/fixture:character:a/fields/fixture:attack"
+              ],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_unit",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "path": "character:fixture:character:a.fixture:attack",
+          "reason": "producer_unit_and_measurement_context_unavailable"
+        }
+      ],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-confirmed_field_without_measurement",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {
+                "confirmed_at": "2026-10-16T00:00:00+00:00",
+                "observed_at": "2026-10-16T00:00:00+00:00",
+                "sources": [
+                  {
+                    "local_source_id": "fixture:S3-local-model-input",
+                    "producer_path": "character:fixture:character:a.fixture:attack",
+                    "source_kind": "manual"
+                  }
+                ],
+                "state": "conflict"
+              },
+              "local_field_refs": [
+                "characters/fixture:character:a/fields/fixture:attack"
+              ],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "conflicting_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [
+        {
+          "path": "character:fixture:character:a.fixture:attack",
+          "reason": "producer_unit_and_measurement_context_unavailable"
+        }
+      ],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-conflicting_condition_field",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-missing_fields",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "plan_kind": "current",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "condition_results": [
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "conditions": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-normal",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "plans_available"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-not_owned",
+      "native_error": null,
+      "pending": [],
+      "rejected_variants": [
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:variant:alternate"
+        },
+        {
+          "code": "hard_constraint_conflict",
+          "details": [
+            {
+              "characters": "fixture:character:b",
+              "code": "character_confirmed_not_owned"
+            }
+          ],
+          "reason": "roster or fixed/excluded character constraints conflict",
+          "variant_id": "fixture:variant:main"
+        }
+      ],
+      "stage_id": "fixture:stage:one",
+      "status": "no_feasible_variant"
+    },
+    {
+      "actual_gate": "C native analysis",
+      "adapter_error": null,
+      "available": [],
+      "condition_results": [],
+      "diagnostics": [],
+      "mode_id": "fixture:mode:duo",
+      "name": "stage-0-unknown_ownership",
+      "native_error": null,
+      "pending": [
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:alternate",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 1
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:lower",
+              "slot_id": "fixture:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:character:c",
+              "equipment_requirements": [],
+              "partition_id": "fixture:upper",
+              "slot_id": "fixture:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:template:one",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:one",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:duo",
+              "stage_id": "fixture:stage:one",
+              "stage_revision": 1
+            },
+            "title": "Synthetic complete planner fixture"
+          },
+          "variant": {
+            "id": "fixture:variant:alternate",
+            "revision": 1,
+            "template_id": "fixture:template:one",
+            "title": "Synthetic complete alternate",
+            "variant_kind": "complete_alternate"
+          },
+          "warnings": [
+            "fixture:condition:fixture:variant:alternate"
+          ]
+        },
+        {
+          "candidate_plan_kind": "current",
+          "condition_results": [
+            {
+              "condition_id": "fixture:condition:fixture:variant:main",
+              "evidence_refs": [
+                {
+                  "id": "ev_fixture_0001",
+                  "revision": 1
+                }
+              ],
+              "evidence_status": "confirmed",
+              "expected": {
+                "measurement_context": {
+                  "assumptions": [],
+                  "phase": "pre_battle"
+                },
+                "operator": "gte",
+                "unit": "points",
+                "value": 100
+              },
+              "field_basis": {},
+              "local_field_refs": [],
+              "match_status": "unknown",
+              "observed": null,
+              "reason_code": "missing_field",
+              "requirement": "soft"
+            }
+          ],
+          "cultivation": [],
+          "cultivation_cost": {
+            "basis": "aggregate_gross_cost",
+            "materials": [],
+            "net_status": "calculated",
+            "reason": null,
+            "status": "calculated"
+          },
+          "equipment": {
+            "actions": [],
+            "assignments": []
+          },
+          "equipment_status": "assessed",
+          "evidence_refs": [
+            {
+              "id": "ev_fixture_0001",
+              "revision": 1
+            }
+          ],
+          "index_release_id": "rel_fixture_0001",
+          "pending_reasons": [
+            {
+              "character_id": "fixture:character:b",
+              "reason": "ownership_unknown"
+            }
+          ],
+          "plan_kind": "pending_confirmation",
+          "ranking": {
+            "allocation_search_truncated": false,
+            "equipment_changes": 0,
+            "known_condition_count": 0,
+            "meaning": "仅用于适配顺序，不是通关概率",
+            "unknown_condition_count": 1
+          },
+          "strategy": {
+            "failure_conditions": [],
+            "mechanics": [],
+            "risks": [],
+            "steps": [
+              {
+                "order": 1,
+                "text": "Synthetic-only action step."
+              }
+            ]
+          },
+          "team": [
+            {
+              "character_id": "fixture:character:b",
+              "equipment_requirements": [],
+              "partition_id": "fixture:lower",
+              "slot_id": "fixture:lower:slot-1"
+            },
+            {
+              "character_id": "fixture:character:a",
+              "equipment_requirements": [],
+              "partition_id": "fixture:upper",
+              "slot_id": "fixture:upper:slot-1"
+            }
+          ],
+          "template": {
+            "id": "fixture:template:one",
+            "revision": 1,
+            "scope": {
+              "cycle_id": "fixture:cycle:one",
+              "environment": "live",
+              "game_version": "fixture:game:v1",
+              "mode_id": "fixture:mode:duo",
+              "stage_id": "fixture:stage:one",
+              "stage_revision": 1
+            },
+            "title": "Synthetic complete planner fixture"
+          },
+          "variant": {
+            "id": "fixture:variant:main",
+            "revision": 1,
+            "template_id": "fixture:template:one",
+            "title": "Synthetic main",
+            "variant_kind": "main"
+          },
+          "warnings": [
+            "fixture:condition:fixture:variant:main"
+          ]
+        }
+      ],
+      "rejected_variants": [],
+      "stage_id": "fixture:stage:one",
+      "status": "confirmation_required"
+    }
+  ],
+  "checks": [
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-complete_alternate/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-complete_alternate/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-complete_alternate/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-complete_alternate/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-complete_alternate/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-complete_alternate/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-complete_alternate/complete_reviewed_variant/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "the main-only character is excluded and only an independently approved full alternate is returned",
+      "name": "stage-0-complete_alternate/expected_alternate",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-complete_alternate/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-confirmed_field_without_measurement/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-confirmed_field_without_measurement/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-confirmed_field_without_measurement/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-confirmed_field_without_measurement/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-confirmed_field_without_measurement/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-confirmed_field_without_measurement/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-confirmed_field_without_measurement/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-confirmed_field_without_measurement/complete_reviewed_variant/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-confirmed_field_without_measurement/complete_reviewed_variant/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-confirmed_field_without_measurement/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "actual B1 FieldFact lacks unit/context or contains a conflict; no supplied numeric value is declared satisfied",
+      "name": "stage-0-confirmed_field_without_measurement/unknown_measurement",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-confirmed_field_without_measurement/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-conflicting_condition_field/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-conflicting_condition_field/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-conflicting_condition_field/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-conflicting_condition_field/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-conflicting_condition_field/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-conflicting_condition_field/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-conflicting_condition_field/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-conflicting_condition_field/complete_reviewed_variant/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-conflicting_condition_field/complete_reviewed_variant/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-conflicting_condition_field/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "actual B1 FieldFact lacks unit/context or contains a conflict; no supplied numeric value is declared satisfied",
+      "name": "stage-0-conflicting_condition_field/unknown_measurement",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-conflicting_condition_field/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-missing_fields/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-missing_fields/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-missing_fields/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-missing_fields/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-missing_fields/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-missing_fields/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-missing_fields/complete_reviewed_variant/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-missing_fields/complete_reviewed_variant/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-missing_fields/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-missing_fields/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-normal/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-normal/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-normal/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-normal/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-normal/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "exclusive allocation uses each UUID at most once in one complete variant",
+      "name": "stage-0-normal/unique_instances/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-normal/complete_reviewed_variant/fixture:variant:alternate",
+      "passed": true
+    },
+    {
+      "detail": "all partitions and slots come from one exact published complete variant",
+      "name": "stage-0-normal/complete_reviewed_variant/fixture:variant:main",
+      "passed": true
+    },
+    {
+      "detail": "the fixed fixtures have no hard measurement requirement; both complete variants must remain available",
+      "name": "stage-0-normal/expected_plans",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-normal/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-not_owned/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-not_owned/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-not_owned/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-not_owned/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-not_owned/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "confirmed non-ownership excludes every affected complete roster",
+      "name": "stage-0-not_owned/expected_not_owned",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-not_owned/coverage",
+      "passed": true
+    },
+    {
+      "detail": "actual builder bytes, independent serializer bytes and raw file hash must agree",
+      "name": "stage-0-unknown_ownership/raw_snapshot",
+      "passed": true
+    },
+    {
+      "detail": "actual A and B1 tuple; metadata/host identities are separate",
+      "name": "stage-0-unknown_ownership/producer_tuple",
+      "passed": true
+    },
+    {
+      "detail": "analysis does not mutate original raw strings or caller inputs",
+      "name": "stage-0-unknown_ownership/input_unchanged",
+      "passed": true
+    },
+    {
+      "detail": "preparation success is distinct from the native domain result",
+      "name": "stage-0-unknown_ownership/adapter",
+      "passed": true
+    },
+    {
+      "detail": "no available plan moves a locked instance",
+      "name": "stage-0-unknown_ownership/lock_actions",
+      "passed": true
+    },
+    {
+      "detail": "unknown ownership is pending, while independent confirmed rosters may remain available",
+      "name": "stage-0-unknown_ownership/expected_unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "B has no complete inventory/material claims",
+      "name": "stage-0-unknown_ownership/coverage",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/no_reviewed_template",
+      "name": "no-reviewed-template/fixture:stage:one",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_producer_payload",
+      "name": "task-extra-scope-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_producer_payload",
+      "name": "task-boolean-scope-revision",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_digest_mismatch",
+      "name": "tampered-original-transport",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/unknown_signing_key",
+      "name": "unknown-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/invalid_signature",
+      "name": "wrong-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_release_mismatch",
+      "name": "requested-release-mismatch",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C native analysis/withdrawn_public_object",
+      "name": "withdrawn-required-evidence",
+      "passed": true
+    },
+    {
+      "detail": "expected gate/code: C producer adapter/producer_dependency_missing",
+      "name": "missing-signed-native-object",
+      "passed": true
+    }
+  ],
+  "component_version": "0.4.0",
+  "full_three_party_acceptance": false,
+  "native_rule_version": "0.2.0",
+  "negative_cases": [
+    {
+      "actual_code": null,
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "no_reviewed_template",
+      "name": "no-reviewed-template/fixture:stage:one",
+      "origin": "C consumer task negative; B1 builder separately rejects this undeclared goal before C",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "no_reviewed_template"
+    },
+    {
+      "actual_code": "invalid_producer_payload",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "invalid_producer_payload",
+      "name": "task-extra-scope-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "invalid_producer_payload",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "invalid_producer_payload",
+      "name": "task-boolean-scope-revision",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_digest_mismatch",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "producer_digest_mismatch",
+      "name": "tampered-original-transport",
+      "origin": "negative transport bytes changed; original expected hash and all captured files unchanged; no deeper gate claimed",
+      "passed": true,
+      "public_raw_sha256": "eb40afa9a71116fb71e8022f2850c563ef5666f3ae924156c97473eafd8ab4c2",
+      "status": "error"
+    },
+    {
+      "actual_code": "unknown_signing_key",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "unknown_signing_key",
+      "name": "unknown-signing-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "invalid_signature",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "invalid_signature",
+      "name": "wrong-signing-key",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_release_mismatch",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "producer_release_mismatch",
+      "name": "requested-release-mismatch",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "withdrawn_public_object",
+      "actual_gate": "C native analysis",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "expected_code": "withdrawn_public_object",
+      "name": "withdrawn-required-evidence",
+      "origin": "consumer task/trust change; producer raw bytes unchanged",
+      "passed": true,
+      "public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "status": "error"
+    },
+    {
+      "actual_code": "producer_dependency_missing",
+      "actual_gate": "C producer adapter",
+      "base_public_raw_sha256": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+      "declared_public_transport_sha256": "81f4308c7b0254c1f29355634822e8d900dd475a2edb4472eba82187cfd83911",
+      "expected_code": "producer_dependency_missing",
+      "name": "missing-signed-native-object",
+      "origin": "C-constructed negative transport, not A output: omitted object with untouched signed manifest/member hashes; fresh negative-input transport digest; original artifact bytes/hash retained",
+      "passed": true,
+      "public_raw_sha256": "81f4308c7b0254c1f29355634822e8d900dd475a2edb4472eba82187cfd83911",
+      "status": "error"
+    }
+  ],
+  "not_exercised": [
+    "B2 host/worker integration",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations",
+    "new A S3 positive acceptance in this older-A report"
+  ],
+  "runtime_kind": "source_only_development",
+  "source_file_sha256": {
+    "src/starhelp_planner/__init__.py": "af2640ab2c3b99ba81bed0511a067c1253694d68d85d786131dcc0491af79980",
+    "src/starhelp_planner/adapters/__init__.py": "11a00b4df333a4011c498f3144e543110c00ff1ef69ac7828193f85ecf206a76",
+    "src/starhelp_planner/adapters/a_distribution.py": "54d9f5ca00308c3c1316b166b815ccae0ecef9f8895937aa20118cdead913e36",
+    "src/starhelp_planner/adapters/a_legacy.py": "22a9683787496f241628328572b28081c91d8e038053951a49c3ca8f2299d6ca",
+    "src/starhelp_planner/adapters/b_snapshot.py": "17dab3f2f9683047fd8524ceb66dfe8147d535d590d2509f27a198a10eb6a574",
+    "src/starhelp_planner/adapters/common.py": "5e120cc718fe9d4ffba25ab75befb795f873f6103a6f8b7837c9abd55ed9a6d2",
+    "src/starhelp_planner/adapters/entry.py": "e40baae9d363888bf979180b9bfc6f09cd8afdca7e3971c540af644d83097e8c",
+    "src/starhelp_planner/adapters/projection.py": "331a8f92e3b6bc51447184f6c18c9b878d2ecb5768abb9d175497f077fb2ec22",
+    "src/starhelp_planner/adapters/signature.py": "c852de5ed6062ca4732bfbd7145c37d2d38888a43a723baa60390918e7d93171",
+    "src/starhelp_planner/api.py": "4a46f64b70093dcdfebd37c6b7f16bd754ec22ea62872ab8a4f6aa4197442740",
+    "src/starhelp_planner/conditions.py": "1cce8498ca32f6c1b1a4ad0ad14dc1267d13c029ca2469ff8d3a9e17e34a1ea2",
+    "src/starhelp_planner/cultivation.py": "ebb22080fc211117336577f1eee63ab7327b8066afe573ff8ce7c009473f55e7",
+    "src/starhelp_planner/demo.py": "92bbb81d488936dc6c17272ec8f49cbe880f7ff4278a4359872dc4f5f6387954",
+    "src/starhelp_planner/demo_data.py": "46965cc5b845976d19244850f65b9e1bc49fb232563e6db2f5786f9042fbbf25",
+    "src/starhelp_planner/engine.py": "d6214de0b0101e32256e9f934f66f7a1aed34cd59195a2f01d882da84f8c415f",
+    "src/starhelp_planner/validation.py": "ba34c35b747bf2d84d3d15651fce0b9407d9801b8bb4e47dc23f6e205186bf20"
+  },
+  "summary": {
+    "builder_rejections": 4,
+    "failed": 0,
+    "modes_observed": [
+      "fixture:mode:duo"
+    ],
+    "passed": 78
+  },
+  "synthetic_only": true,
+  "wheel_proof": null
+}

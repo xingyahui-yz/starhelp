@@ -56,6 +56,7 @@ def validate_json_request(request: Any) -> None:
         if not isinstance(request.get(key), dict):
             raise ValueError(f"{key} must be an object")
     snapshot, task, bundle = request["account_snapshot"], request["task"], request["public_bundle"]
+    validate_scope(task.get("scope"), complete=True)
     for name, value in (("request_id", request.get("request_id")), ("profile_id", snapshot.get("profile_id")), ("snapshot_id", snapshot.get("snapshot_id"))):
         if type(value) is not str or not value:
             raise ValueError(f"{name} must be a nonempty string")
@@ -93,9 +94,11 @@ def validate_json_request(request: Any) -> None:
         for slots in teams.values():
             object_array(slots, "variant.team")
             for slot in slots:
-                object_array(slot.get("equipment_requirements", []), "slot.equipment_requirements")
-                seats = [(req.get("kind"), req.get("slot")) for req in slot.get("equipment_requirements", [])]
-                if any(kind not in {"light_cone", "relic"} or type(seat) is not str or not seat for kind, seat in seats) or len(seats) != len(set(seats)):
+                object_array(slot.get("equipment_requirements"), "slot.equipment_requirements")
+                for requirement in slot["equipment_requirements"]:
+                    validate_equipment_requirement(requirement)
+                seats = [(req["kind"], req["slot"]) for req in slot["equipment_requirements"]]
+                if len(seats) != len(set(seats)):
                     raise ValueError("equipment requirements need unique supported kind/slot pairs")
         for key in ("conditions", "cultivation_requirements", "steps", "mechanics", "failure_conditions", "risks"):
             object_array(variant.get(key, []), f"variant.{key}")
@@ -112,6 +115,41 @@ def validate_json_request(request: Any) -> None:
 def object_array(value: Any, name: str) -> None:
     if not isinstance(value, list) or any(not isinstance(item, dict) for item in value):
         raise ValueError(f"{name} must be an array of objects")
+
+
+def validate_scope(scope: Any, *, complete: bool = False) -> None:
+    if not isinstance(scope, dict) or complete and set(scope) != set(SCOPE_KEYS):
+        raise ValueError("task scope must contain exactly the six declared keys")
+    for key, value in scope.items():
+        # Public entity/evidence scopes also contain producer metadata such as
+        # release_status or fixture_only. Only task.scope is a closed mapping.
+        if key not in SCOPE_KEYS:
+            continue
+        if key == "stage_revision":
+            if type(value) is not int or value < 1:
+                raise ValueError("scope.stage_revision must be a positive integer, excluding boolean")
+        elif type(value) is not str or not value:
+            raise ValueError(f"scope.{key} must be a nonempty string")
+
+
+def validate_equipment_requirement(requirement: dict[str, Any]) -> None:
+    allowed = {"kind", "slot", "public_type_id", "public_type_ids", "evidence_refs"}
+    if set(requirement) - allowed:
+        raise ValueError("equipment requirement contains unsupported keys")
+    if requirement.get("kind") not in {"light_cone", "relic"} or type(requirement.get("slot")) is not str or not requirement["slot"]:
+        raise ValueError("equipment requirement needs a supported kind and nonempty opaque slot")
+    if "public_type_id" in requirement and "public_type_ids" in requirement:
+        raise ValueError("equipment type restrictions are mutually exclusive")
+    if "public_type_id" in requirement and (type(requirement["public_type_id"]) is not str or not requirement["public_type_id"]):
+        raise ValueError("equipment public_type_id must be a nonempty string")
+    if "public_type_ids" in requirement:
+        values = requirement["public_type_ids"]
+        if not isinstance(values, list) or not values or any(type(value) is not str or not value for value in values) or len(values) != len(set(values)):
+            raise ValueError("equipment public_type_ids must be a nonempty unique array of nonempty strings")
+    if "evidence_refs" in requirement:
+        object_array(requirement["evidence_refs"], "equipment.evidence_refs")
+        if any(type(ref.get("id")) is not str or not ref["id"] or type(ref.get("revision")) is not int or ref["revision"] < 1 for ref in requirement["evidence_refs"]):
+            raise ValueError("equipment evidence references require an ID and positive integer revision")
 
 
 def identity(record: Mapping[str, Any]) -> tuple[str, str, int] | None:
@@ -181,6 +219,11 @@ def validate_bundle(bundle: Mapping[str, Any], capabilities: set[str], version: 
     for kind, (plural, id_key) in COLLECTIONS.items():
         identifiers: set[str] = set()
         for obj in bundle[plural]:
+            if "scope" in obj:
+                try:
+                    validate_scope(obj["scope"])
+                except ValueError as exc:
+                    issue("invalid_payload", str(exc))
             identifier, revision = obj.get(id_key), obj.get("revision")
             if not isinstance(identifier, str) or not identifier or type(revision) is not int or revision < 1:
                 issue("invalid_payload", f"{kind} requires a string identity and positive integer revision")
