@@ -57,6 +57,27 @@ This is B's implementation review of the shared candidate, not a freeze or an ed
 
 **B disposition:** accept §§1, 2, 5, 6 and 7 as coordination direction for the limited synthetic integration, with the evidence limits above; accept §4's shape and authorization separation but flag revision 0 and absent measurement context; partially accept §3 while requiring exact scope validation and new equipment replay. This is not a freeze vote for the whole MVP, and B has not changed the shared candidate. The next B work depends on the coordinator's fixed S3 A release and C adapter; the current S1 patch/candidate is closed after this review and push.
 
+### S3 B scope and snapshot-revision boundary (2026-10-21)
+
+After the finite technical scope was frozen at `interop-min-v0.1.md` raw SHA-256
+`1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a`, B added the agreed
+consumer-boundary checks without changing the serializer profile or wire schema. `select_public_task`
+now requires exactly the six scope keys, five non-empty string values, and a positive integer
+`stage_revision` that excludes booleans; it requires the selected stage and template scopes to match
+and the inner stage ID to match the selected stage. `build_producer_analysis_request` repeats scope
+validation against the immutable validated bundle and requires the complete public-goal object to be
+listed by a same-release template. The stdio envelope and producer request builder both reject a
+snapshot revision below 1. B's local uninitialized base may remain at revision 0; the first confirmed
+import creates revision 1 through the existing merge transition, with no artificial revision bump.
+
+Synthetic regressions cover missing/extra scope keys, boolean and zero stage revisions, stage/template
+scope mismatch, mutated task revision and goal, and snapshot revision 0 at both C submission
+boundaries. All 64 package unittest tests, `compileall`, and `git diff --check` passed. No candidate
+rebuild was run for this boundary-only patch; the fixed S1 candidate remains the prior unsigned
+919-file package. A's new three-mode/equipment release and C's explicitly supporting wheel have not
+yet arrived, so full S3 replay, report lifecycle/revocation replay on that set, and the single
+post-dependency candidate rebuild remain pending. No real UID or private account data was used.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and

@@ -10,6 +10,79 @@ from .bundles import ValidatedBundle
 from .models import AccountSnapshot
 from .profiles import _snapshot_to_dict
 
+_TASK_SCOPE_KEYS = frozenset({
+    "game_version",
+    "environment",
+    "mode_id",
+    "cycle_id",
+    "stage_id",
+    "stage_revision",
+})
+_TASK_SCOPE_STRING_KEYS = _TASK_SCOPE_KEYS - {"stage_revision"}
+
+
+def _validated_scope(value: Any, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict) or set(value) != _TASK_SCOPE_KEYS:
+        raise ValueError(f"{label} scope must contain exactly the six supported keys")
+    if any(
+        not isinstance(value[key], str) or not value[key].strip()
+        for key in _TASK_SCOPE_STRING_KEYS
+    ):
+        raise ValueError(f"{label} scope IDs must be non-empty strings")
+    revision = value["stage_revision"]
+    if not isinstance(revision, int) or isinstance(revision, bool) or revision < 1:
+        raise ValueError(f"{label} scope stage_revision must be a positive integer")
+    return dict(value)
+
+
+def _json_values_equal(left: Any, right: Any) -> bool:
+    return json.dumps(
+        left, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ) == json.dumps(
+        right, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False
+    )
+
+
+def _validate_task_matches_bundle(bundle: dict[str, Any], task: dict[str, Any]) -> None:
+    """Reject task semantics that do not exactly come from this release's planner view."""
+    scope = _validated_scope(task.get("scope"), "task")
+    public_goal = task.get("public_goal")
+    if not isinstance(public_goal, dict):
+        raise ValueError("task public_goal must be an exact public goal object")
+    manifest = bundle.get("manifest")
+    release_id = manifest.get("index_release_id") if isinstance(manifest, dict) else None
+    objects = bundle.get("objects")
+    view_object = objects.get(f"planner-view:{release_id}") if isinstance(objects, dict) else None
+    view = view_object.get("bundle") if isinstance(view_object, dict) else None
+    if not isinstance(release_id, str) or not isinstance(view, dict):
+        raise ValueError("validated bundle has no planner view for its release")
+
+    stages = view.get("stages")
+    templates = view.get("templates")
+    if not isinstance(stages, list) or not isinstance(templates, list):
+        raise ValueError("planner view has no selectable stages or templates")
+    stage_matches = [
+        item for item in stages
+        if isinstance(item, dict)
+        and item.get("stage_id") == scope["stage_id"]
+        and item.get("index_release_id") == release_id
+        and _json_values_equal(_validated_scope(item.get("scope"), "stage"), scope)
+    ]
+    if len(stage_matches) != 1:
+        raise ValueError("task scope does not match exactly one stage in the validated bundle")
+    template_matches = [
+        item for item in templates
+        if isinstance(item, dict)
+        and item.get("index_release_id") == release_id
+        and isinstance(item.get("stage_ids"), list)
+        and scope["stage_id"] in item.get("stage_ids", [])
+        and _json_values_equal(_validated_scope(item.get("scope"), "template"), scope)
+        and isinstance(item.get("public_goals"), list)
+        and sum(_json_values_equal(goal, public_goal) for goal in item["public_goals"]) == 1
+    ]
+    if not template_matches:
+        raise ValueError("task scope and full public_goal do not match a template in the bundle")
+
 
 def select_public_task(
     bundle: dict[str, Any],
@@ -61,10 +134,13 @@ def select_public_task(
         raise ValueError("selected template does not include the selected public stage")
     if stage.get("index_release_id") != release_id or template.get("index_release_id") != release_id:
         raise ValueError("selected public mapping does not belong to the active bundle release")
-    scope = stage.get("scope")
+    scope = _validated_scope(stage.get("scope"), "stage")
+    template_scope = _validated_scope(template.get("scope"), "template")
     goals = template.get("public_goals")
-    if not isinstance(scope, dict) or not isinstance(goals, list):
+    if not isinstance(goals, list):
         raise ValueError("selected stage scope or public goals are malformed")
+    if scope["stage_id"] != stage_id or not _json_values_equal(scope, template_scope):
+        raise ValueError("selected stage and template scopes must match exactly")
     goal_matches = [item for item in goals if isinstance(item, dict) and item.get("kind") == goal_kind]
     if len(goal_matches) != 1:
         raise ValueError("selected public goal is missing or ambiguous in the template")
@@ -102,6 +178,9 @@ def build_producer_analysis_request(
     """
     if authorization_generation < 1:
         raise ValueError("authorization generation must be positive")
+    if (not isinstance(snapshot.revision, int) or isinstance(snapshot.revision, bool)
+            or snapshot.revision < 1):
+        raise ValueError("account snapshot revision must be a positive integer")
     if (
         not isinstance(task, dict)
         or not isinstance(task.get("scope"), dict)
@@ -147,6 +226,7 @@ def build_producer_analysis_request(
         "authorization_state": "active",
     }
     producer_task = json.loads(json.dumps(task, ensure_ascii=False, allow_nan=False))
+    _validate_task_matches_bundle(bundle, producer_task)
     timestamp = evaluation_time or datetime.now(UTC)
     if timestamp.tzinfo is None:
         raise ValueError("evaluation time must be timezone aware")

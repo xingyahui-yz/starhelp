@@ -191,8 +191,9 @@ def _validate_request_envelope(
     if snapshot.get("authorization_state") != "active":
         raise PermissionError("analysis request profile authorization is inactive")
     if (not isinstance(snapshot.get("snapshot_revision"), int)
-            or isinstance(snapshot.get("snapshot_revision"), bool)):
-        raise ValueError("analysis request snapshot revision is required")
+            or isinstance(snapshot.get("snapshot_revision"), bool)
+            or snapshot["snapshot_revision"] < 1):
+        raise ValueError("analysis request snapshot revision must be a positive integer")
     if not isinstance(request.get("public_bundle"), dict):
         raise ValueError("analysis request must embed one complete public bundle")
     if not isinstance(request.get("task"), dict):

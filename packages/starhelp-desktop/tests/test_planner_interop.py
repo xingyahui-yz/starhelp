@@ -5,8 +5,10 @@ import json
 import subprocess
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, Callable
 from uuid import UUID
 
 try:
@@ -103,6 +105,31 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             template_id=template["id"],
             goal_kind=template["public_goals"][0]["kind"],
         )
+
+        def select_from_mutated_bundle(
+            mutate: Callable[[dict[str, Any]], object],
+        ) -> dict[str, Any]:
+            changed = json.loads(json.dumps(bundle))
+            changed_view = changed["objects"]["planner-view:rel_fixture_0001"]["bundle"]
+            mutate(changed_view)
+            return select_public_task(
+                changed,
+                stage_id=stage["stage_id"],
+                template_id=template["id"],
+                goal_kind=template["public_goals"][0]["kind"],
+            )
+
+        malformed_scopes = (
+            ("missing key", lambda view: view["stages"][0]["scope"].pop("cycle_id")),
+            ("extra key", lambda view: view["templates"][0]["scope"].update(extra="value")),
+            ("boolean revision", lambda view: view["stages"][0]["scope"].update(stage_revision=True)),
+            ("zero revision", lambda view: view["stages"][0]["scope"].update(stage_revision=0)),
+            ("mismatched scopes", lambda view: view["templates"][0]["scope"].update(mode_id="other")),
+        )
+        for label, mutate in malformed_scopes:
+            with self.subTest(scope_case=label), self.assertRaisesRegex(ValueError, "scope"):
+                select_from_mutated_bundle(mutate)
+
         with self.assertRaisesRegex(ValueError, "missing or ambiguous"):
             select_public_task(
                 bundle,
@@ -125,6 +152,19 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             "request_id": request_id,
         }
         wrapper = build_producer_analysis_request(**request_args)
+        altered_task = json.loads(json.dumps(task))
+        altered_task["scope"]["stage_revision"] = True
+        with self.assertRaisesRegex(ValueError, "stage_revision must be a positive integer"):
+            build_producer_analysis_request(**{**request_args, "task": altered_task})
+        altered_task = json.loads(json.dumps(task))
+        altered_task["public_goal"]["kind"] = "fixture:goal:other"
+        with self.assertRaisesRegex(ValueError, "do not match a template"):
+            build_producer_analysis_request(**{**request_args, "task": altered_task})
+        with self.assertRaisesRegex(ValueError, "snapshot revision must be a positive integer"):
+            build_producer_analysis_request(**{
+                **request_args,
+                "snapshot": replace(snapshot, revision=0),
+            })
         with self.assertRaisesRegex(ValueError, "does not include the bundle's signing key"):
             build_producer_analysis_request(**{
                 **request_args,

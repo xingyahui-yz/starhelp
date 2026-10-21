@@ -60,7 +60,12 @@ from starhelp_desktop.models import (
     SourceKind,
 )
 from starhelp_desktop.privacy import PublicQueryBuilder, PublicScope
-from starhelp_desktop.planner import LocalPlannerProcess, PlannerCancelled, PlannerUnavailable
+from starhelp_desktop.planner import (
+    LocalPlannerProcess,
+    PlannerCancelled,
+    PlannerUnavailable,
+    _validate_request_envelope,
+)
 from starhelp_desktop.public_profile import (
     MihomoPublicProfileClient,
     ProfileRequestError,
@@ -2057,6 +2062,13 @@ class LocalPlannerProcessTests(unittest.TestCase):
         result = self._run(script, required=frozenset({"fixture:analyze:v1"}))
         self.assertEqual(result.planner_version, "fixture:planner:1")
         self.assertEqual(result.result["status"], "coverage_insufficient")
+
+    def test_zero_snapshot_revision_is_rejected_before_spawning_worker(self) -> None:
+        profile_id = uuid4()
+        request = self.request(profile_id, 1)
+        request["account_snapshot"]["snapshot_revision"] = 0
+        with self.assertRaisesRegex(ValueError, "snapshot revision must be a positive integer"):
+            _validate_request_envelope(request, profile_id, 1)
 
     def test_incompatible_or_oversized_results_are_rejected(self) -> None:
         incompatible = (
