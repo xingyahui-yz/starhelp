@@ -201,6 +201,13 @@ the same UUID and requiring `AccountSnapshot` to reject the snapshot before seri
 package suite passes 65 tests; `compileall` and `git diff --check` pass. This test-only change does
 not alter B1 serializer bytes or trigger a candidate rebuild.
 
+B independently checked all 21 C-captured `stage-*.request.json` files against their paired snapshot
+files and the official A bundle bytes. Every embedded snapshot matched its source file and declared
+SHA-256, B1 producer commit/profile matched the pinned tuple, every embedded bundle exactly matched
+the official A bytes and digest, and request IDs and six-key task scopes were consistent: 21 checked,
+0 mismatches. This validates the captured source inputs only; it does not execute or package C's
+worker.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
