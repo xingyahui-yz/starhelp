@@ -217,8 +217,9 @@ def build_producer_analysis_request(
     if not isinstance(signing_key_id, str) or signing_key_id not in distribution_public_keys:
         raise ValueError("distribution trust does not include the bundle's signing key")
     snapshot_bytes = json.dumps(
-        _snapshot_to_dict(snapshot), ensure_ascii=False, separators=(",", ":"), allow_nan=False
-    ).encode("utf-8")
+        _snapshot_to_dict(snapshot), ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False
+    ).encode("utf-8") + b"\n"
     snapshot_wrapper = {
         "profile_id": profile_id,
         "snapshot_revision": snapshot.revision,

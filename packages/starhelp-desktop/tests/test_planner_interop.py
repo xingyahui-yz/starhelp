@@ -152,6 +152,14 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             "request_id": request_id,
         }
         wrapper = build_producer_analysis_request(**request_args)
+        captured_snapshot_bytes = wrapper["producer_request"]["account_snapshot"][
+            "raw_json"
+        ].encode("utf-8")
+        self.assertEqual(captured_snapshot_bytes, snapshot_fixture_bytes)
+        self.assertEqual(
+            wrapper["producer_request"]["account_snapshot"]["sha256"],
+            hashlib.sha256(captured_snapshot_bytes).hexdigest(),
+        )
         altered_task = json.loads(json.dumps(task))
         altered_task["scope"]["stage_revision"] = True
         with self.assertRaisesRegex(ValueError, "stage_revision must be a positive integer"):

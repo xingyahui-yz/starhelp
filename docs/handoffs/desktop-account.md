@@ -78,6 +78,19 @@ rebuild was run for this boundary-only patch; the fixed S1 candidate remains the
 yet arrived, so full S3 replay, report lifecycle/revocation replay on that set, and the single
 post-dependency candidate rebuild remain pending. No real UID or private account data was used.
 
+### S3 B snapshot raw-byte capture for the existing fixture (2026-10-21)
+
+`AccountSnapshot` shape source remains B serializer commit `045965bce4fbc38a3baa79b594535c9dd983d776`
+with profile `starhelp.desktop.snapshot.045965b`. The producer builder now emits the snapshot as
+UTF-8 JSON with `ensure_ascii=false`, sorted object keys, compact separators, `allow_nan=false`, and
+one terminal LF. Its `account_snapshot.raw_json` bytes exactly equal the original existing fixture
+`tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json`, SHA-256
+`a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5`; the regression compares the
+byte arrays and independently checks the request digest. The same request still completes the
+packaged C 0.3.0 synthetic replay. This is byte-compatibility evidence for the existing synthetic
+shape, not a new three-mode/equipment sample. The B host commit that emits these bytes is recorded
+separately from the serializer source in the S3 lock when the new A/C artifact set is pinned.
+
 ## M0 source and contract findings (checked 2026-10-18)
 
 1. March7th's parsed API documents `GET /sr_info_parsed/{uid}` with `language`/`lang` and
