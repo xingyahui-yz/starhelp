@@ -1156,3 +1156,24 @@ This candidate remains unsigned and tested only on the build host. The feedback/
 limited to synthetic demo reports. Production mappings/trust, live A integration, reviewed production
 troubleshooting, target-user Windows validation, publisher signing, and player-provided acceptance
 remain open.
+
+## Automatic-refresh catalog failure rollback and candidate (2026-10-28)
+
+`ProfileRepository.set_auto_refresh()` previously deleted the per-profile refresh object whenever a
+catalog update failed, even when auto-refresh was already enabled and the old encrypted UID/config
+was still the committed state. It now retains the previous config and restores it if catalog
+persistence fails. A fault-injection regression starts with an enabled profile and a recorded
+attempt time, rejects the catalog write while changing the UID, then confirms the prior encrypted
+UID, attempt time, and enabled catalog state remain intact.
+
+Verification: the full desktop package suite passes 71 tests; the targeted rollback regression,
+`compileall -q src packaging`, and `git diff --check` pass. A fresh unsigned PyInstaller 6.22.3
+candidate using the pinned C 0.4.0 wheel has 920 manifest files with exact hash verification; the
+manifest SHA-256 is `6cf00caf71d861ee01af48d68c8a07ffcf6c1c6e1d9e094b7de4f979f4fc0a55`, and the
+packaged planner worker SHA-256 is
+`6900ff39072a05ff16f74aab18867202581b931f8a6a79a3d174326606177fbe`. Synthetic OCR recognized
+`LEVEL 80`; the candidate stayed active for eight seconds and loaded Qt6Core/Qt6Widgets from its
+own `_internal`; the actual packaged worker passed the signed synthetic S3 replay. The installer
+smoke passed install, upgrade, two-way rollback, and tamper rejection in a unique temporary
+directory. This is build-host evidence only; the candidate remains unsigned, production M0/A
+integration and target-user acceptance remain open, and no real UID/account was used.

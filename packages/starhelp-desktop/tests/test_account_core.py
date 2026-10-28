@@ -1942,6 +1942,42 @@ class StorageLifecycleTests(unittest.TestCase):
             restarted.revoke(profile.profile_id)
             self.assertFalse(config_path.exists())
 
+    def test_failed_auto_refresh_catalog_update_restores_previous_encrypted_config(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            repository = ProfileRepository(store, lifecycle)
+            profile = repository.begin_profile(
+                label="Synthetic public profile",
+                provider_id=MihomoPublicProfileClient.PROVIDER_ID,
+                server_label="fixture-region",
+            )
+            repository.set_auto_refresh(
+                profile.profile_id, True, separately_confirmed=True, uid="100000999"
+            )
+            attempted = datetime(2026, 10, 16, tzinfo=UTC)
+            repository.record_auto_refresh_attempt(profile.profile_id, profile.generation, attempted)
+            previous_config = repository.auto_refresh_config(profile.profile_id, profile.generation)
+            original_save = store.save
+
+            def fail_catalog_save(key: str, value: dict[str, object]) -> Path:
+                if key == ProfileRepository.CATALOG_KEY:
+                    raise OSError("synthetic catalog write failure")
+                return original_save(key, value)
+
+            store.save = fail_catalog_save  # type: ignore[method-assign]
+            with self.assertRaisesRegex(OSError, "synthetic catalog write failure"):
+                repository.set_auto_refresh(
+                    profile.profile_id, True, separately_confirmed=True, uid="100000888"
+                )
+
+            store.save = original_save  # type: ignore[method-assign]
+            restored_profile = repository.list_profiles()[0]
+            restored_config = repository.auto_refresh_config(profile.profile_id, profile.generation)
+            self.assertTrue(restored_profile.auto_refresh)
+            self.assertEqual(restored_config, previous_config)
+
     def test_task_rejects_conflicting_or_malformed_constraints(self) -> None:
         base = {
             "profile_id": uuid4(),

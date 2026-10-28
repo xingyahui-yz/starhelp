@@ -363,6 +363,7 @@ class ProfileRepository:
         with self._lock:
             summary = self._catalog[profile_id]
             self._lifecycle.require_active(profile_id, summary.generation)
+            previous_refresh_config: dict[str, object] | None = None
             if enabled:
                 if summary.provider_id != "mihomo-public-profile":
                     raise ValueError("automatic refresh is supported only for Mihomo profiles")
@@ -371,11 +372,11 @@ class ProfileRepository:
                 last_attempt_at = None
                 if summary.auto_refresh:
                     try:
-                        previous = self._store.load(self._refresh_key(profile_id))
+                        previous_refresh_config = self._store.load(self._refresh_key(profile_id))
                     except FileNotFoundError:
-                        previous = {}
-                    if previous.get("uid") == uid:
-                        previous_attempt = previous.get("last_attempt_at")
+                        previous_refresh_config = None
+                    if previous_refresh_config is not None and previous_refresh_config.get("uid") == uid:
+                        previous_attempt = previous_refresh_config.get("last_attempt_at")
                         if isinstance(previous_attempt, str):
                             try:
                                 parsed_attempt = datetime.fromisoformat(previous_attempt)
@@ -404,7 +405,10 @@ class ProfileRepository:
             except Exception:
                 self._catalog[profile_id] = summary
                 if enabled:
-                    self._store.delete_key(self._refresh_key(profile_id))
+                    if previous_refresh_config is None:
+                        self._store.delete_key(self._refresh_key(profile_id))
+                    else:
+                        self._store.save(self._refresh_key(profile_id), previous_refresh_config)
                 raise
             if not enabled:
                 self._store.delete_key(self._refresh_key(profile_id))
