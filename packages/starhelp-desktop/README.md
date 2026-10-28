@@ -33,6 +33,12 @@ identity of a physical copy.
   field names and are shown as raw summary facts in the Progress page; they are not mapped to complete
   cycle or three-mode history. The three challenge modes stay unknown unless separately verified.
   No real UID has been requested; UID-to-region routing remains an M0 decision.
+- The MetaCubeX `mihomo` client README documents the parsed endpoint as
+  `https://api.mihomo.me/sr_info_parsed/{UID}?lang={LANG}` and says V2 is the default while V1 adds
+  `version=v1` ([source](https://github.com/MetaCubeX/mihomo/blob/main/README.md), checked 2026-10-28).
+  B constructs the documented V2 URL. Its selected server/region label is local metadata only and is
+  not sent to Mihomo; the client documentation does not establish UID-to-region routing, coverage,
+  service privacy, or rate-limit guarantees. No real UID request was made.
 - Enka HSR fields and region mapping: not verified from its public API documentation.
 - Planner and public knowledge components: no source code is imported from their worktrees. The
   desktop package vendors the pinned C 0.4.0 wheel as a black-box artifact and launches its worker

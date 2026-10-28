@@ -1090,3 +1090,13 @@ This validates B request/report binding and the built artifact only. C's new man
 profile and full request/result/public-validity binding remain proposals, not a frozen tuple;
 production mappings/trust, actual A service integration, publisher signing, target-user validation,
 and player acceptance remain open. No real UID/account was used and the existing `.tmp/` was kept.
+
+## Mihomo endpoint shape checked against its client documentation (2026-10-28)
+
+The [MetaCubeX `mihomo` README](https://github.com/MetaCubeX/mihomo/blob/main/README.md) documents
+`https://api.mihomo.me/sr_info_parsed/{UID}?lang={LANG}`; its V2 example omits `version`, while the
+V1 example adds `version=v1`. B's `MihomoPublicProfileClient` builds the documented V2 path and
+language query. The UI's server/region label is required local metadata but is not part of the HTTP
+request. This client README confirms the URL shape only: it does not establish how the service routes
+UIDs across regions, its data coverage, privacy terms, or rate limits. UID-to-region mapping therefore
+remains an M0 item, and no real UID was requested during this check.
