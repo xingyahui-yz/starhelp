@@ -813,3 +813,10 @@ only binds cached bytes to a local timestamp. The review records the missing cat
 sequence/expiry/withdrawal fields and errors, plus readiness, process ownership, loopback and staged
 HTTPS boundaries. This is a design review only; no production HTTP or service process was started,
 and no A/C source, shared contract, S3 fixture, B1 serializer, or candidate was modified.
+
+Current B package verification on 2026-10-28 used the component `.venv`: all 65 `unittest` cases
+passed, and `python -m compileall -q src tests` completed successfully. These checks cover the
+current checkout only; no candidate was rebuilt. GitHub branch inspection found A still at the
+reviewed `ed0028c` proposal and C advanced to `fa512b6` with preserved S3 packaged replay evidence;
+neither publishes a frozen S4.1 catalog/withdrawal protocol. Production transport and controller
+implementation therefore remain pending the shared interface freeze.
