@@ -890,3 +890,25 @@ responses for duplicate characters, attributes, and skills.
 Verification on 2026-10-28: all 67 package `unittest` cases passed, `compileall` passed, and
 `git diff --check` passed. No network request or UID lookup was made. Provider coverage, region
 mapping, and production acceptance remain open M0 decisions.
+
+## Current Windows candidate rebuild and verification (2026-10-28)
+
+The earlier 2026-10-21 candidate record above is superseded by this rebuild from B product source
+commit `06535cfe5582d043e091bdce42f6656cdc5da016`, which includes transport-boundary query
+validation and public-profile duplicate conflict handling. PyInstaller 6.22.3 rebuilt the GUI and
+planner worker. The candidate manifest has 920 entries, SHA-256
+`e116bad026729702cdbc80e28f5e465ba737fdbbbf772bbeabd5c1d64f134d0d`; an independent check found
+920 files, no missing or extra entries, and no hash mismatches.
+
+The OCR smoke recognized synthetic `LEVEL 80`. It also confirmed candidate-local RapidOCR, ONNX
+Runtime, OpenCV and OCR models, as well as the embedded Pillow/NumPy/app modules. The smoke now
+disables Python bytecode writes; a post-smoke manifest check again found exactly the same 920 files
+and hashes. This remains an external Python OCR inference smoke, not a frozen GUI import/click test.
+An isolated 8-second launch with a unique temporary `LOCALAPPDATA` remained running and loaded
+`Qt6Core.dll` and `Qt6Widgets.dll`. The synthetic installer smoke passed install, upgrade,
+two-direction rollback and tamper rejection; its first sandboxed run was denied at the temporary
+directory rename, and the same scoped test passed when rerun with local temporary-directory access.
+
+No real profile, UID, or screenshot was used. The folder candidate remains unsigned; this Windows
+11 build-host result does not replace target-user Windows compatibility, publisher-signing, M0
+production mappings/trust, or user-provided account acceptance.

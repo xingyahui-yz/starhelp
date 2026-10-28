@@ -15,6 +15,8 @@ def main() -> int:
     if not (candidate / "StarHelp.exe").is_file() or not internal.is_dir():
         raise SystemExit("built StarHelp candidate is missing; build it before the OCR smoke")
 
+    # The smoke must not add files after the candidate's immutable manifest was created.
+    sys.dont_write_bytecode = True
     sys.path.insert(0, str(internal))
     sys.path.insert(1, str(source))
 

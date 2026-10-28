@@ -42,4 +42,5 @@ from the component root. It checks that Pillow, NumPy, and the B OCR module are 
 executable archive, then exercises inference using the candidate's `_internal` RapidOCR, ONNX
 Runtime, and model files. The external smoke process uses build-environment Pillow and NumPy to
 create and pass an in-memory synthetic PNG, and expects to recognize `LEVEL 80`. It does not
-exercise the frozen GUI click path, access a real screenshot, or write an image file.
+exercise the frozen GUI click path, access a real screenshot, write an image file, or alter the
+candidate after its manifest is created.
