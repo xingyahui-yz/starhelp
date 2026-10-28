@@ -28,6 +28,7 @@ from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.models import ProfileAuthorization
 from starhelp_desktop.planner import (
     LocalPlannerProcess,
+    PlannerResult,
     PlannerUnavailable,
     bundled_planner_command,
 )
@@ -56,6 +57,72 @@ SNAPSHOT_FORMAT_PROFILE = "starhelp.desktop.snapshot.interop-min.v0.1"
     serialization is not None, "install the desktop crypto extra for signed interop"
 )
 class ProducerPlannerInteropTests(unittest.TestCase):
+    def test_report_feedback_uses_the_same_request_snapshot_sent_to_planner(self) -> None:
+        feedback = {
+            "fields": {
+                "fixture:failure": {
+                    "value": "fixture:survival",
+                    "state": "user_reported",
+                    "unit": "fixture:label",
+                    "measurement_context": {
+                        "phase": "fixture:reported",
+                        "assumptions": [],
+                    },
+                }
+            }
+        }
+        expected_feedback = json.loads(json.dumps(feedback))
+        request = {
+            "feedback": json.loads(json.dumps(feedback)),
+            "producer_request": {"feedback": json.loads(json.dumps(feedback))},
+            "task": {"scope": {"stage_id": "fixture:stage"}},
+            "account_snapshot": {"snapshot_revision": 3},
+            "public_bundle": {
+                "manifest": {"index_release_id": "fixture:release"},
+                "objects": {
+                    "planner-view:fixture:release": {
+                        "bundle": {"evidence": [{"id": "fixture:evidence", "revision": 1}]}
+                    }
+                },
+            },
+        }
+        captured_report: dict[str, Any] = {}
+        planner = Mock()
+
+        def mutate_submitted_request(*, request: dict[str, Any], **_kwargs: Any) -> PlannerResult:
+            request["feedback"]["fields"]["fixture:failure"]["value"] = "mutated-after-submit"
+            request["producer_request"]["feedback"]["fields"]["fixture:failure"][
+                "value"
+            ] = "mutated-after-submit"
+            return PlannerResult(
+                planner_version="0.2.0",
+                capabilities=frozenset(),
+                result={
+                    "status": "plans_available",
+                    "index_release_id": "fixture:release",
+                    "citations": [{"id": "fixture:evidence", "revision": 1}],
+                },
+            )
+
+        planner.analyze.side_effect = mutate_submitted_request
+        reports = Mock()
+
+        def capture_temporary_report(**kwargs: Any) -> object:
+            captured_report.update(kwargs)
+            return object()
+
+        reports.make_temporary.side_effect = capture_temporary_report
+        ProducerAnalysisRunner(planner, reports).run(
+            request=request,
+            profile_id=PROFILE_ID,
+            authorization_generation=AUTHORIZATION_GENERATION,
+            lifecycle=Mock(),
+        )
+
+        self.assertEqual(captured_report["task"]["feedback"], expected_feedback)
+        self.assertEqual(request["feedback"], expected_feedback)
+        self.assertEqual(request["producer_request"]["feedback"], expected_feedback)
+
     def test_feedback_mismatch_is_rejected_before_local_planner_call(self) -> None:
         cases = (
             {

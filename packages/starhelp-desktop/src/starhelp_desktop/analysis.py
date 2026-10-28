@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from .lifecycle import ProfileLifecycle
-from .planner import LocalPlannerProcess, PlannerResult, PlannerUnavailable
+from .planner import MAX_REQUEST_BYTES, LocalPlannerProcess, PlannerResult, PlannerUnavailable
 from .reports import AnalysisReport, ReportLifecycle
 
 
@@ -34,9 +34,10 @@ class ProducerAnalysisRunner:
         lifecycle: ProfileLifecycle,
     ) -> ProducerAnalysisExecution:
         """Analyze locally; never persist the result without a separate explicit save action."""
-        self._require_matching_feedback(request)
+        worker_request, report_request = self._snapshot_request(request)
+        self._require_matching_feedback(report_request)
         result = self._planner.analyze(
-            request=request,
+            request=worker_request,
             profile_id=profile_id,
             authorization_generation=authorization_generation,
             lifecycle=lifecycle,
@@ -44,8 +45,8 @@ class ProducerAnalysisRunner:
         if result.result.get("status") != "plans_available":
             return ProducerAnalysisExecution(result, None)
 
-        snapshot = request["account_snapshot"]
-        bundle = request["public_bundle"]
+        snapshot = report_request["account_snapshot"]
+        bundle = report_request["public_bundle"]
         manifest = bundle.get("manifest")
         if not isinstance(manifest, dict) or not isinstance(
             manifest.get("index_release_id"), str
@@ -90,9 +91,9 @@ class ProducerAnalysisRunner:
             f"{item['id']}@{item['revision']}"
             for item in citations
         )
-        report_task = dict(request["task"])
-        if "feedback" in request:
-            feedback = request["feedback"]
+        report_task = dict(report_request["task"])
+        if "feedback" in report_request:
+            feedback = report_request["feedback"]
             if not isinstance(feedback, dict):
                 raise PlannerUnavailable("analysis request feedback is malformed")
             report_task["feedback"] = feedback
@@ -107,6 +108,23 @@ class ProducerAnalysisRunner:
             public_refs=public_refs,
         )
         return ProducerAnalysisExecution(result, report)
+
+    @staticmethod
+    def _snapshot_request(request: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+        if not isinstance(request, dict):
+            raise PlannerUnavailable("analysis request must be a JSON object")
+        try:
+            encoded = json.dumps(
+                request, ensure_ascii=False, separators=(",", ":"), allow_nan=False
+            ).encode("utf-8")
+            if len(encoded) + 1 > MAX_REQUEST_BYTES:
+                raise PlannerUnavailable("analysis request exceeds the local planner size limit")
+            payload = encoded.decode("utf-8")
+            return json.loads(payload), json.loads(payload)
+        except PlannerUnavailable:
+            raise
+        except (TypeError, ValueError, UnicodeError, RecursionError, RuntimeError):
+            raise PlannerUnavailable("analysis request is not a bounded JSON object") from None
 
     @staticmethod
     def _require_matching_feedback(request: dict[str, Any]) -> None:
