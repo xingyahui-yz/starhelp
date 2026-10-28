@@ -42,7 +42,9 @@ class SyntheticDemoContext:
     request: dict[str, Any]
 
 
-def prepare_synthetic_demo(profiles: ProfileRepository) -> SyntheticDemoContext:
+def prepare_synthetic_demo(
+    profiles: ProfileRepository, *, feedback: dict[str, Any] | None = None
+) -> SyntheticDemoContext:
     """Load only pinned synthetic fixtures and create/reuse a separate synthetic profile.
 
     The embedded key is explicitly test-only. This function has no network client and must never
@@ -138,6 +140,7 @@ def prepare_synthetic_demo(profiles: ProfileRepository) -> SyntheticDemoContext:
         snapshot_producer_commit=_B_SNAPSHOT_COMMIT,
         snapshot_format_profile=_B_SNAPSHOT_PROFILE,
         evaluation_time=datetime.now(UTC),
+        feedback=feedback,
     )
     return SyntheticDemoContext(
         profile=profile,

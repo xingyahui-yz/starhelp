@@ -55,6 +55,11 @@ identity of a physical copy.
 - The task form saves the latest target and local constraints under the selected encrypted profile,
   restores that profile's values, and clears them on profile revocation. It records a waiting state;
   it does not call a planner or present a recommendation.
+- The Reports page offers a feedback/reanalysis action only for an explicitly saved synthetic-demo
+  report. It submits a fixed, labeled fixture feedback value to the local worker and stages the new
+  result without saving it. Ordinary reports cannot use this action; player-facing production
+  feedback/reanalysis still awaits frozen M0 mappings, a production request builder/trust tuple, and
+  reviewed troubleshooting data.
 - OCR: optional local RapidOCR adapter, with explicit text-to-field mapping and confirmation;
   screenshot bytes stay in memory during recognition and OCR output is not trusted automatically.
 - Structured import equipment facts preserve each field's source, observation time, optional scope,

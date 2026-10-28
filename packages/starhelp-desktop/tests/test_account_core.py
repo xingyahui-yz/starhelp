@@ -16,7 +16,7 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QDialog, QListWidget, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QListWidget, QInputDialog, QMessageBox
 
 from starhelp_desktop.bundles import (
     BundleRejected,
@@ -469,6 +469,7 @@ class ProgressPageTests(unittest.TestCase):
             self.app.processEvents()
             report_page.report_list.setCurrentRow(0)
             self.app.processEvents()
+            self.assertFalse(report_page.synthetic_reanalysis_button.isEnabled())
             self.assertEqual(task_page.stage.text(), "fixture-stage-secret")
             self.assertIn("synthetic-report-secret", report_page.detail.toPlainText())
 
@@ -724,6 +725,37 @@ class ProgressPageTests(unittest.TestCase):
 
             reports_page.save_pending_button.click()
             self.assertIsNone(reports_page.pending_report)
+            self.assertEqual(
+                len(store.list_profile_keys(demo_profiles[0].profile_id, "report")), 1
+            )
+            reports_page.report_list.setCurrentRow(0)
+            self.assertTrue(reports_page.synthetic_reanalysis_button.isEnabled())
+            reports_page.synthetic_reanalysis_requested.connect(
+                task_page.run_synthetic_feedback_demo
+            )
+            with patch(
+                "starhelp_desktop.gui.QInputDialog.getItem",
+                return_value=("生存问题（仅合成标记）", True),
+            ):
+                reports_page.synthetic_reanalysis_button.click()
+
+            deadline = time.monotonic() + 30
+            while (
+                reports_page.pending_report is None
+                and task_page._demo_worker is not None
+                and time.monotonic() < deadline
+            ):
+                self.app.processEvents()
+                time.sleep(0.01)
+            self.assertIsNotNone(reports_page.pending_report, task_page.status.text())
+            assert reports_page.pending_report is not None
+            self.assertTrue(reports_page.pending_report.task.get("synthetic_demo"))
+            self.assertEqual(
+                reports_page.pending_report.task["feedback"]["fields"][
+                    "fixture:failure_kind"
+                ]["value"],
+                "fixture:survival",
+            )
             self.assertEqual(
                 len(store.list_profile_keys(demo_profiles[0].profile_id, "report")), 1
             )

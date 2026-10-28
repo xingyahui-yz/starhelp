@@ -1101,6 +1101,22 @@ request. This client README confirms the URL shape only: it does not establish h
 UIDs across regions, its data coverage, privacy terms, or rate limits. UID-to-region mapping therefore
 remains an M0 item, and no real UID was requested during this check.
 
+## Synthetic feedback/reanalysis UI (2026-10-28)
+
+The Reports page now exposes “反馈并重新分析（仅合成 fixture）” only when the selected saved report
+belongs to the active `synthetic-demo` profile. The user selects one of three fixed synthetic failure
+labels; B binds it to the saved report's task scope, marks it `user_reported`, and passes it through the
+existing bounded request builder to the local worker. The result returns to the unsaved report
+preview, and the saved-report count stays unchanged until the separate save action. The action is
+disabled for ordinary reports, and there is no network route in this flow.
+
+The end-to-end PySide6 regression uses the pinned synthetic S3 bundle and packaged C wheel: it saves
+an initial demo report, selects synthetic feedback, reruns the local worker, confirms the feedback is
+present in the new temporary report, and confirms the second report was not saved automatically.
+This closes a synthetic UI/worker/report plumbing gap only. Production task analysis and player
+feedback/reanalysis remain unavailable pending the shared M0 tuple, production trust and mappings,
+and reviewed troubleshooting content. No real account or UID was used.
+
 ## Strict task-preference loading and progress-page events (2026-10-28)
 
 `AnalysisTaskDraft.from_dict()` now rejects unknown/missing keys, boolean generations/progress,
@@ -1123,3 +1139,20 @@ Qt6Core/Qt6Widgets; the packaged worker passed the signed synthetic S3 replay; a
 smoke passed synthetic install, upgrade, two-way rollback, and tamper rejection in its guarded
 temporary directory. This does not establish production M0, publisher signing, target-user Windows
 compatibility, or player acceptance. No real UID/account data was used.
+
+## Candidate refreshed for synthetic feedback UI (2026-10-28)
+
+The full package suite passed 70 tests, including the end-to-end synthetic feedback/reanalysis flow
+and the ordinary-report gate. `compileall -q src packaging` and `git diff --check` passed. The new
+unsigned PyInstaller 6.22.3 candidate was built with the pinned C 0.4.0 wheel; all 920 manifest files
+and hashes matched (manifest SHA-256
+`64f310db62ff3ac5b9ecc75abc444d48e7ff7b261e4d24b423d78b647d3a2dd1`; packaged worker SHA-256
+`3c257894d72a5d4fe0df7998861b0bd99f973258616c4ef4935d647c614a67b7`). Candidate OCR recognized
+synthetic `LEVEL 80`; the GUI stayed alive eight seconds and loaded candidate-local Qt6Core/Qt6Widgets;
+the packaged worker passed the signed synthetic S3 replay; and the installer smoke passed synthetic
+install, upgrade, two-way rollback, and tamper rejection in a guarded temporary directory.
+
+This candidate remains unsigned and tested only on the build host. The feedback/reanalysis UI is still
+limited to synthetic demo reports. Production mappings/trust, live A integration, reviewed production
+troubleshooting, target-user Windows validation, publisher signing, and player-provided acceptance
+remain open.

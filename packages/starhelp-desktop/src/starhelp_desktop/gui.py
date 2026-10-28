@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
+    QInputDialog,
     QPushButton,
     QProgressBar,
     QStackedWidget,
@@ -273,25 +274,38 @@ class TaskPage(_Page):
         self.reload_profiles()
 
     def run_synthetic_demo(self) -> None:
+        self._run_synthetic_demo()
+
+    def run_synthetic_feedback_demo(self, feedback: object) -> None:
+        if not isinstance(feedback, dict):
+            self.status.setText("反馈格式无效；没有运行合成分析。")
+            return
+        self._run_synthetic_demo(feedback=feedback)
+
+    def _run_synthetic_demo(self, *, feedback: dict[str, Any] | None = None) -> None:
         if self._demo_worker is not None:
             return
-        choice = QMessageBox.question(
-            self,
-            "运行合成联调演示",
-            "将只使用应用内置并校验摘要的 A 签名 fixture、测试公钥和合成 B 快照，"
-            "创建或复用一个单独的加密演示档案；不会读取当前所选真实档案，也不会访问网络。"
-            "演示任务会允许装备重排，结果只用于合成联调，不代表真实游戏建议。"
-            "演示档案可在“账号与导入”页撤权并删除。是否继续？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-        if choice != QMessageBox.StandardButton.Yes:
-            return
+        if feedback is None:
+            choice = QMessageBox.question(
+                self,
+                "运行合成联调演示",
+                "将只使用应用内置并校验摘要的 A 签名 fixture、测试公钥和合成 B 快照，"
+                "创建或复用一个单独的加密演示档案；不会读取当前所选真实档案，也不会访问网络。"
+                "演示任务会允许装备重排，结果只用于合成联调，不代表真实游戏建议。"
+                "演示档案可在“账号与导入”页撤权并删除。是否继续？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel,
+            )
+            if choice != QMessageBox.StandardButton.Yes:
+                return
         self.synthetic_demo.setEnabled(False)
-        self.status.setText("正在验证内置合成 fixture…")
+        self.status.setText(
+            "正在验证内置合成 fixture…" if feedback is None
+            else "正在准备带玩家自述字段的合成重新分析…"
+        )
         self.progress.setRange(0, 0)
         try:
-            context = prepare_synthetic_demo(self.profiles)
+            context = prepare_synthetic_demo(self.profiles, feedback=feedback)
             scope = context.task["scope"]
             public_goal = context.task["public_goal"]
             draft = AnalysisTaskDraft.create(
@@ -334,6 +348,9 @@ class TaskPage(_Page):
                 task={**report.task, "synthetic_demo": True},
             )
             self.status.setText(
+                "合成重新分析完成：反馈和结果仅待在报告页预览，尚未保存。"
+                "此结果仅来自 fixture，不代表真实游戏建议。"
+                if report.task.get("feedback") is not None else
                 "合成联调完成：报告仅待在报告页预览，尚未保存。"
                 "此结果仅来自 fixture，不代表真实游戏建议。"
             )
@@ -1534,6 +1551,8 @@ class AccountsPage(_Page):
 
 
 class ReportsPage(_Page):
+    synthetic_reanalysis_requested = Signal(object)
+
     def __init__(self, profiles: ProfileRepository, lifecycle: ProfileLifecycle,
                  store: EncryptedPrivateStore, public_cache: PublicBundleCache) -> None:
         super().__init__(
@@ -1550,6 +1569,11 @@ class ReportsPage(_Page):
         self.refresh_button = QPushButton("刷新档案与报告状态")
         self.save_pending_button = QPushButton("主动保存当前分析结果")
         self.save_pending_button.setEnabled(False)
+        self.synthetic_reanalysis_button = QPushButton("反馈并重新分析（仅合成 fixture）")
+        self.synthetic_reanalysis_button.setToolTip(
+            "只对已保存的合成联调报告有效；所选反馈只传给本地合成 worker，不访问网络。"
+        )
+        self.synthetic_reanalysis_button.setEnabled(False)
         self.status = QLabel("规划器尚未接入，不会自动生成或保存攻略报告。")
         self.status.setWordWrap(True)
         self.report_list = QListWidget()
@@ -1560,12 +1584,14 @@ class ReportsPage(_Page):
         row.addWidget(self.profile_list, 1)
         row.addWidget(self.refresh_button)
         row.addWidget(self.save_pending_button)
+        row.addWidget(self.synthetic_reanalysis_button)
         self.content.addLayout(row)
         self.content.addWidget(self.status)
         self.content.addWidget(self.report_list, 1)
         self.content.addWidget(self.detail, 2)
         self.refresh_button.clicked.connect(self.reload_profiles)
         self.save_pending_button.clicked.connect(self.save_pending_report)
+        self.synthetic_reanalysis_button.clicked.connect(self.request_synthetic_reanalysis)
         self.profile_list.currentIndexChanged.connect(self.refresh_reports)
         self.report_list.currentItemChanged.connect(self.show_report)
         self.reload_profiles()
@@ -1586,6 +1612,7 @@ class ReportsPage(_Page):
         self.reload_profiles()
 
     def refresh_reports(self, *_args: object) -> None:
+        self.synthetic_reanalysis_button.setEnabled(False)
         self.report_list.clear()
         self.saved_reports.clear()
         self.detail.clear()
@@ -1650,13 +1677,83 @@ class ReportsPage(_Page):
         self._render_pending_report(selected)
 
     def show_report(self, current: QListWidgetItem | None, _previous: QListWidgetItem | None) -> None:
+        self.synthetic_reanalysis_button.setEnabled(False)
         if current is None:
             self.detail.clear()
             return
         report = self.saved_reports.get(str(current.data(Qt.ItemDataRole.UserRole)))
         if report is None:
             return
+        selected_profile = self.profile_list.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == selected_profile), None)
+        self.synthetic_reanalysis_button.setEnabled(
+            report.task.get("synthetic_demo") is True
+            and profile is not None
+            and profile.provider_id == "synthetic-demo"
+            and self.lifecycle.is_active(report.profile_id, report.authorization_generation)
+        )
         self.detail.setPlainText(self._render_report_detail(report, include_created_at=True))
+
+    def request_synthetic_reanalysis(self) -> None:
+        current = self.report_list.currentItem()
+        report = self.saved_reports.get(
+            str(current.data(Qt.ItemDataRole.UserRole)) if current is not None else ""
+        )
+        selected_profile = self.profile_list.currentData()
+        profile = next((item for item in self.profiles.list_profiles()
+                        if str(item.profile_id) == selected_profile), None)
+        if (
+            report is None
+            or report.task.get("synthetic_demo") is not True
+            or selected_profile != str(report.profile_id)
+            or profile is None
+            or profile.provider_id != "synthetic-demo"
+            or not self.lifecycle.is_active(report.profile_id, report.authorization_generation)
+        ):
+            self.status.setText("只有当前有效的已保存合成联调报告可以执行反馈重跑。")
+            return
+        scope = report.task.get("scope")
+        if not isinstance(scope, dict):
+            self.status.setText("合成报告缺少任务范围；没有运行反馈重跑。")
+            return
+        choices = (
+            "生存问题（仅合成标记）",
+            "伤害问题（仅合成标记）",
+            "限时问题（仅合成标记）",
+        )
+        selected, accepted = QInputDialog.getItem(
+            self,
+            "合成反馈重新分析",
+            "选择一个仅用于 fixture 的自述现象。此数据只交给本地合成 worker，不访问网络：",
+            list(choices),
+            0,
+            False,
+        )
+        if not accepted:
+            return
+        failure_value = {
+            choices[0]: "fixture:survival",
+            choices[1]: "fixture:damage",
+            choices[2]: "fixture:timing",
+        }.get(selected)
+        if failure_value is None:
+            self.status.setText("未知的合成反馈选项；没有运行反馈重跑。")
+            return
+        self.synthetic_reanalysis_requested.emit({
+            "scope": dict(scope),
+            "fields": {
+                "fixture:failure_kind": {
+                    "value": failure_value,
+                    "state": "user_reported",
+                    "unit": "fixture:label",
+                    "measurement_context": {
+                        "phase": "fixture:reported",
+                        "assumptions": [],
+                    },
+                },
+            },
+        })
 
     def _render_report_detail(self, report: AnalysisReport, *, include_created_at: bool) -> str:
         metadata = {
@@ -2143,6 +2240,9 @@ class StarHelpWindow(QMainWindow):
         self.pages.addWidget(self.progress_page)
         self.reports_page = ReportsPage(self.profiles, self.lifecycle, store, public_cache)
         self.task_page.temporary_report_ready.connect(self.reports_page.stage_temporary_report)
+        self.reports_page.synthetic_reanalysis_requested.connect(
+            self.task_page.run_synthetic_feedback_demo
+        )
         self.pages.addWidget(self.reports_page)
         self.pages.addWidget(SettingsPage())
         layout.addWidget(self.navigation)
