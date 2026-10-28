@@ -1050,3 +1050,20 @@ fixtures in a unique `%TEMP%` directory. No candidate was installed over the use
 This candidate remains unsigned and synthetic-only. M0 mappings/trust, C acceptance of the B
 request-builder provenance tuple, production A integration, reviewed troubleshooting evidence,
 target-user Windows validation, publisher signing, and player-provided acceptance remain open.
+
+## C static review follow-up (2026-10-28)
+
+C's read-only review at `parallel/local-planner` commit
+`6a10fba12a719c314c88fd7b79930aa90768344e` confirms that the snapshot format anchor and the
+actual request-builder source must be tracked separately. It recommends a mandatory new producer
+request profile/component with an explicitly registered builder/source/artifact tuple; an
+optional provenance field in the old profile would be ignorable and is not an adequate gate. The
+review is static, not a freeze or acceptance of B `9c51720`, its rebuilt candidate, or the current
+S3 wheel. It did not execute the B candidate or establish a new cross-component tuple.
+
+B `9c51720` now rejects mismatched or one-sided outer/inner feedback before launching the planner,
+with synthetic regression coverage. C's proposed future consumer acceptance also calls for checks
+between request submission, result receipt, report staging/saving, and changes to public validity
+basis. Those gates and the new producer profile remain unimplemented/unfrozen pending a shared
+tuple; do not relabel the old serializer profile or claim full M0/S3 acceptance. This C review was
+read from its committed documentation; no cross-thread message was sent from B.
