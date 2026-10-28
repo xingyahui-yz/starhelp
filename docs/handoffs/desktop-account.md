@@ -36,10 +36,10 @@ shared contract or unlock production TaskPage analysis.
 | Producer request | Outer `AnalysisRequest` / `0.1-draft` contains request ID and authorization generation, full validated public bundle, local task, and an account snapshot authorization wrapper. Embedded `ProducerAnalysisRequest` / `0.1` / `starhelp.producers.v0.1` carries exact raw A bundle and B snapshot JSON plus SHA-256, producer commit and format profile, expected release, active local profile/generation, explicitly supplied distribution trust purpose/key material, task, UTC evaluation time, and latest-known withdrawn evidence refs. It is passed only to the local worker; the B adapter itself does not contact A or a remote model. |
 | Worker stdio | Protocol `starhelp-local-planner` / `0.1-draft`: one UTF-8 JSON `AnalysisRequest` on stdin (8 MiB maximum), one versioned JSON response on stdout (16 MiB maximum), default 30-second timeout. Response has `protocol`, `protocol_version`, `planner_version`, `capabilities`, and `result`. Result correlation requires `request_id`, `snapshot_revision`, and `authorization_generation`; eligible reports additionally require exact release ID and evidence `{id, revision}` references. Authorization revocation cancels/kills the worker and late results are rejected. |
 | Worker errors | Domain errors use a normal response with `result.status = error`, adapter `planner_error`/error details, and correlation fields. Malformed input or unexpected exceptions are silent on stderr and exit 3; oversized input exits 2; oversized response exits 4. The parent maps missing/invalid stdout and nonzero process exits to `PlannerUnavailable`; those process failures do not carry structured request correlation. |
-| Capabilities | Synthetic A envelope requires `starhelp.knowledge-distribution.v1`. C planner view validates `starhelp.local-profile.v0.2`. The worker reports `starhelp.producers.v0.1` and `starhelp.local-profile.v0.2`; B requires both. Pinned C artifact is package `0.3.0`, rules `0.2.0`, wheel SHA-256 `f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca`, built from `b87e963c195acb236918b579d76d74a2853cc623`. |
+| Capabilities | Synthetic A envelope requires `starhelp.knowledge-distribution.v1`. C planner view validates `starhelp.local-profile.v0.2`. The B2 worker reports `starhelp.producers.v0.1` and `starhelp.local-profile.v0.2`; B requires both. Current B2 pin is C package `0.4.0`, native rules `0.2.0`, wheel SHA-256 `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2`, source commit `f627590468154cc8622dad8647fefe9f6fd3c4ee`. The 0.3.0 row in earlier dated review notes remains historical. |
 | Units and conditions | C requires an attribute definition with value type, unit, phase list, and loadout-dependence. Public conditions must use a registered attribute, supported finite operator, exact registered unit, and a measurement context with an allowed phase and explicit assumptions; unknown unit/context/attribute semantics reject the bundle/condition as unsupported. During matching, absent, unconfirmed, conflicting, stale, unit-mismatched, context-mismatched, or out-of-scope local facts yield `match_status = unknown` with a reason code, not a guessed numeric comparison. B has no production field/unit mapping. |
 
-The only replayed release remains A `rel_fixture_0001` (one mode, no equipment requirements), the fixed B snapshot fixture, and C wheel 0.3.0. The production contract remains `0.1-draft`; production field mappings, all three modes, equipment identity/allocation coverage, trust configuration, and API error semantics remain open M0 inputs.
+The earlier S1 review below covered A `rel_fixture_0001` and C 0.3.0. Current B2 evidence also covers A `rel_fixture_s3_0001`, B1 snapshot profile `starhelp.desktop.snapshot.interop-min.v0.1`, and C 0.4.0: source and packaged worker each matched 21 captured cases. This synthetic evidence covers three fixture modes, equipment identity/allocation cases, locks, pending candidates, and withdrawal. The production contract remains `0.1-draft`; real game ID/field mapping, production trust and transport, complete materials and final-loadout panel evidence remain open M0 inputs.
 
 ## B review of `starhelp.interop-min.v0.1` (2026-10-20; candidate only)
 
@@ -677,20 +677,20 @@ Verification: all 56 package tests pass; `compileall` and `git diff --check` pas
 
 Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest matches the exact candidate file set; isolated 8-second startup loaded Qt6Core/Qt6Widgets; synthetic install, upgrade, two-way rollback and tamper rejection passed. No real UID request was made.
 
-### M0/M6 生产集成待输入清单（2026-10-18）
+### M0/M6 生产集成待输入清单（2026-10-21 更新）
 
-以下是 B 当前被阻的具体流程和所需冻结输入；不改变共同契约、A/C 文件或固定测试产物。
+以下记录 B 当前真实阻塞及所需输入。S3/B2 已完成合成技术回放；这不等于生产来源、映射或数据覆盖已验收。此清单不改变共同契约、A/C 文件或固定测试产物。
 
 | B 流程 | 当前限制 | 最小所需决定/产物 |
 |---|---|---|
-| TaskPage 生产分析 | 任务只在本档案加密记忆，不能构造生产 AnalysisRequest | 固定 `game_version`/`environment`/三种 `mode_id`/`cycle_id`/`stage_id`/`stage_revision`/`public_goal`；表单标签到规范目标映射；snapshot 与 C task 字段、能力及错误枚举 |
-| Progress 三模式 | 只显示 Mihomo `player.memory_data.level`、`chaos_id`、`chaos_level` 原字段，不映射周期/关卡/星数或完整历史 | 版本化的三模式 `mode_records` 结构、来源覆盖和时间语义、实际 ID 映射及固定验收期样例 |
-| 公共包同步与撤回 | 有验证/缓存/双 release 抽象，无生产 source/trust/revocation transport | A 的发现/下载/撤回协议、canonical bytes/hash/signature envelope/key ID/purpose、生产信任锚配置、manifest closure/capability rules、禁用状态 freshness/offline 语义 |
-| UID 公开档案 | 已有 consent-gated Mihomo 读取、返回 UID 匹配及预览；未做真实账号查询 | 获准 provider/许可依据和来源版本、端点/字段覆盖、UID/区服映射、限流/失败政策；不需要真实 UID 样本 |
-| 本地服务/邀请维护 | SettingsPage 如实标出本地服务 lifecycle 与邀请维护未接入 | A 可运行服务产物与 start/stop/health contract；部署身份提供方、邀请和只读权限 provisioning、secret distribution、服务端 ACL/TLS 与审计策略 |
-| A→B→C 完整回放 | `rel_fixture_0001` 只有单 mode 且无设备约束；C handoff 明确完整技术接受未通过 | 新 immutable fixture 版本（三 mode，各 main/complete alternate/no-match；装备 type/slot requirement、ambiguous/confirmed 实例、锁定冲突、跨角色调装、材料覆盖/成本、withdrawal），随附原始 hashes 和预期 B/C 输出 |
+| TaskPage 生产分析 | 已能从同一签名 S3 fixture 选择规范 task 并通过 C 0.4.0；真实任务仍无游戏版本/环境/模式/周期/关卡/目标映射，UI 标签不能推导这些 ID | A/内容维护方确认真实且获准发布的 ID、修订、目标语义及适用期；B/C 对照当期人工审核样例。生产内容批准仍需明确人工审阅 |
+| Progress 三模式 | Mihomo 只提供展示字段及有限进度摘要，不证明完整历史、星数、周期或未展示模式；当前没有生产 `mode_records` 映射 | 获准来源字段、三模式实际 ID/覆盖/更新时间及固定样例；缺失记录继续显示 unknown，不填零或推断通关 |
+| 公共包同步与撤回 | B 已有签名校验、双版本缓存、原子激活/回滚与最新已知撤回处理；尚无接入 A 的生产发现/下载/撤回 transport，也无生产公钥配置 | A 提供受支持的服务接口与原始字节/摘要/签名/撤回 freshness 规则；协调确定独立信任锚 provisioning、key rotation 和离线状态。测试 key 只用于 synthetic-test |
+| UID 公开档案 | 已有明确确认后直接读取 Mihomo、UID 回显匹配、重定向拒绝及预览；未查询真实 UID，服务覆盖和区服映射未认证 | 确认允许使用的来源/许可、精确端点和字段覆盖、区服映射、限流/失败语义。目标账号只能由用户主动提供并在本机明确授权后查询 |
+| 本地服务/邀请维护 | SettingsPage 明确显示服务 lifecycle 和邀请维护未接通；A 当前为本地 CLI/WSGI，没有共享部署可供 B 验收 | A 提供部署目标、start/stop/health、身份提供方、邀请/read-only 权限 provisioning、TLS/ACL/审计及 secret distribution 方案，再做本机到服务联调 |
+| S3 技术 replay 与数据覆盖 | B 源 `LocalPlannerProcess` 和打包 worker 对 C 已锁定的 21 个捕获均与 C 报告匹配 21/21；C 原报告的 `not_exercised` 记录早于 B2，仍列 B2 host 未验。当前 AccountSnapshot 不表达完整材料库存、独立单位/面板语境或最终配装面板 | 协调方可用 B2 host commit `c248daab22255a069464a6d277757d01df5d49f3` 与候选摘要复核并更新 C 报告。若要验证完整库存/材料正向计算或最终面板，先提出版本化 schema/profile/capability 扩展并由 A/B/C 确认，再实现对应输入和可核验期望；不得在当前 profile 下伪造完整覆盖 |
 
-交接基线仍是共同契约 `0.1-draft`、A 合成 release `rel_fixture_0001`、C 固定 wheel 0.3.0；保持这些字节和版本不变。协调方冻结新接口后，A/C 发布新版本产物，B 再以黑盒方式消费并验证。来源/内容人工批准、生产 signing trust、服务部署和用户本机真实账号验收分别设 gate。现有合成回放不能证明生产 M0/M5/M6 或完整 MVP 完成。
+当前技术集成元组为 A producer `0.3.0` / release `rel_fixture_s3_0001`、B1 serializer `103741e02c90ac672017f783058bdd8dacae982e`、B host B2 `c248daab22255a069464a6d277757d01df5d49f3`、C wheel `0.4.0` / native rules `0.2.0`。共同生产契约仍为 `0.1-draft`；固定技术接口只覆盖合成回放。内容许可/人工批准、生产 signing trust、在线服务部署、完整材料/面板表示、发布签名、目标 Windows 和真实账号验收分别保持独立关口。
 
 ### UID/区服编辑后重置公开查询同意（2026-10-18）
 
@@ -750,6 +750,35 @@ replayed the 21 committed C capture wrappers through the pinned vendor wheel. Th
 `StarHelpPlannerWorker.exe` replayed the same 21 cases. In both runs, status, available variant IDs,
 and pending variant IDs matched C's installed-wheel report 21/21. A separate packaged withdrawal
 run returned correlated `withdrawn_public_object` and produced no temporary or saved report.
+
+| Capture | Status | Available | Pending | Rejected |
+|---|---:|---:|---:|---:|
+| `stage-0-ambiguous_move` | `confirmation_required` | 0 | 2 | 0 |
+| `stage-0-complete_alternate` | `plans_available` | 1 | 0 | 1 |
+| `stage-0-locked_move` | `confirmation_required` | 0 | 2 | 0 |
+| `stage-0-main_current_equipment` | `plans_available` | 2 | 0 | 0 |
+| `stage-0-missing_fields` | `plans_available` | 2 | 0 | 0 |
+| `stage-0-normal` | `plans_available` | 2 | 0 | 0 |
+| `stage-0-not_owned` | `no_feasible_variant` | 0 | 0 | 2 |
+| `stage-0-player_confirmed_move` | `plans_available` | 2 | 0 | 0 |
+| `stage-0-same_type_distinct_instance` | `plans_available` | 2 | 0 | 0 |
+| `stage-0-source_confirmed_move` | `confirmation_required` | 0 | 2 | 0 |
+| `stage-0-unknown_ownership` | `confirmation_required` | 0 | 2 | 0 |
+| `stage-1-complete_alternate` | `plans_available` | 1 | 0 | 1 |
+| `stage-1-missing_fields` | `plans_available` | 2 | 0 | 0 |
+| `stage-1-normal` | `plans_available` | 2 | 0 | 0 |
+| `stage-1-not_owned` | `no_feasible_variant` | 0 | 0 | 2 |
+| `stage-1-unknown_ownership` | `confirmation_required` | 0 | 2 | 0 |
+| `stage-2-complete_alternate` | `plans_available` | 1 | 0 | 1 |
+| `stage-2-missing_fields` | `plans_available` | 2 | 0 | 0 |
+| `stage-2-normal` | `plans_available` | 2 | 0 | 0 |
+| `stage-2-not_owned` | `no_feasible_variant` | 0 | 0 | 2 |
+| `stage-2-unknown_ownership` | `confirmation_required` | 0 | 2 | 0 |
+
+Counts are B-adapter result arrays; C's locked report exposes its native `available` projection
+with a different shape. Both B runs compared the complete available/pending variant identities as
+well as status, not just these counts. C's earlier `not_exercised` label for B2 is stale relative to
+this evidence; its material-inventory and final-loadout positive checks remain unexercised.
 
 The single post-B2 PyInstaller build used Python 3.12.14 and PyInstaller 6.22.3. The candidate has
 920 manifest entries; the manifest hash is
