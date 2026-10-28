@@ -1067,3 +1067,26 @@ between request submission, result receipt, report staging/saving, and changes t
 basis. Those gates and the new producer profile remain unimplemented/unfrozen pending a shared
 tuple; do not relabel the old serializer profile or claim full M0/S3 acceptance. This C review was
 read from its committed documentation; no cross-thread message was sent from B.
+
+## Request snapshot isolation candidate (2026-10-28)
+
+B source commit `dd904e3edc11177e735381d454c1b8e3b114897d` strengthens the runner boundary: it
+serializes the bounded request once, creates separate JSON copies for the worker and report, checks
+outer/nested feedback agreement on the report-bound copy, then uses that copy for report scope,
+snapshot, citations, and feedback. A synthetic regression mutates the worker's received copy and
+confirms that the original request and temporary report retain the pre-submit feedback. The full
+component suite passes 69 tests and `compileall -q src packaging` passes.
+
+The prior `9c51720` candidate is superseded. The unsigned PyInstaller 6.22.3 candidate was rebuilt
+from `dd904e3` with the pinned C 0.4.0 wheel. Its exact 920-file set and hashes were verified;
+manifest SHA-256 is `3d2fd1b39449e0bc2e67557c7376cd18b3e5f18df01068dd78dd5f1eb408932b`, and worker
+SHA-256 is `b7add70426eef2ac5f3d52ce67392ea6112e073f2c53e791a9a1cad23ebd31fe`. OCR recognized the
+synthetic `LEVEL 80`; the GUI stayed alive for eight seconds with Qt6Core/Qt6Widgets loaded; and
+the packaged worker passed the signed synthetic S3 replay. The installer smoke again passed
+install, upgrade, two-way rollback, and tamper rejection with synthetic installer fixtures in its
+guarded temporary directory.
+
+This validates B request/report binding and the built artifact only. C's new mandatory producer
+profile and full request/result/public-validity binding remain proposals, not a frozen tuple;
+production mappings/trust, actual A service integration, publisher signing, target-user validation,
+and player acceptance remain open. No real UID/account was used and the existing `.tmp/` was kept.
