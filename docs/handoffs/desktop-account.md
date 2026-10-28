@@ -794,3 +794,22 @@ record is `packages/starhelp-desktop/build/candidate-verification-2026-10-21.txt
 This advances the synthetic B2 integration only. The candidate is unsigned; production mode/task
 mapping, production signing trust and revocation transport, publisher signing, target-machine
 review, and real-account acceptance remain open. No real UID or account was queried.
+
+## S4.1 A→B production integration interface review (2026-10-28)
+
+Read-only review of A's proposal at commit `ed0028c7e3a3ce00929cf7ae3db939cb137ced06`
+(`production-integration-proposal-v0.1-draft.md`, blob
+`b6e09bdbfc2ea770bbcdb17940ea11ae0111a2fb`). The B-side review is in
+[`s4-1-integration-review.md`](../../packages/starhelp-desktop/docs/s4-1-integration-review.md).
+The agreed product sequence stays two-stage: a B-managed A process bound to loopback for the
+first Windows MVP, then shared HTTPS A managed by its host for the second stage. This review
+does not freeze wire fields or freshness windows and does not change S3/B1 artifacts.
+
+Code inspection confirmed B currently has a generic `PublicBundleSource` returning only release ID
+and object/bytes, a synchronizer that checks bundle signature/capabilities/closure, and an atomic
+two-release cache. It has no signed catalog/withdrawal validation, freshness enforcement, explicit
+rollback API, HTTPS source, or A process controller. The local verification receipt is unsigned and
+only binds cached bytes to a local timestamp. The review records the missing catalog tuple, signed
+sequence/expiry/withdrawal fields and errors, plus readiness, process ownership, loopback and staged
+HTTPS boundaries. This is a design review only; no production HTTP or service process was started,
+and no A/C source, shared contract, S3 fixture, B1 serializer, or candidate was modified.
