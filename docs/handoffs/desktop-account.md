@@ -1177,3 +1177,45 @@ own `_internal`; the actual packaged worker passed the signed synthetic S3 repla
 smoke passed install, upgrade, two-way rollback, and tamper rejection in a unique temporary
 directory. This is build-host evidence only; the candidate remains unsigned, production M0/A
 integration and target-user acceptance remain open, and no real UID/account was used.
+
+## Current M0 and B2 producer-builder freeze inputs (2026-10-28)
+
+Read-only comparison of the current component records confirms that the remaining integration work
+is not a missing synthetic fixture. B's `producer-interop-s3` sample pins A producer commit
+`dcb1e3ee220b85229bedc6c79d72ebe495825f37`, A envelope profile
+`starhelp.b-publicbundle-envelope.v1`, B snapshot serializer commit
+`103741e02c90ac672017f783058bdd8dacae982e` / profile
+`starhelp.desktop.snapshot.interop-min.v0.1`, release `rel_fixture_s3_0001`, and a test-only key.
+C's current adapter API documents this A 0.3.0 producer and B1 serializer as admitted to its 0.4.0
+wheel. The checked-in S3 fixture exercises three synthetic modes and equipment cases. These facts
+support the existing synthetic packaged-worker replay only; they do not establish production M0 or
+real-data semantics.
+
+The current C review (read from C `6a10fba`) separately says the B request-building code needs its
+own mandatory producer profile and exact source/artifact tuple. The current B request envelope
+records A producer and B snapshot provenance; its `adapter_profile` names C's consumer adapter and
+does not identify the B builder implementation. Do not relabel the snapshot serializer profile or
+silently add an optional field: C's review says that would not be an enforceable compatibility
+gate. Freeze a required B builder profile and its accepted source/artifact identity with the
+coordinator and C before production request construction is enabled.
+
+Concrete production inputs still absent from the M0 draft are:
+
+- An authorized, documented public data source and allowed host/path, with actual exposed fields,
+  coverage limits, freshness/rate rules, and applicable use/storage terms. A's current handoff
+  reports no live source as both authorized and verified.
+- Verified game-version/environment and mode, cycle, stage, character, equipment-type, and external
+  ID mappings, plus the confirmed public-goal and task-scope values. The selected Mihomo server or
+  region is local metadata today; its UID routing semantics remain unverified.
+- Shared condition attribute IDs, operators, units, measurement phases/assumptions, ownership and
+  coverage meanings, and physical-equipment identity policy for real imported records.
+- Production A distribution endpoints and catalog/revocation semantics, freshness/offline rules,
+  and a provisioned publisher key plus independently pinned B trust anchor/key purpose. The
+  synthetic fixture key is test-only.
+- The mandatory B request-builder profile/source/artifact tuple and C-accepted binding rules across
+  submission, result receipt, staged/saved report, snapshot revision, authorization generation,
+  and public validity basis.
+
+Until these are frozen and supported by dated real-source samples plus a reviewed production trust
+configuration, keep production analysis/synchronization disabled and continue using the explicitly
+labeled synthetic demo. No real UID or account data was accessed for this comparison.
