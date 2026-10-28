@@ -1011,3 +1011,19 @@ synthetic interop evidence only. B attempted to send the compatibility proposal 
 automatic review rejected that cross-thread message because authorization to contact C was not
 established for this action. No workaround was attempted; the proposal is recorded here for the
 coordinator's review.
+
+## Current-tree verification and remaining acceptance gates (2026-10-28)
+
+At B HEAD `125f2ac9f0c1545940c30522cc9fc863bae76140`, the package source is unchanged from the
+`16ea426` development candidate; this commit only adds handoff documentation. Re-ran
+`.venv\Scripts\python.exe -m unittest discover -s tests -v` from `packages/starhelp-desktop/`:
+67 tests passed. `compileall -q src packaging` also passed. These checks validate the current
+source tree, not a candidate rebuilt from `125f2ac`.
+
+The synthetic integration and unsigned candidate evidence above still do not satisfy full M0/M6 or
+target-user acceptance. Remaining gates are: approved real field, region, mode, and task mappings;
+an accepted B request-builder provenance tuple with C; production A trust/withdrawal configuration
+and live adapter; representative signed production bundle and complete positive materials/final
+loadout evidence; publisher signing and signed update metadata; target Windows install/upgrade/
+recovery validation; and player-provided local acceptance. The three-mode/equipment synthetic S3
+fixture already exists and is not listed as missing. No real UID or account data has been accessed.
