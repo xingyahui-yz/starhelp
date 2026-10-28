@@ -9,6 +9,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import Mock
 from uuid import UUID
 
 try:
@@ -25,7 +26,11 @@ from starhelp_desktop.bundles import (
 )
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.models import ProfileAuthorization
-from starhelp_desktop.planner import LocalPlannerProcess, bundled_planner_command
+from starhelp_desktop.planner import (
+    LocalPlannerProcess,
+    PlannerUnavailable,
+    bundled_planner_command,
+)
 from starhelp_desktop.profiles import _snapshot_from_dict
 from starhelp_desktop.producer_request import (
     build_producer_analysis_request,
@@ -51,6 +56,38 @@ SNAPSHOT_FORMAT_PROFILE = "starhelp.desktop.snapshot.interop-min.v0.1"
     serialization is not None, "install the desktop crypto extra for signed interop"
 )
 class ProducerPlannerInteropTests(unittest.TestCase):
+    def test_feedback_mismatch_is_rejected_before_local_planner_call(self) -> None:
+        cases = (
+            {
+                "feedback": {"fields": {"fixture:failure": {"value": "outer"}}},
+                "producer_request": {
+                    "feedback": {"fields": {"fixture:failure": {"value": "inner"}}}
+                },
+            },
+            {
+                "feedback": {"fields": {"fixture:failure": {"value": "outer"}}},
+                "producer_request": {},
+            },
+            {
+                "producer_request": {
+                    "feedback": {"fields": {"fixture:failure": {"value": "inner"}}}
+                },
+            },
+        )
+
+        for request in cases:
+            with self.subTest(request=request):
+                planner = Mock()
+                runner = ProducerAnalysisRunner(planner, Mock())
+                with self.assertRaisesRegex(PlannerUnavailable, "feedback.*match"):
+                    runner.run(
+                        request=request,
+                        profile_id=PROFILE_ID,
+                        authorization_generation=AUTHORIZATION_GENERATION,
+                        lifecycle=Mock(),
+                    )
+                planner.analyze.assert_not_called()
+
     def test_signed_public_bundle_and_current_snapshot_serializer_run_in_local_bridge(self) -> None:
         bundle_bytes = PUBLIC_BUNDLE.read_bytes()
         snapshot_fixture_bytes = ACCOUNT_SNAPSHOT.read_bytes()

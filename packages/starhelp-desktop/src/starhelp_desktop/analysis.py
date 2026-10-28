@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -33,6 +34,7 @@ class ProducerAnalysisRunner:
         lifecycle: ProfileLifecycle,
     ) -> ProducerAnalysisExecution:
         """Analyze locally; never persist the result without a separate explicit save action."""
+        self._require_matching_feedback(request)
         result = self._planner.analyze(
             request=request,
             profile_id=profile_id,
@@ -105,3 +107,38 @@ class ProducerAnalysisRunner:
             public_refs=public_refs,
         )
         return ProducerAnalysisExecution(result, report)
+
+    @staticmethod
+    def _require_matching_feedback(request: dict[str, Any]) -> None:
+        producer_request = request.get("producer_request")
+        if not isinstance(producer_request, dict):
+            if "feedback" in request:
+                raise PlannerUnavailable(
+                    "outer feedback does not match a producer request feedback field"
+                )
+            return
+
+        outer_has_feedback = "feedback" in request
+        producer_has_feedback = "feedback" in producer_request
+        if outer_has_feedback != producer_has_feedback:
+            raise PlannerUnavailable(
+                "outer feedback does not match producer request feedback presence"
+            )
+        if not outer_has_feedback:
+            return
+
+        try:
+            outer_feedback = json.dumps(
+                request["feedback"], ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            )
+            producer_feedback = json.dumps(
+                producer_request["feedback"], ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            )
+        except (TypeError, ValueError):
+            raise PlannerUnavailable("analysis request feedback is not valid JSON") from None
+        if outer_feedback != producer_feedback:
+            raise PlannerUnavailable(
+                "outer feedback does not match producer request feedback"
+            )
