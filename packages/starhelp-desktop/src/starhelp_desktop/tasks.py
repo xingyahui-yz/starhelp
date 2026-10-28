@@ -123,23 +123,52 @@ class AnalysisTaskDraft:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> AnalysisTaskDraft:
-        return cls(
-            task_id=UUID(data["task_id"]),
-            profile_id=UUID(data["profile_id"]),
-            authorization_generation=int(data["authorization_generation"]),
-            mode_label=str(data["mode_label"]),
-            cycle_id=str(data["cycle_id"]),
-            stage_id=str(data["stage_id"]),
-            goal_label=str(data["goal_label"]),
-            fixed_character_ids=tuple(str(item) for item in data.get("fixed_character_ids", [])),
-            excluded_character_ids=tuple(str(item) for item in data.get("excluded_character_ids", [])),
-            locked_equipment_instance_ids=tuple(
-                str(item) for item in data.get("locked_equipment_instance_ids", [])
-            ),
-            created_at=datetime.fromisoformat(data["created_at"]),
-            state=TaskState(data["state"]),
-            progress=int(data["progress"]),
+        expected_keys = {
+            "task_id", "profile_id", "authorization_generation", "mode_label", "cycle_id",
+            "stage_id", "goal_label", "fixed_character_ids", "excluded_character_ids",
+            "locked_equipment_instance_ids", "created_at", "state", "progress",
+        }
+        if not isinstance(data, dict) or set(data) != expected_keys:
+            raise ValueError("malformed task preference fields")
+        text_keys = {
+            "task_id", "profile_id", "mode_label", "cycle_id", "stage_id", "goal_label",
+            "created_at", "state",
+        }
+        if any(not isinstance(data[key], str) for key in text_keys):
+            raise ValueError("malformed task preference text fields")
+        generation = data["authorization_generation"]
+        progress = data["progress"]
+        if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
+            raise ValueError("malformed task preference authorization generation")
+        if not isinstance(progress, int) or isinstance(progress, bool) or not 0 <= progress <= 100:
+            raise ValueError("malformed task preference progress")
+        list_keys = (
+            "fixed_character_ids", "excluded_character_ids", "locked_equipment_instance_ids",
         )
+        if any(
+            not isinstance(data[key], list)
+            or any(not isinstance(item, str) for item in data[key])
+            for key in list_keys
+        ):
+            raise ValueError("malformed task preference identifier lists")
+        try:
+            return cls(
+                task_id=UUID(data["task_id"]),
+                profile_id=UUID(data["profile_id"]),
+                authorization_generation=generation,
+                mode_label=data["mode_label"],
+                cycle_id=data["cycle_id"],
+                stage_id=data["stage_id"],
+                goal_label=data["goal_label"],
+                fixed_character_ids=tuple(data["fixed_character_ids"]),
+                excluded_character_ids=tuple(data["excluded_character_ids"]),
+                locked_equipment_instance_ids=tuple(data["locked_equipment_instance_ids"]),
+                created_at=datetime.fromisoformat(data["created_at"]),
+                state=TaskState(data["state"]),
+                progress=progress,
+            )
+        except (TypeError, ValueError, OverflowError):
+            raise ValueError("malformed task preference value") from None
 
 
 class TaskRepository:

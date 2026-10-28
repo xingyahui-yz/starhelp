@@ -377,6 +377,10 @@ class ProgressPageTests(unittest.TestCase):
             page.add_record_button.click()
             self.app.processEvents()
             self.assertEqual(page.records.count(), 1)
+            self.assertIn(
+                "玩家自述进度已加密保存在所选本地档案",
+                page.history.item(0).text(),
+            )
             self.assertIn("玩家自述：已达成", page.records.item(0).text())
             self.assertIn("不提交给生产分析", page.mode_status.toPlainText())
             self.assertIn("混沌回忆：未知", page.mode_status.toPlainText())
@@ -391,6 +395,7 @@ class ProgressPageTests(unittest.TestCase):
                 page.delete_record_button.click()
             self.app.processEvents()
             self.assertEqual(progress_records.list_entries(profile.profile_id, profile.generation), ())
+            self.assertIn("所选玩家自述进度记录已从本地档案删除", page.history.item(0).text())
             self.assertFalse(progress_path.exists())
             progress_records.add(PlayerProgressEntry.create(
                 profile_id=profile.profile_id,
@@ -1921,6 +1926,36 @@ class StorageLifecycleTests(unittest.TestCase):
             AnalysisTaskDraft.create(**base, locked_equipment_instance_ids="fixture-a,")
         with self.assertRaisesRegex(ValueError, "duplicate identifier"):
             AnalysisTaskDraft.create(**base, fixed_character_ids="fixture-a,fixture-a")
+
+    def test_task_deserialization_rejects_malformed_types_instead_of_coercing(self) -> None:
+        task = AnalysisTaskDraft.create(
+            profile_id=uuid4(),
+            authorization_generation=1,
+            mode_label="fixture-mode",
+            cycle_id="fixture-cycle",
+            stage_id="fixture-stage",
+            goal_label="fixture-goal",
+            fixed_character_ids="fixture-character",
+        )
+        valid = task.to_dict()
+        malformed_records = []
+        for key, value in (
+            ("authorization_generation", True),
+            ("progress", True),
+            ("mode_label", 7),
+            ("cycle_id", None),
+            ("fixed_character_ids", "fixture-character"),
+            ("excluded_character_ids", ["fixture-character", 7]),
+            ("locked_equipment_instance_ids", {"fixture-item": True}),
+            ("created_at", 20261028),
+        ):
+            record = dict(valid)
+            record[key] = value
+            malformed_records.append(record)
+
+        for record in malformed_records:
+            with self.subTest(record=record), self.assertRaises(ValueError):
+                AnalysisTaskDraft.from_dict(record)
 
 
 class BundleTests(unittest.TestCase):

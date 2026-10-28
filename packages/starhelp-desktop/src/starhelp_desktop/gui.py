@@ -1887,6 +1887,7 @@ class _ProgressPage(_Page):
         super().__init__("进度", "查看来源覆盖、记录玩家自述进度，以及本会话的后台任务状态。")
         self.profiles = profiles
         self.progress_records = progress_records
+        self.progress_bus = progress_bus
         profile_row = QHBoxLayout()
         profile_row.addWidget(QLabel("本地档案"))
         self.profile_list = QComboBox()

@@ -1100,3 +1100,26 @@ language query. The UI's server/region label is required local metadata but is n
 request. This client README confirms the URL shape only: it does not establish how the service routes
 UIDs across regions, its data coverage, privacy terms, or rate limits. UID-to-region mapping therefore
 remains an M0 item, and no real UID was requested during this check.
+
+## Strict task-preference loading and progress-page events (2026-10-28)
+
+`AnalysisTaskDraft.from_dict()` now rejects unknown/missing keys, boolean generations/progress,
+coercible non-string task labels, malformed identifier arrays, and non-string timestamps rather than
+silently stringifying or integer-coercing encrypted preference data. A synthetic regression covers
+these malformed representations, and the existing encrypted restart/revoke test still passes.
+
+The full PySide6 suite exposed a separate progress-page notification error after a player-reported
+record was added or deleted: the page connected the shared progress bus but did not retain it for its
+event handlers. The page now stores the bus; its UI regression checks the add and delete event in the
+session history as well as the encrypted record changes.
+
+Verification: 70 package tests passed; targeted task lifecycle and progress UI tests passed;
+`compileall -q src packaging` and `git diff --check` passed. A fresh unsigned PyInstaller 6.22.3
+candidate was built with the pinned C 0.4.0 wheel. Its 920-file manifest set and SHA-256 values
+matched (manifest SHA-256 `51ec308fb4cfc6f9df6ba13c2760f0b9a2763cc6a5d7fd23ca548aa3178a9de8`;
+worker SHA-256 `bde7d0648c281d0d7b1bfcb661cb35708cadcc65d6afa35ac8d64a8681790a17`). Candidate OCR
+recognized synthetic `LEVEL 80`; the GUI remained alive for eight seconds and loaded candidate-local
+Qt6Core/Qt6Widgets; the packaged worker passed the signed synthetic S3 replay; and the installer
+smoke passed synthetic install, upgrade, two-way rollback, and tamper rejection in its guarded
+temporary directory. This does not establish production M0, publisher signing, target-user Windows
+compatibility, or player acceptance. No real UID/account data was used.
