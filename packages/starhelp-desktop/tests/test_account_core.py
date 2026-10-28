@@ -73,6 +73,7 @@ from starhelp_desktop.public_profile import (
     _RejectRedirects,
 )
 from starhelp_desktop.profiles import ProfileRepository
+from starhelp_desktop.progress import PlayerProgressEntry, ProgressRepository
 from starhelp_desktop.reports import ReportLifecycle, ReportValidity
 from starhelp_desktop.storage import EncryptedPrivateStore, WindowsDpapiProtector
 from starhelp_desktop.tasks import AnalysisTaskDraft, TaskRepository
@@ -362,13 +363,44 @@ class ProgressPageTests(unittest.TestCase):
                                            confirm_import(proposal))
 
             bus = _ProgressBus()
-            page = _ProgressPage(profiles, bus)
+            progress_records = ProgressRepository(store, lifecycle)
+            page = _ProgressPage(profiles, progress_records, bus)
             page.show()
             self.app.processEvents()
             self.assertIn("Mihomo 忘却之庭摘要", page.mode_status.toPlainText())
             self.assertIn("memory_data.chaos_id: 1234", page.mode_status.toPlainText())
             for mode in _ProgressPage.MODES:
                 self.assertIn(f"{mode}：未知", page.mode_status.toPlainText())
+            page.record_period.setText("fixture-cycle-1")
+            page.record_stage.setText("fixture-stage-2")
+            page.record_note.setText("synthetic-player-note")
+            page.add_record_button.click()
+            self.app.processEvents()
+            self.assertEqual(page.records.count(), 1)
+            self.assertIn("玩家自述：已达成", page.records.item(0).text())
+            self.assertIn("不提交给生产分析", page.mode_status.toPlainText())
+            self.assertIn("混沌回忆：未知", page.mode_status.toPlainText())
+            entries = progress_records.list_entries(profile.profile_id, profile.generation)
+            self.assertEqual(len(entries), 1)
+            self.assertEqual(entries[0].stage_label, "fixture-stage-2")
+            progress_path = store.root / f"profile-{profile.profile_id.hex}-progress-notes.bin"
+            self.assertTrue(progress_path.is_file())
+            self.assertNotIn(b"synthetic-player-note", progress_path.read_bytes())
+            page.records.setCurrentRow(0)
+            with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+                page.delete_record_button.click()
+            self.app.processEvents()
+            self.assertEqual(progress_records.list_entries(profile.profile_id, profile.generation), ())
+            self.assertFalse(progress_path.exists())
+            progress_records.add(PlayerProgressEntry.create(
+                profile_id=profile.profile_id,
+                authorization_generation=profile.generation,
+                mode_label="虚构叙事",
+                period_label="fixture-cycle-1",
+                stage_label="fixture-stage-3",
+                outcome="待确认",
+            ))
+            self.assertEqual(len(store.list_profile_keys(profile.profile_id, "progress")), 1)
 
             for index in range(_ProgressPage.MAX_HISTORY + 2):
                 bus.updated.emit(f"synthetic operation {index}", -1 if index == 51 else index % 101)
@@ -385,6 +417,8 @@ class ProgressPageTests(unittest.TestCase):
             page.show()
             self.app.processEvents()
             self.assertIn("尚无已授权档案", page.mode_status.toPlainText())
+            self.assertEqual(store.list_profile_keys(profile.profile_id, "progress"), ())
+            self.assertEqual(page.records.count(), 0)
             page.close()
 
     def test_task_and_report_pages_clear_revoked_profile_data_on_reentry(self) -> None:

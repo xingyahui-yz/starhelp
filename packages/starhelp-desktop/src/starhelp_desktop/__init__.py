@@ -17,6 +17,7 @@ from .models import (
 )
 from .planner import LocalPlannerProcess, PlannerCancelled, PlannerResult, PlannerUnavailable
 from .producer_request import build_producer_analysis_request, select_public_task
+from .progress import PlayerProgressEntry, ProgressRepository
 from .tasks import AnalysisTaskDraft, TaskRepository, TaskState
 
 __all__ = [
@@ -39,6 +40,8 @@ __all__ = [
     "PlannerUnavailable",
     "ProducerAnalysisExecution",
     "ProducerAnalysisRunner",
+    "PlayerProgressEntry",
+    "ProgressRepository",
     "build_producer_analysis_request",
     "select_public_task",
 ]

@@ -954,3 +954,31 @@ filesystem access.
 No real account or UID was used. This is still an unsigned candidate tested on the build host;
 publisher signing, production trust and mappings, target-user Windows acceptance, and player
 acceptance remain open.
+
+## Encrypted player progress notes and refreshed candidate (2026-10-28)
+
+The progress page now allows a player to add and delete profile-scoped notes for the three displayed
+mode labels, with free-form period/stage labels, a player-reported outcome, and an optional note.
+`ProgressRepository` stores these under the profile's encrypted key prefix and performs reads and
+writes through the authorization lifecycle gate; ordinary profile revoke removes the notes with
+the snapshot, task preferences, and reports. The page labels each item as player-reported, keeps
+source coverage unknown for all three modes, and explicitly says these notes do not enter
+production analysis. This does not resolve M0 mode/cycle/stage IDs or provide source-verified
+progress coverage.
+
+Synthetic UI/storage regression covers adding, reloading, displaying, deleting, ciphertext not
+containing the note plaintext, and removal on profile revocation. All 67 package tests,
+`compileall`, and `git diff --check` passed.
+
+Rebuilt the unsigned PyInstaller 6.22.3 Windows candidate with the pinned C 0.4.0 wheel. Its 920
+manifest entries and hashes matched; manifest SHA-256 is
+`9076fd151141a9f1a5eba4907d3187fd7bc45380f5c48dfa208eb4407b406e3e`, and packaged worker SHA-256
+is `34b1ff7f2e779dea9cedb9854b352abb8ad417c669418ec5852fe10b74fb79a9`. PyInstaller archive
+inspection found both `starhelp_desktop.gui` and `starhelp_desktop.progress`. Candidate-local OCR
+recognized synthetic `LEVEL 80`; the executable remained alive for eight seconds and loaded
+Qt6Core/Qt6Widgets; the packaged worker passed the signed synthetic S3 interop replay; and the
+synthetic install/upgrade/two-way-rollback/tamper-rejection smoke passed.
+
+No real profile, UID, or screenshot was used. The candidate remains unsigned and has only been
+validated on the build host. Production mappings/trust, verified three-mode coverage, target-user
+Windows and player acceptance remain outstanding.

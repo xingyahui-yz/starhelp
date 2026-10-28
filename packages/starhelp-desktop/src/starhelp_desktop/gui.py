@@ -47,6 +47,7 @@ from .lifecycle import ProfileLifecycle
 from .models import EquipmentIdentity, ImportProposal, Ownership, SourceKind
 from .profiles import ProfileRepository, ProfileSummary
 from .planner import LocalPlannerProcess, bundled_planner_command
+from .progress import PROGRESS_OUTCOMES, PROGRESS_MODES, PlayerProgressEntry, ProgressRepository
 from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
 from .reports import AnalysisReport, ReportLifecycle, ReportValidity
 from .storage import EncryptedPrivateStore
@@ -1879,11 +1880,13 @@ class SettingsPage(_Page):
 
 class _ProgressPage(_Page):
     MAX_HISTORY = 50
-    MODES = ("混沌回忆", "虚构叙事", "末日幻影")
+    MODES = PROGRESS_MODES
 
-    def __init__(self, profiles: ProfileRepository, progress_bus: _ProgressBus) -> None:
-        super().__init__("进度", "查看当前档案的公开进度覆盖，以及本会话的后台任务状态。")
+    def __init__(self, profiles: ProfileRepository, progress_records: ProgressRepository,
+                 progress_bus: _ProgressBus) -> None:
+        super().__init__("进度", "查看来源覆盖、记录玩家自述进度，以及本会话的后台任务状态。")
         self.profiles = profiles
+        self.progress_records = progress_records
         profile_row = QHBoxLayout()
         profile_row.addWidget(QLabel("本地档案"))
         self.profile_list = QComboBox()
@@ -1896,6 +1899,36 @@ class _ProgressPage(_Page):
         self.mode_status.setReadOnly(True)
         self.mode_status.setAccessibleName("三种玩法进度覆盖")
         self.content.addWidget(self.mode_status)
+        self.content.addWidget(QLabel(
+            "玩家自述记录（本机加密保存；不等同于公开来源核验，也不会作为生产分析输入）"
+        ))
+        self.record_mode = QComboBox()
+        self.record_mode.addItems(self.MODES)
+        self.record_period = QLineEdit()
+        self.record_period.setPlaceholderText("周期/版本标签（玩家填写）")
+        self.record_stage = QLineEdit()
+        self.record_stage.setPlaceholderText("关卡标签（玩家填写）")
+        self.record_outcome = QComboBox()
+        self.record_outcome.addItems(PROGRESS_OUTCOMES)
+        self.record_note = QLineEdit()
+        self.record_note.setPlaceholderText("备注（可选）")
+        record_form = QFormLayout()
+        record_form.addRow("玩法标签", self.record_mode)
+        record_form.addRow("周期", self.record_period)
+        record_form.addRow("关卡", self.record_stage)
+        record_form.addRow("自述结果", self.record_outcome)
+        record_form.addRow("备注", self.record_note)
+        self.content.addLayout(record_form)
+        self.add_record_button = QPushButton("保存本地进度记录")
+        self.delete_record_button = QPushButton("删除所选记录")
+        self.delete_record_button.setEnabled(False)
+        record_buttons = QHBoxLayout()
+        record_buttons.addWidget(self.add_record_button)
+        record_buttons.addWidget(self.delete_record_button)
+        self.content.addLayout(record_buttons)
+        self.records = QListWidget()
+        self.records.setAccessibleName("玩家自述进度记录")
+        self.content.addWidget(self.records)
         self.status = QLabel("当前没有后台任务。")
         self.status.setWordWrap(True)
         self.bar = QProgressBar()
@@ -1909,6 +1942,11 @@ class _ProgressPage(_Page):
         self.content.addWidget(self.history, 1)
         self.profile_list.currentIndexChanged.connect(self._refresh_mode_status)
         self.refresh_profiles.clicked.connect(self.reload_profiles)
+        self.add_record_button.clicked.connect(self._add_progress_record)
+        self.delete_record_button.clicked.connect(self._delete_progress_record)
+        self.records.currentItemChanged.connect(
+            lambda current, _previous: self.delete_record_button.setEnabled(current is not None)
+        )
         progress_bus.updated.connect(self._update)
         self.reload_profiles()
 
@@ -1933,6 +1971,7 @@ class _ProgressPage(_Page):
     def _refresh_mode_status(self, *_args: object) -> None:
         selected_id = self.profile_list.currentData()
         if not isinstance(selected_id, str):
+            self.records.clear()
             self.mode_status.setPlainText("尚无已授权档案。三种玩法的进度均为未知。")
             return
         profile = next(
@@ -1940,6 +1979,7 @@ class _ProgressPage(_Page):
             None,
         )
         if profile is None:
+            self.records.clear()
             self.mode_status.setPlainText("档案已撤权或不存在。三种玩法的进度均为未知。")
             return
         try:
@@ -1947,12 +1987,22 @@ class _ProgressPage(_Page):
         except FileNotFoundError:
             snapshot = None
         except Exception:
+            self.records.clear()
             self.mode_status.setPlainText("档案资料不可读取；未显示旧进度。")
+            return
+        try:
+            manual_entries = self.progress_records.list_entries(profile.profile_id, profile.generation)
+        except Exception:
+            self.records.clear()
+            self.mode_status.setPlainText("本地进度记录不可读取；未显示旧记录。")
             return
 
         lines = [f"档案：{profile.label}", "", "玩法记录覆盖："]
         lines.extend(f"- {mode}：未知（没有可核实的该模式记录）" for mode in self.MODES)
         lines.append("缺少公开记录不代表未通关；M0 模式、周期和关卡映射未冻结。")
+        lines.append(
+            f"玩家自述：{len(manual_entries)} 条；不改变上面的来源覆盖状态，也不提交给生产分析。"
+        )
         summary_fields = {
             path: fact for path, fact in (snapshot.fields.items() if snapshot else ())
             if path.startswith("progress:mihomo-memory-summary:")
@@ -1970,6 +2020,81 @@ class _ProgressPage(_Page):
         else:
             lines.append("- 此档案没有已导入的 Mihomo 进度摘要字段。")
         self.mode_status.setPlainText("\n".join(lines))
+        self.records.clear()
+        for entry in sorted(manual_entries, key=lambda item: item.recorded_at, reverse=True):
+            scope = " · ".join(item for item in (entry.period_label, entry.stage_label) if item)
+            note = f" · {entry.note}" if entry.note else ""
+            row = QListWidgetItem(
+                f"{entry.mode_label} · {scope} · 玩家自述：{entry.outcome}{note} · "
+                f"{entry.recorded_at.astimezone().strftime('%Y-%m-%d %H:%M')}"
+            )
+            row.setData(Qt.ItemDataRole.UserRole, str(entry.entry_id))
+            self.records.addItem(row)
+        self.delete_record_button.setEnabled(False)
+
+    def _add_progress_record(self) -> None:
+        profile_id = self.profile_list.currentData()
+        if not isinstance(profile_id, str):
+            QMessageBox.information(self, "需要档案", "先创建或选择一个已授权本地档案。")
+            return
+        profile = next(
+            (item for item in self.profiles.list_profiles() if str(item.profile_id) == profile_id),
+            None,
+        )
+        if profile is None:
+            QMessageBox.warning(self, "档案不可用", "所选档案已撤权或不存在。")
+            return
+        try:
+            entry = PlayerProgressEntry.create(
+                profile_id=profile.profile_id,
+                authorization_generation=profile.generation,
+                mode_label=self.record_mode.currentText(),
+                period_label=self.record_period.text(),
+                stage_label=self.record_stage.text(),
+                outcome=self.record_outcome.currentText(),
+                note=self.record_note.text(),
+            )
+            self.progress_records.add(entry)
+        except Exception as exc:
+            QMessageBox.warning(self, "进度记录未保存", str(exc))
+            return
+        self.record_note.clear()
+        self._refresh_mode_status()
+        self.progress_bus.updated.emit("玩家自述进度已加密保存在所选本地档案。", 100)
+
+    def _delete_progress_record(self) -> None:
+        profile_id = self.profile_list.currentData()
+        item = self.records.currentItem()
+        if not isinstance(profile_id, str) or item is None:
+            return
+        profile = next(
+            (candidate for candidate in self.profiles.list_profiles()
+             if str(candidate.profile_id) == profile_id),
+            None,
+        )
+        if profile is None:
+            self._refresh_mode_status()
+            return
+        confirmation = QMessageBox.question(
+            self,
+            "删除本地进度记录",
+            "确定删除所选的玩家自述记录吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if confirmation != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            self.progress_records.delete(
+                profile.profile_id,
+                profile.generation,
+                UUID(item.data(Qt.ItemDataRole.UserRole)),
+            )
+        except Exception as exc:
+            QMessageBox.warning(self, "进度记录未删除", str(exc))
+            return
+        self._refresh_mode_status()
+        self.progress_bus.updated.emit("所选玩家自述进度记录已从本地档案删除。", 100)
 
     def _update(self, message: str, value: int) -> None:
         self.status.setText(message)
@@ -1995,6 +2120,7 @@ class StarHelpWindow(QMainWindow):
         self.lifecycle = ProfileLifecycle(store, temp_root)
         self.profiles = ProfileRepository(store, self.lifecycle)
         self.progress_bus = _ProgressBus()
+        self.progress_records = ProgressRepository(store, self.lifecycle)
         self.tasks = TaskRepository(store, self.lifecycle)
 
         shell = QWidget()
@@ -2007,7 +2133,9 @@ class StarHelpWindow(QMainWindow):
             self.profiles, self.tasks, self.progress_bus, self.lifecycle, store
         )
         self.accounts_page = AccountsPage(self.profiles, self.lifecycle, self.progress_bus)
-        self.progress_page = _ProgressPage(self.profiles, self.progress_bus)
+        self.progress_page = _ProgressPage(
+            self.profiles, self.progress_records, self.progress_bus
+        )
         self.pages.addWidget(self.task_page)
         self.pages.addWidget(PublicKnowledgePage(public_cache))
         self.pages.addWidget(self.accounts_page)
