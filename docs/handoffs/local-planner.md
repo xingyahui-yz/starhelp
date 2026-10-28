@@ -1,5 +1,17 @@
 # Local planner handoff
 
+## S4.1 C technical review draft (2026-10-28)
+
+S3 final evidence was pushed as `fa512b6a874bba71bb52d59f610e4911d2cb22b9`; the existing origin/owner was rechecked through the read-only GitHub connector after automatic approval initially rejected an unverified destination, then the same scoped push was approved and succeeded. Original run dates and fixed wheel/source/candidate remain unchanged.
+
+Reviewed A `docs/production-integration-proposal-v0.1-draft.md` at `ed0028c7e3a3ce00929cf7ae3db939cb137ced06`, raw SHA `7265550d39a41c72b8ee662b72ec941bd2e24ebeaaf4dccec99b065034b35ac9`, with exact worktree/Git blob equality. C proposal: [production-consumption-review-v0.1-draft.md](../../packages/starhelp-planner/docs/production-consumption-review-v0.1-draft.md).
+
+The review specifies the current synthetic-test-only boundary; a new component/profile and explicit producer/key-purpose/trust-configuration admission path; B catalog/network/cache/replay responsibility versus C original signature/semantics rechecks; bounded freshness/withdrawal/offline claims; the invitation/read-only-service-auth clarification; and the minimum separately versioned B unit/context, mode-record, material, final-panel and local-feedback semantics. Feedback may belong to a versioned request companion, not automatically to persisted snapshot data. A/B-dependent field/error/test decisions are listed as an unexecuted plan, without choosing actual key operations, TTLs or real game facts. Public RAG and local-then-invited MVP scope are preserved; account/derived information stays local.
+
+The proposal §9 now reviews A's exact field candidate, first 243a9e0 / raw `8ece54502ee4fa5730fe21a7fbda0c1569072e0c6efbbb57433ac6f72577711c`, then revised immutable commit `012d69508588b0800053108ef38c4bc753bebc14` / raw `88071e56a4b49c3d3cf6dda89aca912559a353139d74e4f81b9f548af7ff989b`. Revision/worktree bytes match. C agrees with independent durable revocation commit/gating and immutable same-sequence raw bytes; artifact failure must never restore a known revoked identity. **Conditional review, not production-contract freeze:** P1 typed kind/id/revision/hash cannot be losslessly mapped by current id-only/id@revision withdrawal handling; native/source/projected hash meaning must be fixed. P2 offline basis must bind the selected artifact, not refresh an unrelated old package via a global new metadata timestamp. P3 result acceptance needs public-validity epoch/basis recheck in addition to authorization/snapshot correlation. P4 a 64 MiB download is not an 8 MiB complete stdio analysis request. These and per-field trust/profile/tuple/effective_at/rollback/error comments are explicit; a further candidate must be reviewed by its own hash before confirmation.
+
+This is documentation/static review only. No new implementation, test run, production enablement, fixed artifact/shared-contract change, real account access or new Goal is part of S4.1. Full Goal/M0 remains incomplete; coordinator can read the proposal directly and route dependencies without user forwarding.
+
 ## Final S3 packaged evidence receipt (reconciled 2026-10-28)
 
 The final runs completed on **2026-10-21**. Recovery on **2026-10-28** checked the existing report/input/wheel hashes and the exact 920-file candidate; no implementation tests were rerun, and no wheel, B source or candidate was rebuilt. The immutable run dates and bytes remain unchanged.
