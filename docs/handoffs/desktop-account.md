@@ -982,3 +982,32 @@ synthetic install/upgrade/two-way-rollback/tamper-rejection smoke passed.
 No real profile, UID, or screenshot was used. The candidate remains unsigned and has only been
 validated on the build host. Production mappings/trust, verified three-mode coverage, target-user
 Windows and player acceptance remain outstanding.
+
+## B request-builder provenance boundary (2026-10-28)
+
+The latest B source/candidate tree is commit `16ea426b312992de308d2d7646a9c592b894b525`.
+The synthetic demo still declares the embedded snapshot serializer as
+`103741e02c90ac672017f783058bdd8dacae982e` / `starhelp.desktop.snapshot.interop-min.v0.1`.
+`_snapshot_to_dict` and its serialized snapshot shape were not changed by the later feedback patch.
+However, the B request wrapper source did change: `producer_request.py` blob
+`0086d9121b9506ddcd3d6144f41a530b59bd8073` (at B commit `080e11fc40e67b4297034dfa3bd6337ff62153e7`)
+adds optional, bounded feedback to the outer and C request; `analysis.py` blob
+`c607e20aabf216a33c30ff04b6e97ed476f919c1` preserves it with the unsaved report. The synthetic
+demo producer constants live in unchanged blob `2b3ece32c57aba11d3bbd019ea7d0e6a307f5a4a`.
+
+This separates two identities that must not be conflated: the embedded snapshot serializer tuple
+and the B analysis-request builder tuple. The current envelope carries the former but has no
+separate provenance field for the latter. B's compatibility proposal is to keep the original
+snapshot tuple and introduce a separately versioned/allowlisted B request-builder identity, bound
+to the complete A/B/C tuple. C must confirm whether that needs an optional provenance object or a
+new `ProducerAnalysisRequest` profile/component version, and define replay cases for old requests
+without feedback, accepted feedback, unknown tuple rejection, and local-only feedback. No emitted
+tuple, old profile, fixture, or fixed wheel was changed pending that review.
+
+The candidate was built from the `16ea426` source tree, but it is a later development candidate,
+not a replacement for S3 acceptance. S3's fixed cross-component result still applies only to its
+recorded B source/worker and `30e4820d…bc19c3` manifest; the 16ea candidate has local package and
+synthetic interop evidence only. B attempted to send the compatibility proposal directly to C, but
+automatic review rejected that cross-thread message because authorization to contact C was not
+established for this action. No workaround was attempted; the proposal is recorded here for the
+coordinator's review.
