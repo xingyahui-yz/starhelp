@@ -176,3 +176,54 @@ A 提供版本化目录/envelope 与明确原始字节、签名/撤回/许可/�
 - [b_snapshot.py](../src/starhelp_planner/adapters/b_snapshot.py)：两个固定 B tuple、闭合快照/事实形状、部分覆盖和身份降级。
 - [entry.py](../src/starhelp_planner/adapters/entry.py)、[engine.py](../src/starhelp_planner/engine.py)：prepare/native 分层、调用方撤回状态、局部适用性、可选反馈入口。
 - [S3 证据](interop-s3-evidence.md) 与 [最终打包锁](../interop/b2-c248daa/packaged-lock.json)：技术合成证据与生产/材料/面板未覆盖边界。
+
+## 10. B 新 builder、feedback 与开发候选的来源澄清
+
+本节为 **2026-10-28 静态兼容评审**。读取 B 固定源码 `16ea426b312992de308d2d7646a9c592b894b525`、feedback 引入提交 `080e11fc40e67b4297034dfa3bd6337ff62153e7`，以及仅补来源说明的 `125f2ac9f0c1545940c30522cc9fc863bae76140`；不随 B 工作分支 HEAD 自动改换评审对象。未执行这些版本、未重跑旧 S3，也未构建/接纳新候选。
+
+### 10.1 应分别记录的精确来源
+
+| 层级 | 本轮核对的身份 | 结论 |
+|---|---|---|
+| 历史 S3 B host / candidate | `c248daab22255a069464a6d277757d01df5d49f3`；manifest `30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3` | 原 S3 结论仅对应该锁定集合，不适用于以下新开发包 |
+| 新 B 实际源码基线 | `16ea426b312992de308d2d7646a9c592b894b525`；`packages/starhelp-desktop` Git tree `58e4679dd3458e2518751228f15983ba91dee6f6` | 新 host/source tuple；不能将整个新 builder 声称为 B1 `103741e` |
+| snapshot serializer/format 兼容锚点 | `103741e02c90ac672017f783058bdd8dacae982e` / `starhelp.desktop.snapshot.interop-min.v0.1` | models/profiles/bundles/storage 四个完整 blob 仍相同，十键快照/七键 fact 和 builder 内排序紧凑 UTF-8+LF 编码逻辑未变；只支持快照格式兼容结论 |
+| 实际 request builder | `16ea426…` 中 `producer_request.py` Git blob **`0086d9121b9506ddcd3d6144f41a530b59bd8073`**；该 blob 首次由 `080e11f…` 引入 | B1 对应 blob 为 `5f1a89db3588573537bfce9af09172deb70ba524`；五项固定 seam 已有一项改变。080e11f 是引入修订，实际新 host 源码基线仍记录 16ea426 |
+| 报告与 worker | `analysis.py` blob `c607e20aabf216a33c30ff04b6e97ed476f919c1`；`planner_worker.py` blob `bce4819941ea04a29725b9faa4ce167c3ae94e96` | 报告新增 feedback 留存；worker 与报告属于需要共同核对的新 host，不由 snapshot 格式证明 |
+| synthetic demo 声明 | `synthetic_demo.py` blob `2b3ece32c57aba11d3bbd019ea7d0e6a307f5a4a`，仍传入旧 snapshot commit/profile | 该常量只覆盖嵌入快照声明，当前 wire 没有独立 builder 来源字段 |
+| 新开发 candidate | manifest **`9076fd151141a9f1a5eba4907d3187fd7bc45380f5c48dfa208eb4407b406e3e`**；B 声明 worker `34b1ff7f2e779dea9cedb9854b352abb8ad417c669418ec5852fe10b74fb79a9`、920 文件、构建源码 16ea426 | C 本轮只读核对本机 manifest 文件的原始 SHA 与该声明一致；未逐项验 920 文件、运行 worker、复核构建过程或证明二进制源码对应 |
+| C 固定消费端 | 0.4.0；wheel SHA `3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2` | 保持固定，不因 B 新 candidate 使用同一 wheel 就获得新的 builder/生产准入 |
+
+表内 `blob/tree` 是 Git 对象 ID，manifest/wheel 摘要为原始字节 SHA-256，不混作同一种 hash。B 的 125f2ac 说明补充了来源声明；它没有建立独立的二进制构建证明。后续若源码/候选改变，须重新给精确 tuple，不能让版本标签替代原始 hash。
+
+**C 0.4.0 的真实限制：** `adapt_snapshot` 只登记旧 045965b 与 B1 103741e 两个 snapshot tuple；将 `account_snapshot.producer_commit` 改为 080e11f/16ea426 会得到 `unsupported_producer_version`。但保持旧 snapshot tuple 的新 builder 请求，当前 C **无法识别其 builder 来源**，并不因此自动拒绝。当前成功结果中的 snapshot provenance 不能扩写成“已验证新 builder”。无 feedback 时生成同样字节，也不能证明执行源码仍为 B1。旧 S3 五项 seam 等同前提已不成立。
+
+### 10.2 feedback 已有能力与尚未证明的边界
+
+- **C 已有：** producer adapter 将 `feedback` 转给 native v0.2；只有审核发布且有证据、范围/关卡适用的排障规则能求值。`user_reported` 只在 feedback 主体中被允许；字段仍须满足已登记属性类型、单位、测量语境、scope 和时间。建议目标还须是适用且重新通过拥有/锁定/条件等检查的完整已发布变体；不能从一句失败描述发明换人/配装方案。
+- **B 新增接线：** builder 接收可选 feedback，最多 64 fields / 64 KiB UTF-8；顶层只允许 `fields/scope/variant_id/variant_revision`，fact 只允许有限键，必须非空值、`user_reported`、明确 unit 和 `{phase,assumptions}`。可选顶层 scope 必须等于任务，variant ID/revision 必须成对；复制至外层报告请求和内层 C 请求。报告只在已有可保存方案时暂存，并由显式保存进入加密存储。字段业务类型、实际属性/单位/时间适用性仍由 C 检查，B 形状检查不等于条件已经满足。
+- **证据强度：** B 新测试代码及 handoff 记录了 synthetic failure 穿过固定 wheel、未保存报告和显式保存的接线检查。固定 S3 包没有排障规则，测试也未断言审核替代方案触发；这不是新 A/B/C 真实排障验收。C 既有 native 排障测试不能替代新实际 builder/worker 的组合验证。本轮未运行这些测试。
+- **需修正的跨层绑定：** 16ea426 的 `_validate_wrapper` 比较外/内 task、身份及原始 public bundle，但没有比较两处 feedback；C 使用内层，`analysis.py` 使用外层保存。builder 正常构造相同值仍不足以防止重序列化/篡改/异步修改后保存另一份反馈。新协议应只保留一个权威 feedback，或强制两处存在性和值一致，分析和报告使用同一不可变请求副本；差异必须拒绝且不得生成可保存报告。request ID/revision/generation 相等不能替代此检查。
+- **玩家进度笔记：** 16ea426 的新增记录是本机加密、受授权管理的自述，包含显示模式名、自由文本周期/关卡、达成标签和 note。它们未进入 snapshot/生产分析，也不构成经验证的 mode/cycle/stage ID、数值成绩、来源覆盖、材料或最终面板。不得自动转换成 confirmed 快照字段、排障触发事实或 A/RAG 输入。若未来显式选取为反馈，仍需另行映射、语义版本与用户任务绑定。
+
+本节更新 §6 的进度判断：反馈的既有 native 形状已有 B 构建接线；单位/语境的新 snapshot、三模式可信记录、材料完整性和最终面板仍未交付。历史 S3 的“未验证 B feedback 接线”结论继续限定于原先固定源码，不否认后续开发实现。
+
+### 10.3 最小版本与准入提案（未实施、未冻结）
+
+1. **新 C component：需要。** 新 builder 来源验证/准入与结果 provenance 属于新增行为，走后续显式组件和新 wheel；不重写 0.4.0、不放宽其旧 tuple，也不把 9076 包追认为 S3。具体版本号待共同契约固定；可与 §3 的生产消费者版本合并安排，但 feedback 接线本身不授予生产信任。
+2. **独立 builder 身份：需要，且在新 producer request profile 中强制。** 建议新 schema/profile 明确 `request_producer`，由受信 host 的已登记策略核对 producer/package、实际 `source_commit`、builder blob/依赖锁及本机能力；16ea426 是本轮候选 source，0086d912 是 builder blob，080e11f 仅作为引入修订说明。它独立于 `account_snapshot` 的 serializer/format；无 feedback 的新请求也必须声明。C 结果回传所用 builder/profile/策略身份供 B 关联。单纯往旧 v0.1 塞一个可被忽略的 optional provenance，不构成强制来源门限。自报 commit/hash 不是认证或构建证明，仍须 B 的实际加载/构建锁和受信配置；未知/缺失/矛盾 identity 在新 profile 拒绝。
+3. **snapshot/native profile：本次 feedback 不单独要求升级。** 在快照原始形状、编码、语义确实保持时，可保留 `starhelp.desktop.snapshot.interop-min.v0.1` 格式锚点，另记实际新 host/builder；既有 feedback 谓词不变时可保留 native `starhelp.local.v0.2` / rules 0.2.0。不得以保留格式锚点声称新 producer 整体就是旧 103741e；单位/材料/模式记录/最终面板等未来扩展仍按 §6 分别版本化。
+4. **capability：分层登记。** 新 producer profile 的来源门限必须成为 worker 明确支持的协议能力；仅接入既有 feedback 不需要虚构一个新 native 排障算子能力。若为 B 的 feedback 接收/报告一致留存增加能力标识，它应表示该端到端行为，并待一致性修正和有限验收后才宣称支持；不能与 A `required_capabilities` 或 C native profile 能力混作一个集合。新增反馈类型/单位/主体/动作超出现有 native 语义时才须另提 native profile/capability。所有新名称均待注册，不由本节发布。
+5. **完整 source/artifact tuple：另立新锁。** 共同登记 A 实际 producer/profile/release/raw hash、B 实际 host/package tree、snapshot 格式及 encoder、request builder/profile/blobs、C component/wheel/native/adapter、候选 manifest/worker 与信任用途。B 应提供明确构建时的源码/依赖/vendor 清单及对应声明/原始样例；C 不用旧 c248daa/30e482 锁替新 16ea426/9076 作证。构建证据缺项标为未建立，不反推已建立。
+
+### 10.4 后续有限验收清单（本轮未运行）
+
+待上述协议与 tuple 固定后，再给新 host/source 与新 candidate 分别产证据；不重跑/重建旧 S3：
+
+- 新实际 builder 的无 feedback 请求；有反馈但无审核规则时明确无法判断；与旧快照格式兼容不等于新来源准入。
+- 审核规则触发正例、未登记属性/错误类型/单位/语境/过期/冲突/跨任务反例；建议目标受完整变体、拥有、锁定、条件、公共撤回检查。A 须先交付相应审核 fixture，不能修改旧 signed S3 包塞入规则。
+- 新 producer/profile/实际 source 未登记、缺 provenance 或冒用旧 builder 来源均拒绝；旧 v0.1 作为历史兼容路径时明确其未验证 builder，不能绕过新消费者的准入策略。
+- 外/内反馈存在性或值不一致、请求在发送至报告暂存之间被修改、request/revision/generation 或公共 validity basis 改变均拒收；无可用方案/领域错误不产生可保存报告。
+- 本地内存、主动保存前零私有持久化、显式加密保存、撤权拒收迟到结果与清理；feedback/进度笔记不进入 A/PublicQuery/RAG/普通日志。源码与打包 worker 各自固定 manifest/加载来源，单独记录执行结果和未证明项。
+
+结论：认可 B 的“快照格式与 request builder 分列”方向；建议强制版本化 producer profile，而非在旧协议中增加可忽略的来源声明。新 B 开发成果保留，9076 候选仍是待新 tuple/协议验收的开发包。A 候选 P1—P4 和完整 Goal/M0 的真实来源、审核、生产信任与本机实测缺口仍未关闭。
