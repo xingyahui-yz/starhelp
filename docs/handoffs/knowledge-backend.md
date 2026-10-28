@@ -2,6 +2,10 @@
 
 Status: S3 producer code and synthetic artifact delivery are committed. This is a public-only backend component; this handoff does not claim the StarHelp MVP is complete or production content is published.
 
+S4.1 proposal: [`packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md`](../../packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md) records a reviewable candidate for signed distribution metadata, revocation, local service lifecycle, and public RAG slices. It is documentation only: endpoints/schema are not frozen or implemented, and S3 code, fixtures, shared contracts, and coordination locks remain unchanged.
+
+S3 final technical acceptance is closed by the root coordinator: C final `fa512b6` was verified remotely; the new set has 83 checks (62 source + packaged), with independent measurement 37/30; B2 is `c248daa`; B has a 65 tests/920 candidate/install report. These are S3 technical acceptance records, not approval of a production compatibility tuple or a production release.
+
 ## Ownership and boundary
 
 - Package: `packages/starhelp-knowledge/`, import name `starhelp_knowledge`.
