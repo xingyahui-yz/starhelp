@@ -878,3 +878,15 @@ environment, whitespace/control/oversized identifiers, UID-like release and goal
 Verification on 2026-10-28: all 66 package `unittest` cases passed, `compileall` passed, and
 `git diff --check` passed. This is local contract-boundary validation only; it does not freeze the
 shared M0 production query mappings or add a production network client.
+
+## Public-profile duplicate conflict handling (2026-10-28)
+
+The Mihomo preview normalizer now rejects duplicate character records and refuses to silently
+overwrite a field when a response repeats the same normalized character/stat or character/skill
+path with a different value. This prevents one response from becoming an arbitrary last-write-wins
+snapshot before the ordinary player preview/confirmation and merge flow. Tests use only synthetic
+responses for duplicate characters, attributes, and skills.
+
+Verification on 2026-10-28: all 67 package `unittest` cases passed, `compileall` passed, and
+`git diff --check` passed. No network request or UID lookup was made. Provider coverage, region
+mapping, and production acceptance remain open M0 decisions.

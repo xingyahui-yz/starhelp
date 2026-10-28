@@ -90,6 +90,28 @@ def _public_identifier(value: object) -> str | None:
     return _public_text(str(value))
 
 
+def _record_public_field(
+    fields: dict[str, FieldFact],
+    path: str,
+    value: int | float,
+    observed: datetime,
+    scope: str,
+) -> None:
+    existing = fields.get(path)
+    if existing is not None:
+        if existing.value != value:
+            raise ProfileRequestError("public profile response contains conflicting duplicate fields")
+        return
+    fields[path] = FieldFact(
+        value=value,
+        status=FieldStatus.NEEDS_REVIEW,
+        source_kind=SourceKind.PUBLIC_PROFILE,
+        source_id=MihomoPublicProfileClient.PROVIDER_ID,
+        observed_at=observed,
+        scope=scope,
+    )
+
+
 class UserConfirmation(Protocol):
     def confirmed(self) -> bool: ...
 
@@ -203,6 +225,7 @@ class MihomoPublicProfileClient:
         ownership: dict[str, Ownership] = {}
         equipment: list[EquipmentInstance] = []
         covered: set[str] = set()
+        seen_character_ids: set[str] = set()
         warnings = [
             "角色列表是公开展示档案；未展示角色和物品的所有权保持未知。服务返回的总数不构成逐项清单。",
             "物品身份尚未被来源证明；同一类型 ID、词条或属性不作副本身份依据。",
@@ -216,13 +239,9 @@ class MihomoPublicProfileClient:
                 value = memory_data.get(source_key)
                 if _finite_integer(value) and value >= 0:
                     path = f"progress:mihomo-memory-summary:{source_key}"
-                    fields[path] = FieldFact(
-                        value=value,
-                        status=FieldStatus.NEEDS_REVIEW,
-                        source_kind=SourceKind.PUBLIC_PROFILE,
-                        source_id=self.PROVIDER_ID,
-                        observed_at=observed,
-                        scope=f"mihomo-player.memory_data.{source_key}",
+                    _record_public_field(
+                        fields, path, value, observed,
+                        f"mihomo-player.memory_data.{source_key}",
                     )
                     covered.add(path)
             if any(path.startswith("progress:mihomo-memory-summary:") for path in fields):
@@ -235,6 +254,9 @@ class MihomoPublicProfileClient:
             character_id = _public_identifier(character.get("id"))
             if character_id is None:
                 continue
+            if character_id in seen_character_ids:
+                raise ProfileRequestError("public profile response contains duplicate character records")
+            seen_character_ids.add(character_id)
             ownership[character_id] = Ownership.OWNED
             ownership_path = f"ownership:{character_id}"
             covered.add(ownership_path)
@@ -242,11 +264,7 @@ class MihomoPublicProfileClient:
                 value = character.get(public_key)
                 if _finite_integer(value):
                     path = f"character:{character_id}.{local_name}"
-                    fields[path] = FieldFact(
-                        value=value, status=FieldStatus.NEEDS_REVIEW,
-                        source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,
-                        observed_at=observed, scope="displayed-character",
-                    )
+                    _record_public_field(fields, path, value, observed, "displayed-character")
                     covered.add(path)
             attributes = character.get("attributes", [])
             if not isinstance(attributes, list):
@@ -258,11 +276,7 @@ class MihomoPublicProfileClient:
                 value = attribute.get("value")
                 if field_name is not None and _finite_number(value):
                     path = f"character:{character_id}.stat:{field_name}"
-                    fields[path] = FieldFact(
-                        value=value, status=FieldStatus.NEEDS_REVIEW,
-                        source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,
-                        observed_at=observed, scope="showcase-base-attributes",
-                    )
+                    _record_public_field(fields, path, value, observed, "showcase-base-attributes")
                     covered.add(path)
             skills = character.get("skills", [])
             if not isinstance(skills, list):
@@ -274,11 +288,7 @@ class MihomoPublicProfileClient:
                 public_skill_id = _public_identifier(skill_id)
                 if public_skill_id is not None and _finite_integer(level):
                     path = f"character:{character_id}.skill:{public_skill_id}"
-                    fields[path] = FieldFact(
-                        value=level, status=FieldStatus.NEEDS_REVIEW,
-                        source_kind=SourceKind.PUBLIC_PROFILE, source_id=self.PROVIDER_ID,
-                        observed_at=observed, scope="showcase-display",
-                    )
+                    _record_public_field(fields, path, level, observed, "showcase-display")
                     covered.add(path)
             equipment.extend(self._equipment_for(character, character_id, observed))
 

@@ -1257,6 +1257,30 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(proposal.ownership, {"fixture": Ownership.OWNED})
         self.assertEqual(proposal.fields, {})
 
+    def test_mihomo_rejects_conflicting_duplicate_records_and_fields(self) -> None:
+        client = MihomoPublicProfileClient()
+        with self.assertRaisesRegex(ProfileRequestError, "duplicate character"):
+            client.to_preview({"characters": [
+                {"id": "fixture", "level": 80},
+                {"id": "fixture", "level": 70},
+            ]})
+        with self.assertRaisesRegex(ProfileRequestError, "conflicting duplicate fields"):
+            client.to_preview({"characters": [{
+                "id": "fixture",
+                "attributes": [
+                    {"field": "spd", "value": 100},
+                    {"field": "spd", "value": 120},
+                ],
+            }]})
+        with self.assertRaisesRegex(ProfileRequestError, "conflicting duplicate fields"):
+            client.to_preview({"characters": [{
+                "id": "fixture",
+                "skills": [
+                    {"id": "skill", "level": 5},
+                    {"id": "skill", "level": 6},
+                ],
+            }]})
+
     def test_mihomo_rejects_ambiguous_json_and_filters_invalid_numbers(self) -> None:
         client = MihomoPublicProfileClient()
         for raw in (
