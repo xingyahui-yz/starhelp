@@ -38,6 +38,8 @@ still needs an approved code-signing certificate, signed update metadata, and ta
 install/upgrade/recovery validation. The script does not publish or self-update the app.
 
 After building a candidate, run `& '.venv\Scripts\python.exe' packaging\smoke-candidate-ocr.py`
-from the component root to exercise OCR using the candidate's own `_internal` RapidOCR, ONNX
-Runtime, and model files. It creates an in-memory synthetic PNG and expects to recognize `LEVEL 80`;
-it does not access a real screenshot or write an image file.
+from the component root. It checks that Pillow, NumPy, and the B OCR module are present in the frozen
+executable archive, then exercises inference using the candidate's `_internal` RapidOCR, ONNX
+Runtime, and model files. The external smoke process uses build-environment Pillow and NumPy to
+create and pass an in-memory synthetic PNG, and expects to recognize `LEVEL 80`. It does not
+exercise the frozen GUI click path, access a real screenshot, or write an image file.

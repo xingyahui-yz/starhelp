@@ -18,16 +18,43 @@ def main() -> int:
     sys.path.insert(0, str(internal))
     sys.path.insert(1, str(source))
 
+    import numpy
+    import cv2
     import onnxruntime
     import rapidocr
     from PIL import Image, ImageDraw, ImageFont
+    from PyInstaller.archive.readers import pkg_archive_contents
 
     from starhelp_desktop.imports import RapidOcrEngine
 
-    if not Path(rapidocr.__file__).resolve().is_relative_to(internal):
-        raise SystemExit("RapidOCR was not loaded from the frozen candidate")
-    if not Path(onnxruntime.__file__).resolve().is_relative_to(internal):
-        raise SystemExit("ONNX Runtime was not loaded from the frozen candidate")
+    runtime_modules = {
+        "RapidOCR": rapidocr.__file__,
+        "ONNX Runtime": onnxruntime.__file__,
+        "OpenCV": cv2.__file__,
+    }
+    for name, module_path in runtime_modules.items():
+        if not Path(module_path).resolve().is_relative_to(internal):
+            raise SystemExit(f"{name} was not loaded from the frozen candidate: {module_path}")
+
+    archived_modules = set(pkg_archive_contents(candidate / "StarHelp.exe"))
+    required_archived_modules = {
+        "PIL",
+        "PIL.Image",
+        "PIL.ImageDraw",
+        "PIL.ImageFont",
+        "numpy",
+        "starhelp_desktop.imports",
+    }
+    missing_archived_modules = required_archived_modules - archived_modules
+    if missing_archived_modules:
+        raise SystemExit(
+            "frozen executable archive is missing expected Pillow/app modules: "
+            f"{sorted(missing_archived_modules)!r}"
+        )
+
+    for name, pattern in (("NumPy", "numpy/**/*.pyd"), ("OpenCV", "cv2/**/*.pyd")):
+        if not any(internal.glob(pattern)):
+            raise SystemExit(f"candidate native {name} extension is missing from _internal")
 
     model_root = Path(rapidocr.__file__).resolve().parent / "models"
     model_names = (
@@ -55,8 +82,14 @@ def main() -> int:
 
     print(json.dumps({
         "candidate": str(candidate),
-        "rapidocr_module": str(Path(rapidocr.__file__).resolve()),
-        "onnxruntime_module": str(Path(onnxruntime.__file__).resolve()),
+        "runtime_modules": {
+            name: str(Path(path).resolve()) for name, path in runtime_modules.items()
+        },
+        "archived_modules": sorted(required_archived_modules),
+        "build_environment_modules": {
+            "NumPy": str(Path(numpy.__file__).resolve()),
+            "Pillow": str(Path(Image.__file__).resolve()),
+        },
         "recognized_text": recognized,
         "model_sha256": model_hashes,
     }, ensure_ascii=False, sort_keys=True))

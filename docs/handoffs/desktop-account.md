@@ -860,3 +860,8 @@ from the candidate `_internal` directory, used the candidate model files, and re
 in-memory synthetic PNG as `LEVEL 80`. This exercises packaged OCR runtime/model inference, not
 the frozen GUI click path; the existing Qt tests cover field mapping/preview behavior. No real
 screenshot or account data was read, and no image file was saved.
+
+The reproducible helper also checks that Pillow, NumPy, and the B OCR module are in the frozen
+executable archive and that NumPy/OpenCV native extensions are present in `_internal`. Its external
+Python smoke process uses build-environment Pillow and NumPy to generate and pass the synthetic PNG;
+it does not claim to execute the frozen app's own Python imports.
