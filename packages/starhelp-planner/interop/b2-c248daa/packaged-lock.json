@@ -1,0 +1,71 @@
+{
+  "M0_complete": false,
+  "a_artifact_commit": "4610573ee9720f2b5e4760a9336263362446b800",
+  "a_producer_commit": "dcb1e3ee220b85229bedc6c79d72ebe495825f37",
+  "account_persistence_calls": 0,
+  "actual_B2_source_and_packaged_worker_checked": true,
+  "all_C_fixed_synthetic_checks_passed": true,
+  "b_host_commit": "c248daab22255a069464a6d277757d01df5d49f3",
+  "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+  "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+  "c_build_source_commit": "f627590468154cc8622dad8647fefe9f6fd3c4ee",
+  "c_replay_tool_commit": "79215ee8cba61a4a738e9f3e8aee152791e17636",
+  "c_wheel_delivery_commit": "8208c6c8611d6b7e471ed93816c7cf025b134331",
+  "c_wheel_sha256": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2",
+  "candidate": {
+    "binary_source_build_attestation": false,
+    "main_executable_sha256": "0370b6f93e095dbb59d22758c5fa1d50abfce7989ab9971d03726acbbdd91dc9",
+    "manifest_and_exact_file_set_verified_before_and_after_each_replay": true,
+    "manifest_file": "candidate-manifest.sha256",
+    "manifest_raw_sha256": "30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3",
+    "publisher_trust_established": false,
+    "verified_files": 920,
+    "worker_executable_sha256": "989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a"
+  },
+  "coordination_id": "starhelp.interop-min.v0.1",
+  "date": "2026-10-21",
+  "frozen_contract_raw_sha256": "1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a",
+  "lock_version": "0.1",
+  "new_a_b1_capture_lock_sha256": "a6e8620bf242eb9598697de777c0f71d45f4cf7756c326371ad4151e218562d3",
+  "new_a_raw_sha256": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+  "new_a_release": "rel_fixture_s3_0001",
+  "no_template_origin": "C-constructed protocol negatives; B builder separately refuses undeclared goals before worker. A/B raw bytes unchanged.",
+  "not_exercised": [
+    "production source/ID/content/trust acceptance",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations",
+    "independent GUI/installer acceptance (B-owned evidence, not run by C)"
+  ],
+  "prior_source_lock_sha256": "5b7d5eecb92702dcfc9e493b2c0a1450f5784885aa22b3ef6a0335f7db82186e",
+  "production_ready": false,
+  "reports": {
+    "c-0.4.0-b2-c248daa-measurement-packaged-comparison-v2.json": {
+      "no_template_protocol_cases": 2,
+      "raw_sha256": "0177ccf9ea10c27458ab6685f85a86cc9db8178fdfd640efa2acca55b444e73e",
+      "summary": {
+        "checks_failed": 0,
+        "checks_passed": 37,
+        "transports": [
+          "fixed-B2-source-worker",
+          "hash-pinned-Windows-worker"
+        ],
+        "worker_cases": 30
+      }
+    },
+    "c-0.4.0-b2-c248daa-packaged-comparison-v2.json": {
+      "no_template_protocol_cases": 6,
+      "raw_sha256": "daf0924c8740a789422a6299fade1f5821f67748bc7272e12f45d1909efb77ea",
+      "summary": {
+        "checks_failed": 0,
+        "checks_passed": 83,
+        "transports": [
+          "fixed-B2-source-worker",
+          "hash-pinned-Windows-worker"
+        ],
+        "worker_cases": 62
+      }
+    }
+  },
+  "separate_old_a_b1_measurement_capture_lock_sha256": "597d7947ee545880a3337827d5872838f506e17813533785b2dde35309281152",
+  "synthetic_only": true
+}

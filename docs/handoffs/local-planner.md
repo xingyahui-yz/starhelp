@@ -1,5 +1,22 @@
 # Local planner handoff
 
+## Final S3 packaged evidence receipt (reconciled 2026-10-28)
+
+The final runs completed on **2026-10-21**. Recovery on **2026-10-28** checked the existing report/input/wheel hashes and the exact 920-file candidate; no implementation tests were rerun, and no wheel, B source or candidate was rebuilt. The immutable run dates and bytes remain unchanged.
+
+| Fixed input set | Passing checks | Worker case executions | Transports |
+|---|---:|---:|---|
+| New A three-mode S3 set | **83, zero failed** | **62 = 31 source + 31 packaged** | fixed B2 source and pinned Windows worker |
+| Separate old-A measurement set | **37, zero failed** | **30 = 15 source + 15 packaged** | same two transports, separate producer capture |
+
+These counts are checks and case executions, not independent real-game stages. The new set retains 21 actual B1/B2-builder wrappers and adds protocol negatives, including no-reviewed-template for each mode. Those no-template wrappers deliberately change outer/inner task goals together while retaining A/B raw bytes; the normal B builder separately rejects undeclared goals before submission. Results are correlated, produce no unsaved report for no-template/errors/pending/infeasible outcomes, preserve locks/instance identity and reject completed-worker results after the declared revoke interposer. Private persistence calls remain zero.
+
+**Final lock:** `packages/starhelp-planner/interop/b2-c248daa/packaged-lock.json`, SHA-256 `850428ffad5d388d0d25358e7f38f7509433745dd0e26d516628efac2f8a671c`. Reports: `interop/reports/c-0.4.0-b2-c248daa-packaged-comparison-v2.json` (SHA `daf0924c8740a789422a6299fade1f5821f67748bc7272e12f45d1909efb77ea`) and `c-0.4.0-b2-c248daa-measurement-packaged-comparison-v2.json` (SHA `0177ccf9ea10c27458ab6685f85a86cc9db8178fdfd640efa2acca55b444e73e`). The copied raw `candidate-manifest.sha256` is SHA `30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3`, covers exactly 920 files, and was checked before/after each run. Main exe SHA `0370b6f93e095dbb59d22758c5fa1d50abfce7989ab9971d03726acbbdd91dc9`; worker SHA `989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a`.
+
+Identity remains A producer dcb1e3e / artifact 4610573e, B1 serializer/encoder 103741e, B2 host c248daa, C wheel source f627590 / delivery 8208c6c / SHA 3b5b8de8…52c47aea2. The final harness is fixed at `79215ee8cba61a4a738e9f3e8aee152791e17636`. Runtime/profile versions and all original locks remain fixed. Binary publisher trust and independent binary source-build attestation remain unestablished; C did not run B's GUI/installer acceptance.
+
+**Scope:** C's fixed synthetic source/installed/packaged interoperability evidence is complete for this S3 set. The full Goal/M0 is **not complete**: real sources/IDs, human content review, production trust and real local acceptance remain open; complete-material/final-panel positive coverage is unavailable in the current B representation. Native reviewed-feedback tests do not establish B's missing feedback-builder wiring. No new implementation or S4 task is started by this receipt. Detailed evidence: [interop-s3-evidence.md](../../packages/starhelp-planner/docs/interop-s3-evidence.md). Earlier checkpoints below are historical.
+
 ## B2 packaged replay checkpoint (2026-10-21)
 
 The new candidate is explicitly pinned to manifest `30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3`, 920 files, worker `989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a`. Independent C source+Windows-worker replay passed **77 checks / 56 cases** on new A and **35 checks / 28 cases** on the separate old-A measurement set, with exact manifest/file-set verification before and after. These are `c-0.4.0-b2-c248daa-packaged-comparison.json` and `c-0.4.0-b2-c248daa-measurement-packaged-comparison.json` under package `interop/reports/`.

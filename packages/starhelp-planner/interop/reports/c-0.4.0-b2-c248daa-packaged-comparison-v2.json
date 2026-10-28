@@ -1,0 +1,1632 @@
+{
+  "C_wheel_file": "starhelp_planner-0.4.0-py3-none-any.whl",
+  "C_wheel_sha256": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2",
+  "account_persistence_calls": 0,
+  "b_host_commit": "c248daab22255a069464a6d277757d01df5d49f3",
+  "builder_rebuilds": [
+    {
+      "name": "stage-0-ambiguous_move",
+      "snapshot_sha256": "74edb4c7c568556ea9fc6a62e757674db864a8e22387bd663b94576ad116375a",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-complete_alternate",
+      "snapshot_sha256": "64a85800ae0b81c75d75d2fcddd401c8c88de5ad8e079d357c53ce6b9a701d1e",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-locked_move",
+      "snapshot_sha256": "bd524df1ef9abdadff5398f61f3490c87ff6e30f7ad2fd17a74efcbcda6de134",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-main_current_equipment",
+      "snapshot_sha256": "50ac347fe8e45ff5dfeb3bd291407e1001bfe1609e216bd8be503aabfbf96b2a",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-missing_fields",
+      "snapshot_sha256": "baa07d50a2031fdb071a2a4fa3893372b7fe00faac49e7b206e98c3a49c985df",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-normal",
+      "snapshot_sha256": "baa07d50a2031fdb071a2a4fa3893372b7fe00faac49e7b206e98c3a49c985df",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-not_owned",
+      "snapshot_sha256": "db13075a24b7d4ef461b05fc5f2c84da6c3d35b491081bca1a298deaa2f2b663",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-player_confirmed_move",
+      "snapshot_sha256": "bd524df1ef9abdadff5398f61f3490c87ff6e30f7ad2fd17a74efcbcda6de134",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-same_type_distinct_instance",
+      "snapshot_sha256": "8b06245ac83685b815e955b121d51ce88b5631fd8f11c20ff96a7f0418007cda",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-source_confirmed_move",
+      "snapshot_sha256": "1372d15a8fdcc716155763fc8802a154bd79f36e425b5bd2ade8c8daae0d76a9",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-0-unknown_ownership",
+      "snapshot_sha256": "719e9bc82842a531f876cad9f08bceb04910956a50da498ed1cd158242eeac13",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-1-complete_alternate",
+      "snapshot_sha256": "c983c1818fc87aa5cb309b47a7cd1f6ac072eaf1761722cda72d1a1f91fa55e1",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-1-missing_fields",
+      "snapshot_sha256": "49c3c2c017c09bbffb26e9c3f47bce66a280362242fbc56034caa9d798e3253a",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-1-normal",
+      "snapshot_sha256": "49c3c2c017c09bbffb26e9c3f47bce66a280362242fbc56034caa9d798e3253a",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-1-not_owned",
+      "snapshot_sha256": "2a23bd5fca1e637ede39fc875230450c3cb94401afc646c1ba5a7023200656f5",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-1-unknown_ownership",
+      "snapshot_sha256": "4a0d6603a11b04f07cf69aadfae40f19167095a1efb6028110f5d2c1228a89a7",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-2-complete_alternate",
+      "snapshot_sha256": "4a6bc5375bafbaf5b56f555f7a23b7027181f5deaf065a3da3f57eb7b7c41c59",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-2-missing_fields",
+      "snapshot_sha256": "f912c21c60e5624392b378438dc463be2f19ca7f52040cb22733b5edb280d711",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-2-normal",
+      "snapshot_sha256": "f912c21c60e5624392b378438dc463be2f19ca7f52040cb22733b5edb280d711",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-2-not_owned",
+      "snapshot_sha256": "faa140ee05a532b50b09e9be99d712e4ee7dfd14f35f6f46aa26edb75b5dfc6a",
+      "wrapper_equal_to_B1_capture": true
+    },
+    {
+      "name": "stage-2-unknown_ownership",
+      "snapshot_sha256": "64435fe354637326cf9b3f3b20bcb2c8cd06c419962825d0459a0f8d60c48293",
+      "wrapper_equal_to_B1_capture": true
+    }
+  ],
+  "candidate": {
+    "build_source_commit_attested": false,
+    "manifest_sha256": "30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3",
+    "publisher_trust_established": false,
+    "verified_files": 920,
+    "worker_sha256": "989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a"
+  },
+  "candidate_build_provenance_attested": false,
+  "capture_lock_raw_sha256": "a6e8620bf242eb9598697de777c0f71d45f4cf7756c326371ad4151e218562d3",
+  "cases": [
+    {
+      "input_unchanged": true,
+      "name": "stage-0-ambiguous_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-ambiguous_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-locked_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-locked_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-main_current_equipment",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-main_current_equipment",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate",
+          "fixture:s3:alpha:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate",
+          "fixture:s3:alpha:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate",
+          "fixture:s3:alpha:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:alternate",
+          "fixture:s3:alpha:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-player_confirmed_move",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-player_confirmed_move",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-same_type_distinct_instance",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-same_type_distinct_instance",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:alpha:variant:main",
+          "fixture:s3:alpha:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-source_confirmed_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-source_confirmed_move",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-0-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate",
+          "fixture:s3:beta:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate",
+          "fixture:s3:beta:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate",
+          "fixture:s3:beta:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:beta:variant:alternate",
+          "fixture:s3:beta:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-1-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-complete_alternate",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate",
+          "fixture:s3:gamma:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-missing_fields",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate",
+          "fixture:s3:gamma:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate",
+          "fixture:s3:gamma:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-normal",
+      "observation": {
+        "available_variant_ids": [
+          "fixture:s3:gamma:variant:alternate",
+          "fixture:s3:gamma:variant:main"
+        ],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "plans_available",
+        "temporary_report_created": true
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-not_owned",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_feasible_variant",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "stage-2-unknown_ownership",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "confirmation_required",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:alpha:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:beta:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:gamma:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "withdrawn-required-evidence",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "withdrawn_public_object",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "raw-digest-tamper",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "producer_digest_mismatch",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "unknown-signing-key",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "unknown_signing_key",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-request-id",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-snapshot-revision",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-authorization-generation",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "post-worker-revocation-rejects-result",
+      "observation": {
+        "completed_worker_result_rejected": true,
+        "exception": "PlannerCancelled",
+        "message": "analysis result rejected because profile authorization changed",
+        "require_active_calls": 2,
+        "status": "bridge_refused",
+        "test_interposer": "actual B revoke at post-worker require_active checkpoint"
+      },
+      "passed": true,
+      "transport": "fixed-B2-source-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:alpha:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:beta:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "no-reviewed-template/fixture:s3:gamma:stage",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": null,
+        "native_result_matches_fixed_installed_C": true,
+        "status": "no_reviewed_template",
+        "temporary_report_created": false
+      },
+      "origin": "C-constructed protocol negative: outer/inner task goal changed together; original A/B raw bytes retained. B1/B2 builder separately refuses the undeclared goal before worker submission.",
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "withdrawn-required-evidence",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "withdrawn_public_object",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "raw-digest-tamper",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "producer_digest_mismatch",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "unknown-signing-key",
+      "observation": {
+        "available_variant_ids": [],
+        "component_version": "0.4.0",
+        "correlation_tuple_matches": true,
+        "error_code": "unknown_signing_key",
+        "native_result_matches_fixed_installed_C": null,
+        "status": "error",
+        "temporary_report_created": false
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-request-id",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-snapshot-revision",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "mismatched-authorization-generation",
+      "observation": {
+        "exception": "PlannerUnavailable",
+        "message": "local planner exited with an error",
+        "status": "bridge_refused"
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    },
+    {
+      "input_unchanged": true,
+      "name": "post-worker-revocation-rejects-result",
+      "observation": {
+        "completed_worker_result_rejected": true,
+        "exception": "PlannerCancelled",
+        "message": "analysis result rejected because profile authorization changed",
+        "require_active_calls": 2,
+        "status": "bridge_refused",
+        "test_interposer": "actual B revoke at post-worker require_active checkpoint"
+      },
+      "passed": true,
+      "transport": "hash-pinned-Windows-worker"
+    }
+  ],
+  "checks": [
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-ambiguous_move/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-ambiguous_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-ambiguous_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-complete_alternate/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-locked_move/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-locked_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-locked_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-main_current_equipment/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-main_current_equipment",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-main_current_equipment",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-missing_fields/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-normal/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-not_owned/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-player_confirmed_move/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-player_confirmed_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-player_confirmed_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-same_type_distinct_instance/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-same_type_distinct_instance",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-same_type_distinct_instance",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-source_confirmed_move/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-source_confirmed_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-source_confirmed_move",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-0-unknown_ownership/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-0-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-0-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-1-complete_alternate/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-1-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-1-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-1-missing_fields/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-1-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-1-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-1-normal/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-1-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-1-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-1-not_owned/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-1-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-1-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-1-unknown_ownership/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-1-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-1-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-2-complete_alternate/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-2-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-2-complete_alternate",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-2-missing_fields/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-2-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-2-missing_fields",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-2-normal/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-2-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-2-normal",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-2-not_owned/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-2-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-2-not_owned",
+      "passed": true
+    },
+    {
+      "detail": "actual B2 builder emits the exact B1 snapshot bytes under the independently verified unchanged seam",
+      "name": "stage-2-unknown_ownership/actual_B2_builder_bytes",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/stage-2-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/stage-2-unknown_ownership",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/no-reviewed-template/fixture:s3:alpha:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/no-reviewed-template/fixture:s3:beta:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/no-reviewed-template/fixture:s3:gamma:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/withdrawn-required-evidence",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/raw-digest-tamper",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/unknown-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/mismatched-request-id",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/mismatched-snapshot-revision",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/mismatched-authorization-generation",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "fixed-B2-source-worker/post-worker-revocation-rejects-result",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/no-reviewed-template/fixture:s3:alpha:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/no-reviewed-template/fixture:s3:beta:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/no-reviewed-template/fixture:s3:gamma:stage",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/withdrawn-required-evidence",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/raw-digest-tamper",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/unknown-signing-key",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/mismatched-request-id",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/mismatched-snapshot-revision",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/mismatched-authorization-generation",
+      "passed": true
+    },
+    {
+      "detail": "actual B bridge/worker, status/allocation/correlation/staging versus fixed installed C evidence",
+      "name": "hash-pinned-Windows-worker/post-worker-revocation-rejects-result",
+      "passed": true
+    }
+  ],
+  "expected_installed_report": {
+    "file": "c-0.4.0-b1-s3-installed.json",
+    "sha256": "ccf0d5c186ead25d63b25070e80a597cc40b4617fd6ec2dfb3fee0cb02ddd29d"
+  },
+  "full_M0_acceptance": false,
+  "not_exercised": [
+    "production source/content/trust acceptance",
+    "complete inventory/material positive calculations",
+    "final-loadout panel positive calculations"
+  ],
+  "source_load_proof": {
+    "C_wheel_sha256": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2",
+    "actual_module_load": {
+      "C_module_from_exact_B2_vendor": true,
+      "component_version": "0.4.0",
+      "loaded_B_modules": {
+        "starhelp_desktop.models": {
+          "path": "src/starhelp_desktop/models.py",
+          "sha256": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504"
+        },
+        "starhelp_desktop.planner_worker": {
+          "path": "src/starhelp_desktop/planner_worker.py",
+          "sha256": "b59a1d30d8fd41d679b088fa716a83d4484af080ee1e73aa33b072a3be7d1ce4"
+        },
+        "starhelp_desktop.producer_request": {
+          "path": "src/starhelp_desktop/producer_request.py",
+          "sha256": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59"
+        },
+        "starhelp_desktop.profiles": {
+          "path": "src/starhelp_desktop/profiles.py",
+          "sha256": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3"
+        }
+      },
+      "native_rule_version": "0.2.0",
+      "producer_adapter_profile": "starhelp.producers.v0.1"
+    },
+    "b1_seam_hashes_equal": {
+      "src/starhelp_desktop/bundles.py": "dbfc4b6510897f2129ea8a7aa75fea484ced49b47bd8fb413fb89cfd3664d9af",
+      "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+      "src/starhelp_desktop/producer_request.py": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59",
+      "src/starhelp_desktop/profiles.py": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3",
+      "src/starhelp_desktop/storage.py": "02d6fbde5d0e234b9464816b9dc2e6093fb2a3c5dc9f94c3a8a9b01b8e0ea226"
+    },
+    "b_host_commit": "c248daab22255a069464a6d277757d01df5d49f3",
+    "b_host_source_proof": {
+      "all_files_verified": true,
+      "commit": "c248daab22255a069464a6d277757d01df5d49f3",
+      "file_sha256": {
+        "README.md": "2751a48e6651ae0af4436876a92fd68a0589e76736f7eebd21521b251a0c0a08",
+        "packaging/README.md": "688194e1315db0398f0277a6d3a3a559d430ce33afcf0a519f5ec60382156175",
+        "packaging/StarHelp.spec": "6c831bfc7367476bd0a91d9392a555c02c18d20e2247d1dba43451d0dd29aabc",
+        "packaging/StarHelpPlannerWorker.spec": "d222266ceeed655a32d34679c510cd8ba132da59d13df4afb9d282aaa7124a74",
+        "packaging/build-candidate.ps1": "ad249ba5c98aa9b3c13523a4ed4847c85ca427560f1604d94a6cfeb3c00d2ccd",
+        "packaging/entrypoint.py": "1ac8f3259572d999a3bc12d084f1ff61ac879c96b382edcdc971a534f29b4650",
+        "packaging/install-candidate.ps1": "27f983035d8518b82e131c55c53fc52d85c61113b753b54f8051089678b34697",
+        "packaging/planner_worker_entrypoint.py": "b3e275b2303a457db7c80bbf7241f4a9dec4839b8db2cee1bb984bf963873e57",
+        "packaging/vendor/PLANNER-ARTIFACT.md": "f76e45c3a4d9ce613d2914f55269904f12a6ed56ef99df5fb7b0c1ba3dfb8636",
+        "packaging/vendor/starhelp_planner-0.3.0-py3-none-any.whl": "f7b6c5c221e2491c9399ed76656945175961ac94188b11ad2fe4d4160d0aa0ca",
+        "packaging/vendor/starhelp_planner-0.4.0-py3-none-any.whl": "3b5b8de8f2ef71cd07f1cfb7724cb0a1564f316860232b58728386d52c47aea2",
+        "pyproject.toml": "6f1df152d3d34086d5ab4c80cf2c939b9a8789ee45db9be1aafdfadcafd523a3",
+        "src/starhelp_desktop/__init__.py": "26761d0531e24e49a3c0dd3e8ac4888e832529a0da33ffcd5bc551e1009d3fc3",
+        "src/starhelp_desktop/__main__.py": "d21de9364b84039d30d4e397c712a49e6f1c6798819aff0f19b90849695aeff2",
+        "src/starhelp_desktop/analysis.py": "26845ba0facf8b73cee5dcbfb0ee2c441a74c84d06e5b0aab611b97c7414aa9a",
+        "src/starhelp_desktop/bundles.py": "dbfc4b6510897f2129ea8a7aa75fea484ced49b47bd8fb413fb89cfd3664d9af",
+        "src/starhelp_desktop/equipment.py": "72a5bff218cce068dd1e79cbfa769177682f0f984847aa1bbf2d27299ea28365",
+        "src/starhelp_desktop/gui.py": "779b3b872a9d90615b566d957fee9ee1da797c4019ef49ec19f063622b5afbb2",
+        "src/starhelp_desktop/imports.py": "c501403ff821f9f7799819ef45be471e04e8bda9d877b80865eb74ebdbfc8230",
+        "src/starhelp_desktop/lifecycle.py": "fae591136ce165ded3a305528a66ac5446cda4cb8b5b9eb6658946db3bedd43a",
+        "src/starhelp_desktop/merge.py": "4f1252fc107d00dca2a3b583005249d8f9a8f0af9c15b1df8203baa080e32e52",
+        "src/starhelp_desktop/models.py": "432bf4f1c0599e6eee982d949114c50e4849eb4de49e70cdae31873e509af504",
+        "src/starhelp_desktop/planner.py": "96950c94a1554589e8cdfb7142eb61a08aca3d3dfe2ae5b360794b59d03a88ba",
+        "src/starhelp_desktop/planner_worker.py": "b59a1d30d8fd41d679b088fa716a83d4484af080ee1e73aa33b072a3be7d1ce4",
+        "src/starhelp_desktop/privacy.py": "297d493e1b55c4902506aac98c743b46e52bbb1be7a0a20450407e7509b12a79",
+        "src/starhelp_desktop/producer_request.py": "c88882dede1e225f21095a7baa13f64ca78b66e745a53c8b0662c6731e573e59",
+        "src/starhelp_desktop/profiles.py": "d5c3531cdde6e9bd6381578a83374f6dc00be4b5ea5dad1c7bca7eb586134be3",
+        "src/starhelp_desktop/public_profile.py": "234bdf000acac6d75780b5bf0521f574fb29a2afc6915aa2f8e89f3afd1d94ce",
+        "src/starhelp_desktop/reports.py": "8c9033cda4e4cfcce970abc959c1809bca54ef8f2af44bc74f024176056c4fc7",
+        "src/starhelp_desktop/storage.py": "02d6fbde5d0e234b9464816b9dc2e6093fb2a3c5dc9f94c3a8a9b01b8e0ea226",
+        "src/starhelp_desktop/synthetic_demo.py": "0939698fa39dc40f6b277264eb2d0f088ba4712cf9ec3a364be0fbc8f9388d17",
+        "src/starhelp_desktop/tasks.py": "84d8d3fbe854b9bc7fa0a405584f1b68330efe703e9897f206bafa3546abf332",
+        "tests/Install-Candidate.Smoke.ps1": "09aa9d1faaffd7af1118e9250f4c1e8ac3b7931bc6351934a9de18991b1b8f32",
+        "tests/fixtures/producer-interop-s3/README.md": "ef75be2e389d4d835b977a8fbe35e773f94982d1f949b01383b5074876bb6264",
+        "tests/fixtures/producer-interop-s3/SHA256SUMS.txt": "1dd544e4974c38420cad1337ddcd365b59054f666eaf11bc404176fc9ea1188e",
+        "tests/fixtures/producer-interop-s3/equipment-type-table.json": "7ffda486ef1b00683d3b3279fb3f2bf802075c46a5f04dbe563fc60f6ed75380",
+        "tests/fixtures/producer-interop-s3/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+        "tests/fixtures/producer-interop-s3/starhelp-interop-min-v0.1-s3.bpublic.json": "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+        "tests/fixtures/producer-interop-s3/synthetic-b-snapshot-045965b.json": "e7269a57b83e3145bd647262c4a88d1663718d4078c502f0cd4829108d9b3b58",
+        "tests/fixtures/producer-interop-v1/README.md": "59ae0fd5ac71d9d29a87f8319f5094e774c9ff92d88f510fc5cf4d52f3c7fcab",
+        "tests/fixtures/producer-interop-v1/fixture-ed25519-public.pem": "7fe277b94d7e7d57dd3fceeaad77495fdff04861c02c3b1cc624c736aac8a29e",
+        "tests/fixtures/producer-interop-v1/knowledge-planner-fixture-v1.bpublic.json": "cd848169254d78586d9ae197f944688463fb72a513d2b38aba7e888feed4d13b",
+        "tests/fixtures/producer-interop-v1/synthetic-b-snapshot-045965b.json": "a0c9fd982bd78e11e2ead2460b08b4ed13b4cb52afbe7f9274a6ecd35bd0cbd5",
+        "tests/test_account_core.py": "ccc8b72cbc294a2fb6c08e7809233df29b2ee714400eacb6f271f94551e2eb49",
+        "tests/test_planner_interop.py": "ec7fe7e144f4a9598b75ef6902d4677dce1c5ba741492d5bdcf20ad288eb4968"
+      },
+      "git_tree": "1f6c9729ccd1536ed48db10b3ff92fd362bcdcf9",
+      "package_subdir": "packages/starhelp-desktop"
+    },
+    "b_serializer_commit": "103741e02c90ac672017f783058bdd8dacae982e",
+    "b_serializer_profile": "starhelp.desktop.snapshot.interop-min.v0.1",
+    "candidate_build_provenance_attested": false,
+    "full_three_party_acceptance": false,
+    "synthetic_only": true,
+    "worker_request_replay_executed": false
+  },
+  "summary": {
+    "checks_failed": 0,
+    "checks_passed": 83,
+    "transports": [
+      "fixed-B2-source-worker",
+      "hash-pinned-Windows-worker"
+    ],
+    "worker_cases": 62
+  },
+  "synthetic_only": true,
+  "worker_request_replay_executed": true
+}

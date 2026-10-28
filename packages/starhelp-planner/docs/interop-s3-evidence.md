@@ -2,6 +2,28 @@
 
 Date: 2026-10-21. Frozen technical scope: `starhelp.interop-min.v0.1`, raw SHA-256 `1e62607b9ab5af686f8d63ac067e8a061b0bb61064ffc09c3f58172c4cd31f7a`; reviewed semantic candidate `8116030eb600d58a091a52711b99d7788d45fed71fdbc1bfe02a01ca25233f68`. The shared MVP remains draft. This document records C implementation and observed gates, not production acceptance.
 
+## Final fixed packaged replay (run 2026-10-21, receipt 2026-10-28)
+
+The interrupted delivery was reconciled on 2026-10-28 by checking existing hashes, all captured input files, report checks/cases and the exact current 920-file candidate. **No implementation tests were rerun and no artifacts rebuilt.** Original reports, run dates and raw bytes are preserved.
+
+| Set | Checks | Worker case executions | Final report SHA-256 |
+|---|---:|---:|---|
+| New A/B1 S3 through B2 | **83 passed, 0 failed** | **62: 31 source + 31 packaged** | `daf0924c8740a789422a6299fade1f5821f67748bc7272e12f45d1909efb77ea` |
+| Separate old-A/B1 measurement set | **37 passed, 0 failed** | **30: 15 source + 15 packaged** | `0177ccf9ea10c27458ab6685f85a86cc9db8178fdfd640efa2acca55b444e73e` |
+
+Reports: `interop/reports/c-0.4.0-b2-c248daa-packaged-comparison-v2.json` and `c-0.4.0-b2-c248daa-measurement-packaged-comparison-v2.json`. Final lock `interop/b2-c248daa/packaged-lock.json` has raw SHA `850428ffad5d388d0d25358e7f38f7509433745dd0e26d516628efac2f8a671c`; it fixes source host c248daa, B1 serializer 103741e, C wheel source f627590 / delivery 8208c6c, A source dcb1e3e / artifact 4610573e and final harness `79215ee8cba61a4a738e9f3e8aee152791e17636`. Original artifact/capture/source locks are not rewritten.
+
+| Candidate identity independently checked by C | SHA-256 / count |
+|---|---|
+| Raw manifest, copied as `interop/b2-c248daa/candidate-manifest.sha256` | `30e4820db6b3a97b193b29b225591758a1e424828b8f55be6094c68046bc19c3` |
+| Exact manifest file set | 920 files; checked before and after each replay |
+| Main executable | `0370b6f93e095dbb59d22758c5fa1d50abfce7989ab9971d03726acbbdd91dc9` |
+| Worker executable | `989c0a8ee1abf73bd99db9b50722990d3a4e728ec6b038814b44dcdd7a260f9a` |
+
+The first packaged reports (77 checks / 56 case executions and 35 / 28) are retained. v2 adds the three S3 per-mode no-template protocol negatives on each transport and one corresponding old-A case per transport. These are **C-constructed protocol negatives**, not B-builder output: outer/inner goals change together, original A/B raw bytes stay fixed, and the normal builder rejects undeclared goals before C. Both workers return correlated no_reviewed_template without creating reports. The unchanged 21/7 builder captures, complete variant/allocation/pending results, locks, confirmed/unreliable identities, error context, report staging and deterministic post-worker revoke rejection all pass; private persistence calls are zero. Check/case counts are not counts of independent game stages.
+
+C's finite synthetic interoperability checks have passed. Independent binary source-build attestation and publisher trust remain false. C's worker observations do not claim B-owned GUI/installer acceptance. Full Goal/M0 and production source/ID/content/trust acceptance remain open, as do positive complete-material/final-panel coverage and B's feedback-builder wiring. No source/profile expansion or S4 implementation is implied.
+
 ## Fixed B2 source and actual worker replay
 
 B2 host `c248daab22255a069464a6d277757d01df5d49f3` was extracted from Git into C's new `.tmp/producer-snapshots/b2-c248daa/` directory. All **45 package files** match that exact Git tree before/after execution. Models, profiles, producer_request, bundles and storage match the five independently pinned B1 file hashes. The actual isolated B2 `_load_planner` loads the exact 0.4.0 vendor wheel (SHA 3b5b8de8…52c47aea2), with native rule 0.2.0 and producer profile starhelp.producers.v0.1. B2 remains host identity; B1 `103741e` remains actual serializer/encoder identity.
@@ -16,7 +38,7 @@ Files are `interop/reports/c-0.4.0-b2-c248daa-source-load.json`, `c-0.4.0-b2-c24
 
 The actual B2 builder reproduces all **21 S3** and, separately, **7 measurement** wrappers/snapshot bytes exactly. Worker results match the fixed installed-C evidence for status, full variant/allocation/pending results, citations and report eligibility. Available plans create unsaved reports; pending/infeasible/errors do not. Confirmed moves and the same snapshot under a lock retain their observed changed result. Native withdrawal, adapter digest tamper and unknown-key errors all preserve request/revision/generation and create no report. Wrong wrapper request/revision/generation is refused. A declared lifecycle test interposer calls actual B revoke at the second require_active check, after the real worker completes; both sets reject that completed result as PlannerCancelled. This is a deterministic synthetic race check, not real-account acceptance. **Private persistence calls: 0.**
 
-The Windows candidate is being built by B. No old `dist` executable was used for this source report; candidate manifest/worker replay and binary build attestation are not established by it. Full M0/production/material/final-panel limitations remain below.
+The source-only reports above do not establish candidate behavior or binary build attestation. The separately pinned source+packaged results are in the final section above; full M0/production/material/final-panel limitations remain.
 
 ## Fixed C wheel and isolated replay
 
@@ -91,7 +113,7 @@ Each capture requires a new output directory; historical raw inputs are never ov
 
 `tools/verify_b2_host.py` verifies the whole fixed source copy, compares models/profiles/producer_request/bundles/storage bytes to the independent B1 source proof, checks vendor wheel equality, and invokes the actual isolated B worker loader to verify C's origin and version. It passed on c248daa as above. Its standalone output deliberately does not claim request replay or binary build provenance. The fixed C artifact/report delivery commit is `8208c6c8611d6b7e471ed93816c7cf025b134331`, source commit f627590 as above; both were pushed to C's existing branch.
 
-`tools/replay_b2_host.py` uses that verifier, checks the C-installed expected report against the fixed artifact lock, and rebuilds every captured wrapper through the actual B2 builder. Exact B1 snapshot bytes, source/optional hash-pinned executable worker output, complete variant/equipment/pending results, correlation tuple, temporary-report eligibility and absence of persistence are asserted. Extra cases cover withdrawal, transport digest tamper, unknown key, wrapper identity/revision/generation mismatch, and an explicit test interposer calling actual B revoke at the post-worker authorization checkpoint. Binary source-build attestation is kept false. Actual c248daa source replay passed as above; the new Windows candidate remains pending. No uncommitted B code is labelled as B1.
+`tools/replay_b2_host.py` uses that verifier, checks the C-installed expected report against the fixed artifact lock, and rebuilds every captured wrapper through the actual B2 builder. Exact B1 snapshot bytes, source/optional hash-pinned executable worker output, complete variant/equipment/pending results, correlation tuple, temporary-report eligibility and absence of persistence are asserted. Extra cases cover no-template protocol inputs, withdrawal, transport digest tamper, unknown key, wrapper identity/revision/generation mismatch, and an explicit test interposer calling actual B revoke at the post-worker authorization checkpoint. Actual c248daa source and pinned Windows worker replay passed as recorded above. Binary source-build attestation stays false; no uncommitted B code is labelled as B1.
 
 Reproduce after extracting B2's exact Git tree into a new C temporary directory (each report path must be new):
 
@@ -103,6 +125,6 @@ Optional `--candidate` and `--candidate-manifest-sha256` add a separate executab
 
 The actual seam is `profiles._snapshot_to_dict` plus `producer_request.build_producer_analysis_request`, importing `models`, `bundles`, and their fixed package dependencies. B2 can change its worker/vendor loading and fixture inputs while retaining these B1 Git blobs. C will compare B2 serializer/encoder and transitively loaded source files to B1, record the B2 host commit separately, verify the actual loaded C module against the final wheel, and inspect actual worker output. A matching fixture byte string alone does not establish the current program's source identity. A changed seam requires a new explicit producer tuple; the registry has no wildcard, caller-supplied allowlist or metadata-commit alias.
 
-New A, B1 and the final C 0.4.0 wheel are locked and isolated-installed replay has passed. B2 host/worker validation follows this delivery. Current B representation cannot express complete material inventory or final loadout panels; their positive coverage remains **not exercised**, even if native-only unit tests pass or an empty cultivation list totals zero. A statistical condition cannot be invented in the condition-free S3 release; the separate old-A measurement replay remains clearly identified.
+New A, B1, B2 host/candidate and the C 0.4.0 wheel are locked; isolated-installed and source+packaged replay have passed. Current B representation cannot express complete material inventory or final loadout panels; their positive coverage remains **not exercised**, even if native-only unit tests pass or an empty cultivation list totals zero. A statistical condition cannot be invented in the condition-free S3 release; the separate old-A measurement replay remains clearly identified.
 
 Full M0/Goal acceptance also still requires real sources/IDs, human content review and production trust. No real account, UID, game input, remote model, public private-data log, main update, merge, rebase or PR is part of this delivery.
