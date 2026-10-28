@@ -88,10 +88,16 @@ class ProducerAnalysisRunner:
             f"{item['id']}@{item['revision']}"
             for item in citations
         )
+        report_task = dict(request["task"])
+        if "feedback" in request:
+            feedback = request["feedback"]
+            if not isinstance(feedback, dict):
+                raise PlannerUnavailable("analysis request feedback is malformed")
+            report_task["feedback"] = feedback
         report = self._reports.make_temporary(
             profile_id=profile_id,
             generation=authorization_generation,
-            task=request["task"],
+            task=report_task,
             result=result.result,
             snapshot_revision=snapshot["snapshot_revision"],
             public_release_id=release_id,

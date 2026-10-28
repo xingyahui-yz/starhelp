@@ -916,3 +916,20 @@ post-replay candidate still has the same 920 manifest files and hashes; packaged
 No real profile, UID, or screenshot was used. The folder candidate remains unsigned; this Windows
 11 build-host result does not replace target-user Windows compatibility, publisher-signing, M0
 production mappings/trust, or user-provided account acceptance.
+
+## Local feedback request plumbing (2026-10-28)
+
+`build_producer_analysis_request()` now accepts optional feedback for the pinned local C worker.
+The builder limits it to 64 reported fields and 64 KiB, requires each fact to be explicitly
+`user_reported` with a unit and measurement context, binds an optional scope to the selected task,
+and rejects unsupported keys/non-JSON values. It copies the feedback into the local producer
+request; no PublicQuery or A transport path receives it. When C returns an eligible report, the
+feedback travels with the unsaved report details and is retained only if the player explicitly
+saves the encrypted report.
+
+The B/C interop test passed a synthetic reported failure through the pinned worker, and the full 67
+package tests, `compileall`, and `git diff --check` passed. The fixed S3 bundle has no troubleshooting
+rules, so this verifies bounded request plumbing and local report retention, not an alternative-plan
+recommendation. A player-facing feedback/reanalysis control and a production bundle with reviewed
+troubleshooting rules remain open; current task creation still reports production analysis as
+unavailable until M0 is frozen.

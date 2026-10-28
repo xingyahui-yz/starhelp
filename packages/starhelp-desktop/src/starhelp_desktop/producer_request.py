@@ -19,6 +19,63 @@ _TASK_SCOPE_KEYS = frozenset({
     "stage_revision",
 })
 _TASK_SCOPE_STRING_KEYS = _TASK_SCOPE_KEYS - {"stage_revision"}
+_MAX_FEEDBACK_BYTES = 64 * 1024
+
+
+def _validated_feedback(value: Any, task: dict[str, Any]) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) - {
+        "fields", "scope", "variant_id", "variant_revision",
+    }:
+        raise ValueError("feedback must contain only supported local fields")
+    fields = value.get("fields")
+    if not isinstance(fields, dict) or not fields or len(fields) > 64:
+        raise ValueError("feedback must contain between 1 and 64 reported fields")
+    if "scope" in value and value["scope"] != task["scope"]:
+        raise ValueError("feedback scope must match the selected task")
+    if ("variant_id" in value) != ("variant_revision" in value):
+        raise ValueError("feedback variant identity must include ID and revision")
+    if "variant_id" in value and (
+        not isinstance(value["variant_id"], str) or not value["variant_id"].strip()
+        or not isinstance(value["variant_revision"], int)
+        or isinstance(value["variant_revision"], bool) or value["variant_revision"] < 1
+    ):
+        raise ValueError("feedback variant identity is malformed")
+
+    allowed_fact_keys = {
+        "value", "state", "unit", "measurement_context", "scope", "observed_at",
+        "valid_until",
+    }
+    for field_id, fact in fields.items():
+        if (
+            not isinstance(field_id, str) or not field_id or field_id != field_id.strip()
+            or len(field_id) > 160 or any(ord(char) < 32 for char in field_id)
+            or not isinstance(fact, dict)
+            or set(fact) - allowed_fact_keys
+            or not {"value", "state", "unit", "measurement_context"}.issubset(fact)
+        ):
+            raise ValueError("feedback field is malformed or contains unsupported keys")
+        context = fact["measurement_context"]
+        if (
+            fact["value"] is None or fact["state"] != "user_reported"
+            or not isinstance(fact["unit"], str) or not fact["unit"].strip()
+            or not isinstance(context, dict) or set(context) != {"phase", "assumptions"}
+            or not isinstance(context["phase"], str) or not context["phase"].strip()
+            or not isinstance(context["assumptions"], list)
+            or len(context["assumptions"]) > 32
+            or any(not isinstance(item, str) or not item.strip()
+                   for item in context["assumptions"])
+        ):
+            raise ValueError("feedback fields must be explicitly user-reported and contextualized")
+
+    try:
+        encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError):
+        raise ValueError("feedback must contain JSON-compatible finite values") from None
+    if len(encoded.encode("utf-8")) > _MAX_FEEDBACK_BYTES:
+        raise ValueError("feedback exceeds the 64 KiB local limit")
+    return json.loads(encoded)
 
 
 def _validated_scope(value: Any, label: str) -> dict[str, Any]:
@@ -169,6 +226,7 @@ def build_producer_analysis_request(
     snapshot_format_profile: str,
     evaluation_time: datetime | None = None,
     withdrawn_public_refs: Sequence[dict[str, Any]] = (),
+    feedback: dict[str, Any] | None = None,
     request_id: str | None = None,
 ) -> dict[str, Any]:
     """Build the immutable-source wrapper consumed by the pinned local planner worker.
@@ -228,6 +286,7 @@ def build_producer_analysis_request(
     }
     producer_task = json.loads(json.dumps(task, ensure_ascii=False, allow_nan=False))
     _validate_task_matches_bundle(bundle, producer_task)
+    local_feedback = _validated_feedback(feedback, producer_task)
     timestamp = evaluation_time or datetime.now(UTC)
     if timestamp.tzinfo is None:
         raise ValueError("evaluation time must be timezone aware")
@@ -272,6 +331,8 @@ def build_producer_analysis_request(
         "evaluation_time": timestamp_text,
         "latest_known_validity": {"withdrawn_public_refs": withdrawn_refs},
     }
+    if local_feedback is not None:
+        producer_request["feedback"] = local_feedback
     return {
         "contract_version": "0.1-draft",
         "schema_id": "AnalysisRequest",
@@ -282,6 +343,7 @@ def build_producer_analysis_request(
         "account_snapshot": snapshot_wrapper,
         "task": producer_task,
         "producer_request": producer_request,
+        **({"feedback": local_feedback} if local_feedback is not None else {}),
     }
 
 

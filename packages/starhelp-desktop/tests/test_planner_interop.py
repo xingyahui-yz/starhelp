@@ -140,6 +140,20 @@ class ProducerPlannerInteropTests(unittest.TestCase):
                 template_id=template["id"],
                 goal_kind=template["public_goals"][0]["kind"],
             )
+        feedback = {
+            "scope": task["scope"],
+            "fields": {
+                "fixture:failure_kind": {
+                    "value": "fixture:survival",
+                    "state": "user_reported",
+                    "unit": "fixture:label",
+                    "measurement_context": {
+                        "phase": "fixture:reported",
+                        "assumptions": [],
+                    },
+                },
+            },
+        }
         request_args = {
             "validated_bundle": validated,
             "task": task,
@@ -152,9 +166,12 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             "snapshot_producer_commit": SNAPSHOT_SERIALIZER_COMMIT,
             "snapshot_format_profile": SNAPSHOT_FORMAT_PROFILE,
             "evaluation_time": datetime(2026, 10, 21, 0, 0, tzinfo=UTC),
+            "feedback": feedback,
             "request_id": request_id,
         }
         wrapper = build_producer_analysis_request(**request_args)
+        self.assertEqual(wrapper["feedback"], feedback)
+        self.assertEqual(wrapper["producer_request"]["feedback"], feedback)
         captured_snapshot_bytes = wrapper["producer_request"]["account_snapshot"][
             "raw_json"
         ].encode("utf-8")
@@ -163,6 +180,29 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             wrapper["producer_request"]["account_snapshot"]["sha256"],
             hashlib.sha256(captured_snapshot_bytes).hexdigest(),
         )
+        invalid_feedback = {**feedback, "unexpected": "not-local-feedback-schema"}
+        with self.assertRaisesRegex(ValueError, "supported local fields"):
+            build_producer_analysis_request(**{**request_args, "feedback": invalid_feedback})
+        invalid_feedback = {
+            "fields": {
+                "fixture:failure_kind": {
+                    **feedback["fields"]["fixture:failure_kind"],
+                    "state": "confirmed",
+                },
+            },
+        }
+        with self.assertRaisesRegex(ValueError, "user-reported"):
+            build_producer_analysis_request(**{**request_args, "feedback": invalid_feedback})
+        oversized_feedback = {
+            "fields": {
+                "fixture:failure_kind": {
+                    **feedback["fields"]["fixture:failure_kind"],
+                    "value": "x" * (64 * 1024),
+                },
+            },
+        }
+        with self.assertRaisesRegex(ValueError, "64 KiB"):
+            build_producer_analysis_request(**{**request_args, "feedback": oversized_feedback})
         altered_task = json.loads(json.dumps(task))
         altered_task["scope"]["stage_revision"] = True
         with self.assertRaisesRegex(ValueError, "stage_revision must be a positive integer"):
@@ -212,6 +252,7 @@ class ProducerPlannerInteropTests(unittest.TestCase):
             result = execution.planner_result
             self.assertIsNotNone(execution.temporary_report)
             assert execution.temporary_report is not None
+            self.assertEqual(execution.temporary_report.task["feedback"], feedback)
             self.assertEqual(store.list_profile_keys(PROFILE_ID, "report"), ())
             self.assertIn("ev_fixture_s3_0001@1", execution.temporary_report.public_refs)
             reports.save_explicitly(
