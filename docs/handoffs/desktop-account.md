@@ -843,3 +843,20 @@ old cached release against the newest known safety state. Same-sequence raw dige
 immutable: same sequence/same raw digest is idempotent; same sequence/different digest is conflict.
 No new transport/controller code was added pending an A revision and A/B/C confirmation of the
 same candidate hash.
+
+## Packaged OCR model smoke (2026-10-28)
+
+The existing candidate remains the single 2026-10-21 build from B2 source commit
+`c248daab22255a069464a6d277757d01df5d49f3`; it was not rebuilt. The current `dist/StarHelp`
+manifest SHA-256 still matches the recorded `30e4820d…bc19c3` manifest. All three bundled OCR
+models are present under `_internal/rapidocr/models`, and each candidate model SHA-256 matches the
+installed build environment: detection `090f04abcd9d9a7498bc4ebf677e4cb9bdce1fe4197ddb7e529f1ef44e1ff94f`,
+classification `e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c`, recognition
+`6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884`.
+
+Added reproducible `packages/starhelp-desktop/packaging/smoke-candidate-ocr.py` and documented
+its invocation in the packaging README. On 2026-10-28 it loaded both `rapidocr` and `onnxruntime`
+from the candidate `_internal` directory, used the candidate model files, and recognized an
+in-memory synthetic PNG as `LEVEL 80`. This exercises packaged OCR runtime/model inference, not
+the frozen GUI click path; the existing Qt tests cover field mapping/preview behavior. No real
+screenshot or account data was read, and no image file was saved.

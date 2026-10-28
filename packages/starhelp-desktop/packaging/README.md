@@ -36,3 +36,8 @@ The result remains an unsigned folder-style candidate. SHA-256 verification dete
 corruption but does not authenticate the publisher because the manifest is unsigned. The release
 still needs an approved code-signing certificate, signed update metadata, and target-Windows
 install/upgrade/recovery validation. The script does not publish or self-update the app.
+
+After building a candidate, run `& '.venv\Scripts\python.exe' packaging\smoke-candidate-ocr.py`
+from the component root to exercise OCR using the candidate's own `_internal` RapidOCR, ONNX
+Runtime, and model files. It creates an in-memory synthetic PNG and expects to recognize `LEVEL 80`;
+it does not access a real screenshot or write an image file.
