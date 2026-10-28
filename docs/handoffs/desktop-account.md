@@ -1027,3 +1027,26 @@ and live adapter; representative signed production bundle and complete positive 
 loadout evidence; publisher signing and signed update metadata; target Windows install/upgrade/
 recovery validation; and player-provided local acceptance. The three-mode/equipment synthetic S3
 fixture already exists and is not listed as missing. No real UID or account data has been accessed.
+
+## Feedback consistency guard and rebuilt candidate (2026-10-28)
+
+At B source commit `9c51720a91d9dc25847cddd53f220fb60ca7b075`,
+`ProducerAnalysisRunner.run()` now compares canonical JSON for the outer report feedback and the
+nested `producer_request.feedback` before starting the local planner. It rejects differing values
+or one-sided feedback so a saved report cannot claim feedback that the planner did not analyze.
+Synthetic regression covers mismatch and both missing-side cases, and asserts rejection occurs
+before the planner call. The full package suite passes 68 tests; `compileall -q src packaging`
+passes.
+
+The unsigned PyInstaller 6.22.3 candidate was rebuilt from this source commit with the pinned C
+0.4.0 wheel. All 920 manifest entries and hashes match; manifest SHA-256 is
+`f74134a6611d7a2758a5748c2b6388ab7dafd97ecb17ce4efd8dcf2ba1da216f`, and the packaged worker
+SHA-256 is `b7c45fcf7a76538aa7e6c8fc209c4c825a3be8e8cbdd17a5ab5a0099a817912f`. Candidate OCR
+recognized synthetic `LEVEL 80`; the candidate stayed alive for eight seconds and loaded Qt6Core
+and Qt6Widgets; the actual packaged worker passed the signed synthetic S3 replay. The installer
+smoke passed install, upgrade, two-way rollback, and tamper rejection using synthetic installer
+fixtures in a unique `%TEMP%` directory. No candidate was installed over the user's existing app.
+
+This candidate remains unsigned and synthetic-only. M0 mappings/trust, C acceptance of the B
+request-builder provenance tuple, production A integration, reviewed troubleshooting evidence,
+target-user Windows validation, publisher signing, and player-provided acceptance remain open.
