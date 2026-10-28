@@ -677,7 +677,7 @@ Verification: all 56 package tests pass; `compileall` and `git diff --check` pas
 
 Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest matches the exact candidate file set; isolated 8-second startup loaded Qt6Core/Qt6Widgets; synthetic install, upgrade, two-way rollback and tamper rejection passed. No real UID request was made.
 
-### M0/M6 生产集成待输入清单（2026-10-21 更新）
+### M0/M6 生产集成待输入清单（2026-10-28 更新）
 
 以下记录 B 当前真实阻塞及所需输入。S3/B2 已完成合成技术回放；这不等于生产来源、映射或数据覆盖已验收。此清单不改变共同契约、A/C 文件或固定测试产物。
 
@@ -688,7 +688,7 @@ Rebuilt the candidate after this URL correction. The 919-file SHA-256 manifest m
 | 公共包同步与撤回 | B 已有签名校验、双版本缓存、原子激活/回滚与最新已知撤回处理；尚无接入 A 的生产发现/下载/撤回 transport，也无生产公钥配置 | A 提供受支持的服务接口与原始字节/摘要/签名/撤回 freshness 规则；协调确定独立信任锚 provisioning、key rotation 和离线状态。测试 key 只用于 synthetic-test |
 | UID 公开档案 | 已有明确确认后直接读取 Mihomo、UID 回显匹配、重定向拒绝及预览；未查询真实 UID，服务覆盖和区服映射未认证 | 确认允许使用的来源/许可、精确端点和字段覆盖、区服映射、限流/失败语义。目标账号只能由用户主动提供并在本机明确授权后查询 |
 | 本地服务/邀请维护 | SettingsPage 明确显示服务 lifecycle 和邀请维护未接通；A 当前为本地 CLI/WSGI，没有共享部署可供 B 验收 | A 提供部署目标、start/stop/health、身份提供方、邀请/read-only 权限 provisioning、TLS/ACL/审计及 secret distribution 方案，再做本机到服务联调 |
-| S3 技术 replay 与数据覆盖 | B 源 `LocalPlannerProcess` 和打包 worker 对 C 已锁定的 21 个捕获均与 C 报告匹配 21/21；C 原报告的 `not_exercised` 记录早于 B2，仍列 B2 host 未验。当前 AccountSnapshot 不表达完整材料库存、独立单位/面板语境或最终配装面板 | 协调方可用 B2 host commit `c248daab22255a069464a6d277757d01df5d49f3` 与候选摘要复核并更新 C 报告。若要验证完整库存/材料正向计算或最终面板，先提出版本化 schema/profile/capability 扩展并由 A/B/C 确认，再实现对应输入和可核验期望；不得在当前 profile 下伪造完整覆盖 |
+| S3 技术 replay 与数据覆盖 | B 源与打包 worker 对 C 固定捕获匹配 21/21。C 最新 packaged report `c-0.4.0-b2-c248daa-packaged-comparison-v2.json`（C `fa512b6`，blob `174fa9b57a5b7c35a765c900d9429794db7eebf6`）记录 83 checks passed、0 failed、62 worker cases，包含 B2 builder、source worker 与 Windows worker；报告为 synthetic-only。报告仍标 `full_M0_acceptance=false`、candidate source provenance/publisher trust 未建立，并将完整库存/材料正向计算、最终面板正向计算列为未覆盖。当前 AccountSnapshot 不表达这些完整来源语义 | 保留 C 报告为跨组件合成证据，不把它升级为 M0 或生产验收。若要验证完整库存/材料正向计算或最终面板，先提出版本化 schema/profile/capability 扩展并由 A/B/C 确认，再实现对应输入和可核验期望；不得在当前 profile 下伪造完整覆盖 |
 
 当前技术集成元组为 A producer `0.3.0` / release `rel_fixture_s3_0001`、B1 serializer `103741e02c90ac672017f783058bdd8dacae982e`、B host B2 `c248daab22255a069464a6d277757d01df5d49f3`、C wheel `0.4.0` / native rules `0.2.0`。共同生产契约仍为 `0.1-draft`；固定技术接口只覆盖合成回放。内容许可/人工批准、生产 signing trust、在线服务部署、完整材料/面板表示、发布签名、目标 Windows 和真实账号验收分别保持独立关口。
 
@@ -775,10 +775,12 @@ run returned correlated `withdrawn_public_object` and produced no temporary or s
 | `stage-2-not_owned` | `no_feasible_variant` | 0 | 0 | 2 |
 | `stage-2-unknown_ownership` | `confirmation_required` | 0 | 2 | 0 |
 
-Counts are B-adapter result arrays; C's locked report exposes its native `available` projection
-with a different shape. Both B runs compared the complete available/pending variant identities as
-well as status, not just these counts. C's earlier `not_exercised` label for B2 is stale relative to
-this evidence; its material-inventory and final-loadout positive checks remain unexercised.
+Counts are B-adapter result arrays; C's report exposes its native `available` projection with a
+different shape. Both B runs compared complete available/pending variant identities as well as
+status. C's packaged comparison at `fa512b6` now includes B2 and records 83 passed checks across
+62 worker cases with zero failures. Its `not_exercised` list still includes production source,
+content and trust acceptance, positive complete inventory/material calculations, and final-loadout
+panel calculations.
 
 The single post-B2 PyInstaller build used Python 3.12.14 and PyInstaller 6.22.3. The candidate has
 920 manifest entries; the manifest hash is
