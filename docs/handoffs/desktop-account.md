@@ -822,3 +822,24 @@ current checkout only; no candidate was rebuilt. GitHub branch inspection found 
 reviewed `ed0028c` proposal and C advanced to `fa512b6` with preserved S3 packaged replay evidence;
 neither publishes a frozen S4.1 catalog/withdrawal protocol. Production transport and controller
 implementation therefore remain pending the shared interface freeze.
+
+### Review of A's local S4.1 contract candidate (2026-10-28)
+
+Read-only review of A local commit `243a9e04a243124a75d76efc4a20edb989c8eaec`,
+[`public-distribution-local-service-contract-candidate-v0.1.md`](../../../knowledge-backend/packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md).
+This commit is not the current GitHub A branch head (`ed0028c`) and is not a frozen shared
+interface. B agrees with the proposed stage topology, strict catalog/revocation signatures,
+exact A/B/C tuple, immutable raw-byte digest, bounded download, explicit rollback, and readiness
+split. The detailed field-by-field review is in
+[`s4-1-integration-review.md`](../../packages/starhelp-desktop/docs/s4-1-integration-review.md).
+
+The material difference is transaction ordering: candidate section 4 currently commits catalog
+and revocation high-water only with successful artifact activation, so an artifact download or
+verification failure could discard an already authenticated newer revocation. B requests A to
+split durable catalog/revocation safety checkpoints from the later artifact pointer transaction;
+persist authenticated catalog replay state and a fully verified revocation checkpoint before
+artifact download, never roll those checkpoints back on artifact failure, and continue to gate an
+old cached release against the newest known safety state. Same-sequence raw digests must be
+immutable: same sequence/same raw digest is idempotent; same sequence/different digest is conflict.
+No new transport/controller code was added pending an A revision and A/B/C confirmation of the
+same candidate hash.
