@@ -908,6 +908,10 @@ An isolated 8-second launch with a unique temporary `LOCALAPPDATA` remained runn
 `Qt6Core.dll` and `Qt6Widgets.dll`. The synthetic installer smoke passed install, upgrade,
 two-direction rollback and tamper rejection; its first sandboxed run was denied at the temporary
 directory rename, and the same scoped test passed when rerun with local temporary-directory access.
+The fixed signed S3 fixture replay was also rerun through the newly built
+`planner-worker/StarHelpPlannerWorker.exe` using the existing B interop harness; it passed. The
+post-replay candidate still has the same 920 manifest files and hashes; packaged worker SHA-256 is
+`5f4feea1f077fe936270b3f1fe7c74a8c6172ba4f1d50fe4db589394d483b546`.
 
 No real profile, UID, or screenshot was used. The folder candidate remains unsigned; this Windows
 11 build-host result does not replace target-user Windows compatibility, publisher-signing, M0
