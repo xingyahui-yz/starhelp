@@ -865,3 +865,16 @@ The reproducible helper also checks that Pillow, NumPy, and the B OCR module are
 executable archive and that NumPy/OpenCV native extensions are present in `_internal`. Its external
 Python smoke process uses build-environment Pillow and NumPy to generate and pass the synthetic PNG;
 it does not claim to execute the frozen app's own Python imports.
+
+## Public-query transport boundary hardening (2026-10-28)
+
+`PublicQueryBuilder.serialize()` now independently validates the required draft schema identifiers,
+allowlisted query kinds and environments, exact scope keys, and bounded/trimmed/control-free public
+identifiers. Optional goal and release identifiers are checked at serialization time as well, so
+callers cannot bypass the `build()` validation by constructing a request dictionary directly. The
+synthetic regression covers unapproved query kind, schema version, missing fields, unsupported
+environment, whitespace/control/oversized identifiers, UID-like release and goal values.
+
+Verification on 2026-10-28: all 66 package `unittest` cases passed, `compileall` passed, and
+`git diff --check` passed. This is local contract-boundary validation only; it does not freeze the
+shared M0 production query mappings or add a production network client.

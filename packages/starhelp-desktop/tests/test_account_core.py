@@ -1344,6 +1344,33 @@ class ImportAndPrivacyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unapproved field"):
             builder.serialize(request)
 
+    def test_public_query_serializer_revalidates_transport_boundary(self) -> None:
+        builder = PublicQueryBuilder()
+        request = builder.build(PublicScope(
+            "fixture-version", "live", "fixture-mode", "fixture-cycle", "fixture-stage",
+            "stage_templates",
+        ))
+
+        invalid_requests = (
+            ({**request, "query_kind": "account_snapshot"}, "query kind"),
+            ({**request, "schema_version": "future"}, "schema"),
+            ({key: value for key, value in request.items() if key != "scope"}, "missing"),
+            ({**request, "scope": {**request["scope"], "environment": "production"}},
+             "environment"),
+            ({**request, "scope": {**request["scope"], "stage_id": " stage "}},
+             "stage_id"),
+            ({**request, "scope": {**request["scope"], "mode_id": "m\nmode"}},
+             "mode_id"),
+            ({**request, "scope": {**request["scope"], "cycle_id": "x" * 161}},
+             "cycle_id"),
+            ({**request, "index_release_id": "100000999"}, "release ID"),
+            ({**request, "public_goal": {"kind": "100000999"}}, "public goal"),
+        )
+        for malformed, message in invalid_requests:
+            with self.subTest(malformed=malformed):
+                with self.assertRaisesRegex(ValueError, message):
+                    builder.serialize(malformed)
+
     def test_ocr_text_requires_explicit_field_mapping_and_confirmation(self) -> None:
         draft = OcrDraft(
             lines=(OcrTextLine("等级 80", 0.93, ((0, 0), (10, 0), (10, 10), (0, 10))),),

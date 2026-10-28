@@ -6,6 +6,21 @@ from dataclasses import dataclass
 
 
 _UID = re.compile(r"(?<!\d)\d{8,12}(?!\d)")
+_CONTROL = re.compile(r"[\x00-\x1f\x7f]")
+_MAX_PUBLIC_IDENTIFIER_LENGTH = 160
+
+
+def _validate_public_identifier(value: object, label: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or value != value.strip()
+        or len(value) > _MAX_PUBLIC_IDENTIFIER_LENGTH
+        or _CONTROL.search(value)
+        or _UID.search(value)
+    ):
+        raise ValueError(f"{label} is malformed or UID-like")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,30 +84,44 @@ class PublicQueryBuilder:
             request["index_release_id"] = release_id
         return request
 
-    @staticmethod
-    def serialize(request: dict[str, object]) -> bytes:
-        # Validate top-level keys again at the actual transport boundary.
+    @classmethod
+    def serialize(cls, request: dict[str, object]) -> bytes:
+        # Revalidate the complete public contract at the actual transport boundary.
+        if not isinstance(request, dict):
+            raise ValueError("outbound public request must be an object")
         allowed = {
             "contract_version", "schema_id", "schema_version", "query_kind", "scope",
             "public_goal", "index_release_id",
         }
         if set(request) - allowed:
             raise ValueError("outbound public request contains an unapproved field")
+        required = {"contract_version", "schema_id", "schema_version", "query_kind", "scope"}
+        if not required.issubset(request):
+            raise ValueError("outbound public request is missing required fields")
+        if (
+            request["contract_version"] != "0.1-draft"
+            or request["schema_id"] != "PublicQuery"
+            or request["schema_version"] != "0.1-draft"
+        ):
+            raise ValueError("outbound public request has an unsupported schema")
+        query_kind = request["query_kind"]
+        if not isinstance(query_kind, str) or query_kind not in cls.ALLOWED_KINDS:
+            raise ValueError("outbound public query kind is unsupported")
         scope = request.get("scope")
         allowed_scope = {"game_version", "environment", "mode_id", "cycle_id", "stage_id"}
         if not isinstance(scope, dict) or set(scope) != allowed_scope:
             raise ValueError("outbound public scope does not match the allowlist")
-        if any(not isinstance(value, str) or not value or _UID.search(value) for value in scope.values()):
-            raise ValueError("outbound public scope contains a private or malformed value")
+        for name, value in scope.items():
+            _validate_public_identifier(value, f"outbound public scope {name}")
+        if scope["environment"] not in cls.ALLOWED_ENVIRONMENTS:
+            raise ValueError("outbound public environment is unsupported")
         goal = request.get("public_goal")
-        if goal is not None and (
-            not isinstance(goal, dict) or set(goal) != {"kind"}
-            or not isinstance(goal["kind"], str) or _UID.search(goal["kind"])
-        ):
-            raise ValueError("outbound public goal does not match the allowlist")
-        release_id = request.get("index_release_id")
-        if release_id is not None and (not isinstance(release_id, str) or _UID.search(release_id)):
-            raise ValueError("outbound release ID is malformed")
+        if "public_goal" in request:
+            if not isinstance(goal, dict) or set(goal) != {"kind"}:
+                raise ValueError("outbound public goal does not match the allowlist")
+            _validate_public_identifier(goal["kind"], "outbound public goal")
+        if "index_release_id" in request:
+            _validate_public_identifier(request["index_release_id"], "outbound release ID")
         payload = json.dumps(request, ensure_ascii=False, separators=(",", ":"))
         if _UID.search(payload):
             raise ValueError("UID-like value blocked at outbound serialization boundary")
