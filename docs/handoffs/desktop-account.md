@@ -933,3 +933,24 @@ rules, so this verifies bounded request plumbing and local report retention, not
 recommendation. A player-facing feedback/reanalysis control and a production bundle with reviewed
 troubleshooting rules remain open; current task creation still reports production analysis as
 unavailable until M0 is frozen.
+
+## Candidate rebuilt after feedback plumbing (2026-10-28)
+
+Rebuilt the unsigned Windows folder candidate from B HEAD `080e11fc40e67b4297034dfa3bd6337ff62153e7`
+with PyInstaller 6.22.3 and the repository-pinned C 0.4.0 wheel. Its manifest contains 920 files;
+all listed hashes, file membership, and the post-smoke inventory matched. Manifest SHA-256:
+`b73c1eb7d43b8a0f5fb49e07a3026f9d1f41702c1f9fa52221381b3f701dc89f`. Packaged planner worker
+SHA-256: `efcc8af5b9fc8b207079fc4397e005957dc9c66592567b9c8d4e65e0158a517a`.
+
+The bundled RapidOCR/ONNX/OpenCV runtime loaded the candidate's local models and recognized the
+synthetic text `LEVEL 80`; the test passed the generated image in memory and wrote no screenshot.
+The candidate executable remained alive for eight seconds in an isolated per-user data directory
+and loaded Qt6Core/Qt6Widgets. The existing B/C interop test was directed to the packaged worker
+executable and passed against the fixed signed synthetic S3 fixture. All 67 package tests and
+`compileall` passed. Synthetic install, upgrade, two-way rollback, and tamper rejection passed;
+the sandboxed rename attempt was denied, then the test passed with scoped temporary-directory
+filesystem access.
+
+No real account or UID was used. This is still an unsigned candidate tested on the build host;
+publisher signing, production trust and mappings, target-user Windows acceptance, and player
+acceptance remain open.
