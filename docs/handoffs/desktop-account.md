@@ -1219,3 +1219,24 @@ Concrete production inputs still absent from the M0 draft are:
 Until these are frozen and supported by dated real-source samples plus a reviewed production trust
 configuration, keep production analysis/synchronization disabled and continue using the explicitly
 labeled synthetic demo. No real UID or account data was accessed for this comparison.
+
+## Report validity requires a known public basis (2026-10-30)
+
+`ReportLifecycle` now fails closed when there is no current public release ID or the latest signed
+withdrawal/disable state is unknown. Those cases display and persist `needs_review` with a specific
+reason; a report can return to `current` only when its snapshot and public release match and the
+caller explicitly says withdrawal status is known. A verified withdrawn citation remains
+`evidence_withdrawn`, and a changed snapshot remains `expired`. The GUI has no signed A withdrawal
+feed yet, so its reports remain visibly `needs_review` rather than implying online validity.
+
+Regression covers unknown withdrawal status, missing current release, recovery to current when the
+same basis is again verifiable, and the pending-report UI. All 72 package tests pass;
+`compileall -q src packaging` and `git diff --check` pass. A fresh unsigned PyInstaller 6.22.3
+candidate with pinned C 0.4.0 has 920 manifest entries and exact file-set/hash verification; manifest
+SHA-256 is `eb0f5fb15c83ee40d56ec72c59b64208f10e27c792a5cd56bc9df4a102c76715`, and packaged worker
+SHA-256 is `bd8b2909d4cba28bcee2e0ab4ccf8ef650300ff47d21eddb3dcf3221d9b8a099`. Synthetic OCR
+recognized `LEVEL 80`; the GUI stayed active for eight seconds with candidate-local Qt6Core and
+Qt6Widgets; the packaged worker passed signed synthetic S3 replay; and installer smoke passed
+install, upgrade, two-way rollback, and tamper rejection. This remains build-host-only unsigned
+evidence; production withdrawal data, publisher signing, target-machine acceptance, and player
+acceptance remain open.

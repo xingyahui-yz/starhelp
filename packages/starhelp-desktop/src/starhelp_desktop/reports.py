@@ -19,6 +19,18 @@ class ReportValidity(StrEnum):
     EVIDENCE_WITHDRAWN = "evidence_withdrawn"
 
 
+_SNAPSHOT_UNAVAILABLE = "当前账号快照不可用，无法核验报告依据"
+_PUBLIC_RELEASE_UNAVAILABLE = "本机当前公共资料版本未知，无法核对报告依据"
+_PUBLIC_RELEASE_CHANGED = "本机当前公共资料版本已变化；旧报告保留原版本依据"
+_WITHDRAWAL_STATUS_UNKNOWN = "最新公共资料撤回/禁用状态未知"
+_RECHECKABLE_REASONS = frozenset({
+    _SNAPSHOT_UNAVAILABLE,
+    _PUBLIC_RELEASE_UNAVAILABLE,
+    _PUBLIC_RELEASE_CHANGED,
+    _WITHDRAWAL_STATUS_UNKNOWN,
+})
+
+
 @dataclass(frozen=True, slots=True)
 class AnalysisReport:
     report_id: UUID
@@ -47,6 +59,7 @@ class ReportLifecycle:
         current_snapshot_revision: int | None,
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
+        withdrawal_status_known: bool = False,
     ) -> AnalysisReport:
         """Refresh an unsaved report's validity without persisting the report."""
         self._lifecycle.require_active(
@@ -57,6 +70,7 @@ class ReportLifecycle:
             current_snapshot_revision,
             current_public_release_id=current_public_release_id,
             withdrawn_refs=withdrawn_refs,
+            withdrawal_status_known=withdrawal_status_known,
         )
 
     def make_temporary(
@@ -85,12 +99,16 @@ class ReportLifecycle:
         *,
         current_snapshot_revision: int | None,
         current_public_release_id: str | None = None,
+        withdrawn_refs: frozenset[str] = frozenset(),
+        withdrawal_status_known: bool = False,
     ) -> Path:
         key = f"profile-{report.profile_id.hex}-report-{report.report_id.hex}"
         assessed = self._assess_snapshot(
             report,
             current_snapshot_revision,
             current_public_release_id=current_public_release_id,
+            withdrawn_refs=withdrawn_refs,
+            withdrawal_status_known=withdrawal_status_known,
         )
         return self._lifecycle.run_authorized(
             report.profile_id,
@@ -105,7 +123,10 @@ class ReportLifecycle:
         *,
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
+        withdrawal_status_known: bool = False,
     ) -> AnalysisReport:
+        if not isinstance(withdrawal_status_known, bool):
+            raise ValueError("withdrawal status knowledge must be an explicit boolean")
         if report.validity is ReportValidity.EVIDENCE_WITHDRAWN:
             return report
         if withdrawn_refs & report.public_refs:
@@ -113,20 +134,29 @@ class ReportLifecycle:
                            validity_reason="引用证据已知撤回")
         if report.validity is ReportValidity.EXPIRED:
             return report
+        if (report.validity is ReportValidity.NEEDS_REVIEW
+                and report.validity_reason in _RECHECKABLE_REASONS):
+            report = replace(report, validity=ReportValidity.CURRENT, validity_reason=None)
         if current_snapshot_revision is None:
             return replace(report, validity=ReportValidity.NEEDS_REVIEW,
-                           validity_reason="当前账号快照不可用，无法核验报告依据")
+                           validity_reason=_SNAPSHOT_UNAVAILABLE)
         assessed = self.mark_stale(
             report,
             current_snapshot_revision=current_snapshot_revision,
             withdrawn_refs=withdrawn_refs,
             report_refs=report.public_refs,
         )
-        if (assessed.validity in {ReportValidity.CURRENT, ReportValidity.NEEDS_REVIEW}
-                and current_public_release_id is not None
-                and current_public_release_id != assessed.public_release_id):
+        if assessed.validity in {ReportValidity.EXPIRED, ReportValidity.EVIDENCE_WITHDRAWN}:
+            return assessed
+        if current_public_release_id is None:
             return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
-                           validity_reason="本机当前公共资料版本已变化；旧报告保留原版本依据")
+                           validity_reason=_PUBLIC_RELEASE_UNAVAILABLE)
+        if current_public_release_id != assessed.public_release_id:
+            return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
+                           validity_reason=_PUBLIC_RELEASE_CHANGED)
+        if not withdrawal_status_known:
+            return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
+                           validity_reason=_WITHDRAWAL_STATUS_UNKNOWN)
         return assessed
 
     def mark_stale(
@@ -155,6 +185,7 @@ class ReportLifecycle:
         current_snapshot_revision: int | None,
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
+        withdrawal_status_known: bool = False,
     ) -> tuple[AnalysisReport, ...]:
         return self._lifecycle.run_authorized(
             profile_id,
@@ -165,6 +196,7 @@ class ReportLifecycle:
                 current_snapshot_revision=current_snapshot_revision,
                 current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
+                withdrawal_status_known=withdrawal_status_known,
             ),
         )
 
@@ -176,6 +208,7 @@ class ReportLifecycle:
         current_snapshot_revision: int | None,
         current_public_release_id: str | None,
         withdrawn_refs: frozenset[str],
+        withdrawal_status_known: bool,
     ) -> tuple[AnalysisReport, ...]:
         reports: list[AnalysisReport] = []
         for key in self._store.list_profile_keys(profile_id, "report"):
@@ -190,6 +223,7 @@ class ReportLifecycle:
                 current_snapshot_revision,
                 current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
+                withdrawal_status_known=withdrawal_status_known,
             )
             if updated != report:
                 self._store.save(key, self._to_dict(updated))

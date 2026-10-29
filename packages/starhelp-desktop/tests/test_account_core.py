@@ -525,8 +525,9 @@ class ProgressPageTests(unittest.TestCase):
                 planner_version="fixture-planner",
             )
             reports_page.stage_temporary_report(report)
-            self.assertEqual(reports_page.pending_report.validity, ReportValidity.CURRENT)
-            self.assertIn('"状态": "current"', reports_page.detail.toPlainText())
+            self.assertEqual(reports_page.pending_report.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("本机当前公共资料版本未知", reports_page.status.text())
+            self.assertIn('"状态": "needs_review"', reports_page.detail.toPlainText())
 
             next_import = confirm_import(ImportProposal.create(
                 source_kind=SourceKind.MANUAL,
@@ -1676,6 +1677,7 @@ class StorageLifecycleTests(unittest.TestCase):
                 bundle_bound,
                 current_snapshot_revision=1,
                 current_public_release_id="fixture-release",
+                withdrawal_status_known=True,
             )
             release_changed = reports.list_saved(
                 profile_id=profile_id,
@@ -1711,6 +1713,66 @@ class StorageLifecycleTests(unittest.TestCase):
             lifecycle.revoke(profile_id)
             with self.assertRaises(PermissionError):
                 reports.save_explicitly(snapshot_bound, current_snapshot_revision=1)
+
+    def test_report_current_status_requires_public_basis_and_known_withdrawal_state(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            profile_id = uuid4()
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            lifecycle.authorize(ProfileAuthorization(
+                profile_id, True, 1, "synthetic-source", frozenset({"reports"}),
+                datetime.now(UTC),
+            ))
+            reports = ReportLifecycle(store, lifecycle)
+            report = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "task"},
+                result={"fixture": "result"}, snapshot_revision=1,
+                public_release_id="fixture-release", planner_version="fixture",
+            )
+            saved_path = reports.save_explicitly(
+                report,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release",
+            )
+            self.assertTrue(saved_path.exists())
+
+            unknown_withdrawal = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release",
+            )[0]
+            self.assertEqual(unknown_withdrawal.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("撤回/禁用状态未知", unknown_withdrawal.validity_reason)
+
+            verified = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release",
+                withdrawal_status_known=True,
+            )[0]
+            self.assertEqual(verified.validity, ReportValidity.CURRENT)
+
+            unavailable_release = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                current_public_release_id=None,
+                withdrawal_status_known=True,
+            )[0]
+            self.assertEqual(unavailable_release.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("公共资料版本未知", unavailable_release.validity_reason)
+
+            recovered = reports.list_saved(
+                profile_id=profile_id,
+                generation=1,
+                current_snapshot_revision=1,
+                current_public_release_id="fixture-release",
+                withdrawal_status_known=True,
+            )[0]
+            self.assertEqual(recovered.validity, ReportValidity.CURRENT)
 
     def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
         with temporary_directory() as directory:

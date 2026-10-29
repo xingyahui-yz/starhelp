@@ -78,8 +78,11 @@ identity of a physical copy.
 - The report page lists only explicitly saved reports, reloads them under the active profile, and
   persists snapshot-expired or evidence-withdrawn status. A temporary planner result can be staged
   from TaskPage and requires the visible save action before DPAPI persistence. Online withdrawal
-  state is reported as unknown until A's signed withdrawal feed is available. No report is generated
-  without a planner result.
+  state is reported as unknown until A's signed withdrawal feed is available. A report is marked
+  `needs_review` if the current public release or signed withdrawal status cannot be checked; it can
+  return to `current` when the same snapshot/release is available and withdrawal status is verified.
+  Snapshot-expired and known-withdrawn states remain terminal. No report is generated without a
+  planner result.
 - The two-release public cache revalidates signed bytes every time a cached release is loaded.
   Byte-oriented sources retain the exact UTF-8 release bytes across activation and restart so the
   producer adapter can verify its recorded digest; test object sources use canonical JSON bytes.
