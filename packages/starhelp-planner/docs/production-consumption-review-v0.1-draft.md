@@ -227,3 +227,22 @@ A 提供版本化目录/envelope 与明确原始字节、签名/撤回/许可/�
 - 本地内存、主动保存前零私有持久化、显式加密保存、撤权拒收迟到结果与清理；feedback/进度笔记不进入 A/PublicQuery/RAG/普通日志。源码与打包 worker 各自固定 manifest/加载来源，单独记录执行结果和未证明项。
 
 结论：认可 B 的“快照格式与 request builder 分列”方向；建议强制版本化 producer profile，而非在旧协议中增加可忽略的来源声明。新 B 开发成果保留，9076 候选仍是待新 tuple/协议验收的开发包。A 候选 P1—P4 和完整 Goal/M0 的真实来源、审核、生产信任与本机实测缺口仍未关闭。
+
+### 10.5 B 后续修复的静态复核（2026-10-30）
+
+§10.1—10.4 的来源和未修复描述针对当时固定的 16ea426，不自动代表后续代码。本次另读 B **`9f619e88e77412df24233080da5eaf41d8ffe33b`**：包 Git tree **`b80cbca0cd1cd1e327ad5da1e44789951d2aa892`**，与 `41b5e711a5129812df7198535e0ab90af85b2b24` 的包 tree 相同；9f619e8 只补根目录 handoff。以下是该固定源码的静态结论，未运行 B 测试、GUI、worker 或安装器。
+
+| 评审项 | 新源码证据 | 当前判断 |
+|---|---|---|
+| 外/内 feedback 存在性与值不一致 | `9c51720a91d9dc25847cddd53f220fb60ca7b075` 在 `ProducerAnalysisRunner.run` 调 planner 前调用 `_require_matching_feedback`；逐侧存在性一致，`allow_nan=False`、排序紧凑 JSON 值比较 | §10.2 所指 runner 路径已增加拒绝门限；静态认可该修正，不能继续称当前 runner 完全缺此检查 |
+| 发送后原请求/worker 参数被修改影响报告 | `dd904e3edc11177e735381d454c1b8e3b114897d` 的 `_snapshot_request` 对完整请求有界编码一次，再解析出分离的 worker/report 副本；检查 report 副本并从它读取快照、task、bundle、feedback | 原调用方与 worker 可变 dict 不再是报告读取来源。`analysis.py` 当前 blob **`d3961b47844a44a0a3dfb9bb1b228836d608d528`**；不能继续拿旧 c607e20 作为该修复后的实际来源 |
+| 回归代码的证明范围 | 9c51720 测试覆盖不同值/两种单侧缺失，并断言 planner 未调用；dd904e3 测试以 Mock 修改 worker 入参后返回构造结果，检查原请求及暂存报告保留原值 | 这是已读的回归代码与 B 执行记录，不是 C 新执行结果。Mock 隔离检查不能证明实际 worker 消费字节、结果反馈摘要或公开 validity basis 已绑定 |
+| 五项 seam / snapshot 格式 | builder blob 仍为 `0086d9121b9506ddcd3d6144f41a530b59bd8073`；profiles blob 改为 **`e07f0829b3109c4f624ae3323264d249df7e680b`**，diff 是自动刷新配置失败恢复 | 相对 B1，五项完整文件中已有 builder、profiles 两项不同；旧五文件等同前提仍不能使用。对 B1/16ea426/9f619e8 的 `_snapshot_to_dict` 做静态 AST 比较相同；该函数不变不证明整个 profiles 或新 host 与 B1 相同 |
+| 独立 stdio worker 边界 | `planner_worker.py` 仍为 blob `bce4819941ea04a29725b9faa4ce167c3ae94e96`；`_validate_wrapper` 没有新增外/内 feedback 比较 | runner 的修正不能表述为 worker 任意入口已有同一检查。新协议须定义唯一权威 feedback 或在实际消费边界检查一致性；直接 worker、正常 runner、报告保存分别有验收项 |
+| builder 身份准入 | 新 handoff 同意 C 的强制 profile/source/artifact 方向；builder wire 仍没有独立必需身份，C wheel 仍为 0.4.0 | §10.3 的新 component/producer profile 提案仍待共同固定和实施；不把 runner 修复、synthetic UI 重算或旧快照 tuple 当作新 builder 准入 |
+
+AST 比较仅用于核对固定函数语义形状，`ast.dump(..., include_attributes=False)` UTF-8 的 SHA-256 为 `06af62f70fd4e59b41c664f3bfcdb631eb5a67203b5588ce43f2fbd3396b8d55`；它不是 snapshot raw bytes digest、Git blob ID 或完整 serializer 运行证明。
+
+**本机当前开发候选另行固定：** manifest 原始 SHA-256 **`6cf00caf71d861ee01af48d68c8a07ffcf6c1c6e1d9e094b7de4f979f4fc0a55`**，实际 `planner-worker/StarHelpPlannerWorker.exe` 原始 SHA-256 **`6900ff39072a05ff16f74aab18867202581b931f8a6a79a3d174326606177fbe`**；C 本次只读重算这两个文件，均与 B handoff 相同。B 记录 71 项包测试、920 文件校验与合成候选 smoke；C 未复跑、未逐项验当前 920 文件，也未独立确认二进制构建来源。该集合既不是 9076 开发候选，也不是已验 S3 30e482 集合；不迁移任何旧 source/packaged 对照结论。
+
+**仍开放的依赖：** A 固定候选仍为 `012d69508588b0800053108ef38c4bc753bebc14` / raw SHA `88071e56a4b49c3d3cf6dda89aca912559a353139d74e4f81b9f548af7ff989b`，本轮重新核对；P1 typed identity/hash、P2 所选 artifact 离线资格、P3 公开依据 epoch 的结果/保存 gate、P4 整体 stdio 字节预算均未由 B runner 修复关闭。B 9f619e8 也明确真实来源/ID/条件语义、生产信任和新 builder 契约未冻结。按现有 S4.1 顺序先收敛同一契约 hash/tuple，再安排新组件实施；本轮只更新这份评审及 C handoff，固定 wheel、源码、fixture、共享契约、原 S3 证据保持原样。
