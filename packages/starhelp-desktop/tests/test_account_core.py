@@ -1542,8 +1542,15 @@ class StorageLifecycleTests(unittest.TestCase):
                 profile_id, True, 1, "synthetic-source", frozenset({"display"}),
                 datetime.now(UTC),
             ))
+            other_profile_id = uuid4()
             cancel = lifecycle.register_task(profile_id, 1)
             private_file = store.save(f"profile-{profile_id.hex}-snapshot", {"fixture": True})
+            interrupted_write = store.root / f".profile-{profile_id.hex}-snapshot.interrupted.tmp"
+            interrupted_write.write_bytes(b"SHDPAPI1synthetic-ciphertext")
+            other_profile_interrupted_write = store.root / (
+                f".profile-{other_profile_id.hex}-snapshot.interrupted.tmp"
+            )
+            other_profile_interrupted_write.write_bytes(b"SHDPAPI1other-synthetic-ciphertext")
             temp_file = root / "temp" / profile_id.hex / "scan.tmp"
             temp_file.parent.mkdir(parents=True)
             temp_file.write_bytes(b"synthetic")
@@ -1551,6 +1558,8 @@ class StorageLifecycleTests(unittest.TestCase):
             self.assertTrue(cancel.is_set())
             self.assertFalse(lifecycle.accepts_result(profile_id, 1))
             self.assertFalse(private_file.exists())
+            self.assertFalse(interrupted_write.exists())
+            self.assertTrue(other_profile_interrupted_write.exists())
             self.assertFalse(temp_file.exists())
             with self.assertRaises(PermissionError):
                 lifecycle.require_active(profile_id, 1)

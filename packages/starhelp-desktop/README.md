@@ -15,7 +15,9 @@ Ed25519 bundle verification uses the optional `crypto` extra. The command report
 error when PySide6 Essentials is unavailable.
 
 Tests are standard-library `unittest` tests under `tests/` and use synthetic data. DPAPI integration
-requires Windows; the encryption contract is injected in platform-independent unit tests.
+requires Windows; the encryption contract is injected in platform-independent unit tests. Revoking
+a profile removes its encrypted object files and any hidden encrypted staging files left by an
+interrupted atomic write, while preserving files belonging to other profiles.
 
 Structured local imports use `starhelp.account-import` version `0.1-draft`. Equipment entries may
 include a `facts` object keyed by local field paths; each fact has an explicit `value` and optional

@@ -144,9 +144,13 @@ class EncryptedPrivateStore:
     def delete_profile(self, profile_id: UUID) -> tuple[Path, ...]:
         prefix = f"profile-{profile_id.hex}-"
         removed: list[Path] = []
-        for path in self.root.glob(f"{prefix}*.bin"):
-            path.unlink(missing_ok=True)
-            removed.append(path)
+        # A crash between creating the encrypted staging file and replacing the
+        # destination can leave a hidden temporary file behind. Scope cleanup
+        # to this profile while covering both committed objects and staging files.
+        for pattern in (f"{prefix}*.bin", f".{prefix}*.tmp"):
+            for path in self.root.glob(pattern):
+                path.unlink(missing_ok=True)
+                removed.append(path)
         return tuple(removed)
 
     def list_profile_keys(self, profile_id: UUID, kind: str) -> tuple[str, ...]:

@@ -1240,3 +1240,22 @@ Qt6Widgets; the packaged worker passed signed synthetic S3 replay; and installer
 install, upgrade, two-way rollback, and tamper rejection. This remains build-host-only unsigned
 evidence; production withdrawal data, publisher signing, target-machine acceptance, and player
 acceptance remain open.
+
+## Revocation removes interrupted encrypted staging files (2026-10-30)
+
+`EncryptedPrivateStore.save` writes ciphertext to a hidden per-object `.tmp` file before replacing
+the `.bin` destination. If the process exits between those steps, the previous revocation cleanup
+removed committed `.bin` objects but could leave that ciphertext on disk. `delete_profile` now
+removes both patterns scoped to the exact profile UUID; unrelated profiles' staging files remain.
+The synthetic revocation regression confirms committed data and interrupted staging files are
+deleted, another profile's staging file remains, and task cancellation/late-result rejection still
+work. The targeted regression and all 72 package tests passed; `compileall -q src packaging` and
+`git diff --check` passed. A fresh unsigned PyInstaller 6.22.3 candidate with pinned C 0.4.0 has
+920 manifest entries with exact file-set/hash verification; manifest SHA-256 is
+`35bc61763c5facec7f64f3a31a3246f9b8de0ee37695d87aa4e7194e35a950af`, GUI executable SHA-256 is
+`55f8eb037e5193a1a4eec03320ba66410330a27a0e220c8a14587021f51b5da6`, and packaged worker SHA-256
+is `6ff387a00867e2aaad7b39722e395a5e3531611cf022727b501fb7b731d32391`. Synthetic OCR recognized
+`LEVEL 80`; the GUI stayed active for eight seconds and loaded candidate-local Qt6Core and
+Qt6Widgets; the packaged worker passed signed synthetic S3 replay; installer smoke passed install,
+upgrade, two-way rollback, and tamper rejection. This remains unsigned build-host evidence;
+production data, publisher signing, target-machine acceptance, and player acceptance remain open.
