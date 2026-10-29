@@ -1,5 +1,11 @@
 # Local planner handoff
 
+## S4.1 report validity follow-up (2026-10-30)
+
+Statically reviewed B **`37e142f8004bf7590856a0c794304f5f7cf40f5d`**, reports blob **`55a6a90eca6322a46195e5636ef239953a9e1e2b`**; [review §10.6](../../packages/starhelp-planner/docs/production-consumption-review-v0.1-draft.md#106-b-报告保守状态与-p3-的区别2026-10-30) recognizes its conservative display/save/list defaults: missing public release or unknown withdrawal status yields needs_review, while known withdrawn/expired states remain distinct. GUI does not assert signed withdrawal knowledge. C did not run B's tests or adopt its rebuilt candidate; the initial internal make_temporary object still defaults current and must be distinguished from later GUI assessment.
+
+**P3 remains open:** withdrawal_status_known is a caller boolean, not an authenticated metadata/artifact basis or epoch. New consumers still need binding across submission, receipt, staging and explicit save, including a revocation committed between assessment and save. Historical needs_review/expired report storage must not imply current execution eligibility. No producer/native profile, fixed C artifact, shared contract or S3 evidence changed. A candidate remains 012d695 / raw 88071e56; new builder admission and P1–P4 require a jointly fixed contract before implementation. This is a source/contract review update, not production acceptance.
+
 ## S4.1 B follow-up static review (2026-10-30)
 
 Read B fixed source **`9f619e88e77412df24233080da5eaf41d8ffe33b`**, package Git tree **`b80cbca0cd1cd1e327ad5da1e44789951d2aa892`** (same package tree as 41b5e711). [Review §10.5](../../packages/starhelp-planner/docs/production-consumption-review-v0.1-draft.md#105-b-后续修复的静态复核2026-10-30) distinguishes it from the historical 16ea426 review below. B `9c51720a91d9dc25847cddd53f220fb60ca7b075` now rejects differing or one-sided feedback before the runner calls the planner; `dd904e3edc11177e735381d454c1b8e3b114897d` derives separate worker/report copies from one bounded serialization. Static review recognizes those runner fixes. Current `analysis.py` blob is `d3961b47844a44a0a3dfb9bb1b228836d608d528`; the independently callable stdio worker remains bce4819 with no outer/inner feedback comparison. Mock mutation regression code is not proof of actual worker feedback/result binding or public-validity epoch enforcement.

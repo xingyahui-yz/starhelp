@@ -246,3 +246,20 @@ AST 比较仅用于核对固定函数语义形状，`ast.dump(..., include_attri
 **本机当前开发候选另行固定：** manifest 原始 SHA-256 **`6cf00caf71d861ee01af48d68c8a07ffcf6c1c6e1d9e094b7de4f979f4fc0a55`**，实际 `planner-worker/StarHelpPlannerWorker.exe` 原始 SHA-256 **`6900ff39072a05ff16f74aab18867202581b931f8a6a79a3d174326606177fbe`**；C 本次只读重算这两个文件，均与 B handoff 相同。B 记录 71 项包测试、920 文件校验与合成候选 smoke；C 未复跑、未逐项验当前 920 文件，也未独立确认二进制构建来源。该集合既不是 9076 开发候选，也不是已验 S3 30e482 集合；不迁移任何旧 source/packaged 对照结论。
 
 **仍开放的依赖：** A 固定候选仍为 `012d69508588b0800053108ef38c4bc753bebc14` / raw SHA `88071e56a4b49c3d3cf6dda89aca912559a353139d74e4f81b9f548af7ff989b`，本轮重新核对；P1 typed identity/hash、P2 所选 artifact 离线资格、P3 公开依据 epoch 的结果/保存 gate、P4 整体 stdio 字节预算均未由 B runner 修复关闭。B 9f619e8 也明确真实来源/ID/条件语义、生产信任和新 builder 契约未冻结。按现有 S4.1 顺序先收敛同一契约 hash/tuple，再安排新组件实施；本轮只更新这份评审及 C handoff，固定 wheel、源码、fixture、共享契约、原 S3 证据保持原样。
+
+### 10.6 B 报告保守状态与 P3 的区别（2026-10-30）
+
+新增静态评审对象是 B **`37e142f8004bf7590856a0c794304f5f7cf40f5d`**，`reports.py` blob **`55a6a90eca6322a46195e5636ef239953a9e1e2b`**。该提交修改报告逻辑、回归代码及说明；analysis 仍为 d3961b4，stdio worker 仍为 bce4819，未增加新的 producer profile 或 C 请求/结果字段。A 候选原始 SHA 仍是 88071e56，P1—P4 没有新的共同冻结版本。
+
+| 当前实现 | 静态认可的改进 | 尚不能据此证明 |
+|---|---|---|
+| `assess_for_display/save_explicitly/list_saved` 的 `withdrawal_status_known` 缺省为 false，必须是 bool | 公共 release 不明、release 不同、撤回状态未知会得到 `needs_review`，不因本机有缓存或用户点击保存就默认当前有效 | bool 本身不证明已验签、已知最新、时间/用途正确，也未绑定目录/撤回 sequence、raw digest、所选 artifact 或策略 |
+| 已知撤回引用优先，`evidence_withdrawn` 保留；已过期 `expired` 不自动恢复 | 本地已知的失效状态不被这次“重新可核对”逻辑直接清除 | 当前仍是裸引用集合语义；不能等同 P1 的 typed kind/id/revision/hash 或 release raw digest 撤回 |
+| 仅对几个可重新核对的原因复评；相同 snapshot/release 且 known=true 可回到 current | 缺少资料导致的暂时未知与确定过期/撤回分开 | 仅相同 ID 加 bool 不能建立同一个经过认证的公开依据；必须另有受信控制器提供并复核 basis |
+| GUI 暂存展示和主动保存调用报告评估，未传 known=true | 没有签名撤回 feed 时，现有 GUI 保守显示/保存为需复核 | `make_temporary` 创建的内部对象仍缺省 current；runner 的初始对象、独立调用入口与 GUI 评估不能混称为所有消费边界均已阻止旧依据结果 |
+
+本次已读回归代码覆盖缺省未知、缺 release、显式 known=true 恢复及暂存 UI；B handoff 记录 72 项测试和新开发候选验证。C **没有运行这些检查，也没有采用该候选为新互操作验收对象**。报告状态改进不改变旧 c248daa/30e482 的 S3 证据边界。
+
+**P3 仍开放，但不否认本次保守缺省修复。** 新消费者仍须让受信 host 在提交、接收、暂存与保存的实际使用点关联同一公开 basis，并在新撤回生效/当前依据改变时拒绝旧结果成为当前可用报告。该 basis 至少包含已验 metadata pair/序号摘要、所选 release/raw digest 资格及策略/epoch；授权 generation、snapshot revision、release ID 或一个 known 布尔都不能单独替代它。校验后至保存间的依据变化也需相应事务/CAS 或明确失败处理。显式加密保存标为需复核/过期的历史结果，与允许其作为当前可用方案是不同决定；新契约应保留准确状态，不能把“已保存”解释为生产准入。
+
+后续有限验收除 §10.4 外，还须包含：相同 release ID 但 raw digest/撤回 basis 改变；worker 在旧 basis 下完成；展示评估后、显式保存前提交新撤回；未知 basis 不被空撤回集/true 标记恢复；已撤回结果保持失效。这是尚待冻结的新版本要求，本轮没有增加 runtime、测试或重建产物。
