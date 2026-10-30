@@ -43,8 +43,11 @@ class AnalysisReport:
     public_release_id: str
     planner_version: str
     public_refs: frozenset[str] = frozenset()
-    validity: ReportValidity = ReportValidity.CURRENT
-    validity_reason: str | None = None
+    # A report is not current until its snapshot, release, and withdrawal state
+    # have been checked by the host. Callers that construct one directly must
+    # not inherit an optimistic status before that assessment.
+    validity: ReportValidity = ReportValidity.NEEDS_REVIEW
+    validity_reason: str | None = _PUBLIC_RELEASE_UNAVAILABLE
 
 
 class ReportLifecycle:
@@ -249,6 +252,12 @@ class ReportLifecycle:
 
     @staticmethod
     def _from_dict(data: dict[str, Any]) -> AnalysisReport:
+        validity = ReportValidity(data.get("validity", ReportValidity.NEEDS_REVIEW.value))
+        validity_reason = (
+            str(data["validity_reason"])
+            if data.get("validity_reason") is not None
+            else _PUBLIC_RELEASE_UNAVAILABLE if validity is ReportValidity.NEEDS_REVIEW else None
+        )
         return AnalysisReport(
             report_id=UUID(data["report_id"]),
             profile_id=UUID(data["profile_id"]),
@@ -260,7 +269,6 @@ class ReportLifecycle:
             public_release_id=str(data["public_release_id"]),
             planner_version=str(data["planner_version"]),
             public_refs=frozenset(str(item) for item in data.get("public_refs", [])),
-            validity=ReportValidity(data.get("validity", ReportValidity.CURRENT.value)),
-            validity_reason=(str(data["validity_reason"])
-                             if data.get("validity_reason") is not None else None),
+            validity=validity,
+            validity_reason=validity_reason,
         )

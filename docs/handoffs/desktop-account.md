@@ -955,6 +955,23 @@ No real account or UID was used. This is still an unsigned candidate tested on t
 publisher signing, production trust and mappings, target-user Windows acceptance, and player
 acceptance remain open.
 
+## Temporary reports start in review state (2026-10-30)
+
+C's read-only static review of B `37e142f` §10.6 noted that the GUI report page downgraded
+unverified results, but `ReportLifecycle.make_temporary()` itself still created an object marked
+`current`; a consumer could inspect that object before the GUI assessment. Legacy serialized
+reports lacking a validity field also defaulted to `current`. B now initializes new reports as
+`needs_review` with the missing-public-basis reason, and loads legacy reports with the same
+fail-closed defaults. The state can return to `current` only after `ReportLifecycle` checks a
+matching snapshot and release and receives explicit known withdrawal status. Regression checks
+both direct temporary objects and legacy records with no validity fields. The targeted test, all
+72 package tests, `compileall -q src packaging`, and `git diff --check` pass.
+
+This closes the direct-object optimistic-default gap only. It does not establish an authenticated
+public validity epoch, typed evidence identity/hash, selected-artifact offline eligibility, or a
+shared total stdio budget. Those P1–P4 items and the mandatory B builder producer profile remain
+subject to the shared S4.1 contract/source tuple; production report eligibility stays disabled.
+
 ## Encrypted player progress notes and refreshed candidate (2026-10-28)
 
 The progress page now allows a player to add and delete profile-scoped notes for the three displayed
@@ -1259,3 +1276,16 @@ is `6ff387a00867e2aaad7b39722e395a5e3531611cf022727b501fb7b731d32391`. Synthetic
 Qt6Widgets; the packaged worker passed signed synthetic S3 replay; installer smoke passed install,
 upgrade, two-way rollback, and tamper rejection. This remains unsigned build-host evidence;
 production data, publisher signing, target-machine acceptance, and player acceptance remain open.
+
+## Rebuilt candidate for fail-closed temporary report state (2026-10-30)
+
+The candidate was rebuilt after the `ReportLifecycle` default change from B HEAD `ed3e235` plus the
+current package patch. The unsigned PyInstaller 6.22.3 candidate with pinned C 0.4.0 has 920
+manifest entries with exact file-set/hash verification. Manifest SHA-256 is
+`141e13416d721bf9574c7f0b61a86751b1eabceb1dd4e8ffc9ca33a1496df451`, GUI executable SHA-256 is
+`fa26fc182e9fb106c27c54a61ece1f2ba3841086b92149315b623b221a235896`, and packaged worker SHA-256
+is `4ce36f7c016293446dc61bcb34f04e2b068cfaf9fad85fba3de2fb88f595deb2`. Candidate OCR recognized
+synthetic `LEVEL 80`; the GUI stayed active for eight seconds and loaded candidate-local Qt6Core and
+Qt6Widgets; the packaged worker passed signed synthetic S3 replay. The synthetic installer smoke
+was last run against the unchanged installer in the immediately prior candidate build; this report
+state change does not alter installer code. All account and bundle inputs remained synthetic.

@@ -1739,6 +1739,14 @@ class StorageLifecycleTests(unittest.TestCase):
                 result={"fixture": "result"}, snapshot_revision=1,
                 public_release_id="fixture-release", planner_version="fixture",
             )
+            self.assertEqual(report.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("公共资料版本未知", report.validity_reason)
+            legacy_unassessed = reports._to_dict(report)
+            legacy_unassessed.pop("validity")
+            legacy_unassessed.pop("validity_reason")
+            loaded_legacy = reports._from_dict(legacy_unassessed)
+            self.assertEqual(loaded_legacy.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertIn("公共资料版本未知", loaded_legacy.validity_reason)
             saved_path = reports.save_explicitly(
                 report,
                 current_snapshot_revision=1,
