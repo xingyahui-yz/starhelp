@@ -231,7 +231,8 @@ class MihomoPublicProfileClient:
             "物品身份尚未被来源证明；同一类型 ID、词条或属性不作副本身份依据。",
         ]
         player = payload.get("player")
-        memory_data = player.get("memory_data") if isinstance(player, dict) else None
+        space_info = player.get("space_info") if isinstance(player, dict) else None
+        memory_data = space_info.get("memory_data") if isinstance(space_info, dict) else None
         if isinstance(memory_data, dict):
             # Preserve only the provider's explicitly named summary fields. Their cycle,
             # stage, and current three-mode semantics are not inferred here.
@@ -241,7 +242,7 @@ class MihomoPublicProfileClient:
                     path = f"progress:mihomo-memory-summary:{source_key}"
                     _record_public_field(
                         fields, path, value, observed,
-                        f"mihomo-player.memory_data.{source_key}",
+                        f"mihomo-player.space_info.memory_data.{source_key}",
                     )
                     covered.add(path)
             if any(path.startswith("progress:mihomo-memory-summary:") for path in fields):

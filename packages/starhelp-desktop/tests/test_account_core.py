@@ -356,7 +356,9 @@ class ProgressPageTests(unittest.TestCase):
                 server_label="fixture-server",
             )
             proposal = MihomoPublicProfileClient().to_preview({
-                "player": {"memory_data": {"level": 8, "chaos_id": 1234, "chaos_level": 12}},
+                "player": {"space_info": {"memory_data": {
+                    "level": 8, "chaos_id": 1234, "chaos_level": 12,
+                }}},
                 "characters": [],
             })
             profiles.save_confirmed_import(profile.profile_id, profile.generation,
@@ -1295,14 +1297,14 @@ class ImportAndPrivacyTests(unittest.TestCase):
         proposal = MihomoPublicProfileClient().to_preview({
             "player": {
                 "uid": "100000999",
-                "memory_data": {
+                "space_info": {"memory_data": {
                     "level": 8,
                     "chaos_id": 1234,
                     "chaos_level": 12,
                     "negative": -1,
                     "malformed_bool": True,
                     "unexpected": "ignored",
-                },
+                }},
             },
             "characters": [],
         })
@@ -1317,10 +1319,19 @@ class ImportAndPrivacyTests(unittest.TestCase):
         )
         self.assertEqual(proposal.coverage, frozenset(proposal.fields))
         self.assertTrue(all(item.status is FieldStatus.NEEDS_REVIEW for item in proposal.fields.values()))
-        self.assertTrue(all(item.scope.startswith("mihomo-player.memory_data.")
+        self.assertTrue(all(item.scope.startswith("mihomo-player.space_info.memory_data.")
                             for item in proposal.fields.values()))
         self.assertNotIn("100000999", json.dumps(proposal.fields, default=str))
         self.assertTrue(any("未将其换算" in warning for warning in proposal.warnings))
+
+    def test_mihomo_ignores_undocumented_flat_memory_data_shape(self) -> None:
+        proposal = MihomoPublicProfileClient().to_preview({
+            "player": {"memory_data": {"level": 8, "chaos_id": 1234}},
+            "characters": [],
+        })
+
+        self.assertEqual(proposal.fields, {})
+        self.assertEqual(proposal.coverage, frozenset())
 
     def test_mihomo_malformed_optional_arrays_are_ignored(self) -> None:
         proposal = MihomoPublicProfileClient().to_preview({

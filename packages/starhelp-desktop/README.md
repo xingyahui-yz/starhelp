@@ -31,9 +31,9 @@ identity of a physical copy.
   including malformed optional arrays. Network responses must echo the requested UID in the documented
   `player.uid` field or they are rejected before preview. Manual and separately authorized automatic
   reads can be canceled locally; an already sent HTTP request may still finish at the service, but its
-  response is discarded. Mihomo `player.memory_data` summary values are retained with their provider
-  field names and are shown as raw summary facts in the Progress page; they are not mapped to complete
-  cycle or three-mode history. The three challenge modes stay unknown unless separately verified.
+  response is discarded. Mihomo's documented `player.space_info.memory_data` summary values are
+  retained with their provider field names and are shown as raw summary facts in the Progress page;
+  they are not mapped to complete cycle or three-mode history. The three challenge modes stay unknown unless separately verified.
   No real UID has been requested; UID-to-region routing remains an M0 decision.
 - The MetaCubeX `mihomo` client README documents the parsed endpoint as
   `https://api.mihomo.me/sr_info_parsed/{UID}?lang={LANG}` and says V2 is the default while V1 adds

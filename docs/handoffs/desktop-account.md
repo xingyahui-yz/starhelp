@@ -1307,3 +1307,37 @@ optimistic default noted by the earlier review, but does not implement the large
 | Builder provenance | New consumer profile must require a `request_producer` identity that independently names B host/package, actual source commit, builder blob, dependency lock and artifact/build tuple; keep it distinct from the snapshot serializer profile. The claim must be tied to B's verified build/load policy, not merely self-reported fields. | Unknown/missing/conflicting builder identity, old B1 identity with new builder source, and artifact mismatch reject. Freeze the C-accepted profile/capability and full A/B/C source-artifact tuple before implementation; do not alter fixed S3 or C 0.4.0. |
 
 The separate production M0 inputs remain: authorized real public source/terms and coverage, verified game/mode/cycle/stage/entity/goal mappings, field units/measurement context/coverage/identity semantics, A signed distribution/revocation operations, and a separately provisioned production trust anchor. Until those inputs and the S4.1 tuple are agreed, production TaskPage analysis and public synchronization stay disabled; synthetic replay is compatibility evidence only.
+
+## Mihomo response-shape verification (2026-10-30)
+
+The first-party March7th Parsed Data API example places the Memory summary at
+`player.space_info.memory_data`; its reference model likewise declares `SpaceInfo.memory_data`
+inside `PlayerInfo.space_info`. B previously looked for the undocumented flattened
+`player.memory_data`, so documented responses would silently omit this summary. B now reads the
+nested path and records the matching provenance scope. A synthetic regression confirms named
+summary values are retained without mapping them to challenge modes, while a separate regression
+confirms the undocumented flat shape is ignored. All 73 package tests pass.
+
+The source review is recorded in
+`packages/starhelp-desktop/docs/research/mihomo-public-profile-source-2026-10-30.md`. This verifies
+the endpoint/query shape and example field paths only. It does not establish service authorization,
+privacy/retention terms, numerical rate limits, cache freshness, UID-to-region routing, full account
+coverage, or frozen task mappings. The documented server label therefore remains local metadata;
+no live UID or account request was made. Production sync and analysis remain behind the existing M0
+freeze gates.
+
+## Mihomo parser correction candidate (2026-10-30)
+
+Rebuilt the unsigned PyInstaller 6.22.3 candidate after correcting the documented Memory summary path.
+The manifest contains 920 entries and exact file-set/hash verification passed. Manifest SHA-256 is
+`e55304b5fc3b73afba36fbc65e8a17af5364961fb1de949dab69bddab7c6c2cf`; GUI executable SHA-256 is
+`2c830897138d84b896dcd1d27ab88a45a848848a66ea0d14127123b7b60bfd20`; packaged worker SHA-256 is
+`d457d203d5e8dfe4aa58e822e178b4967f9f3ba3acd64c33c74b87c099cc85b3`.
+
+All 73 package tests passed, `compileall -q src packaging` passed, and `git diff --check` passed.
+The candidate-local OCR smoke recognized synthetic `LEVEL 80`; an isolated 8-second GUI launch loaded
+`Qt6Core.dll` and `Qt6Widgets.dll`; and the packaged worker passed the signed synthetic S3
+interop/report replay. The installer script was unchanged and its synthetic install/upgrade/rollback
+smoke is recorded above from the prior candidate. No real UID, account data, or user screenshot was
+used. The candidate remains unsigned and build-host-only; production M0, publisher signing, and
+target-machine acceptance remain open.
