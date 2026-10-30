@@ -358,6 +358,7 @@ class ProgressPageTests(unittest.TestCase):
             proposal = MihomoPublicProfileClient().to_preview({
                 "player": {"space_info": {"memory_data": {
                     "level": 8, "chaos_id": 1234, "chaos_level": 12,
+                    "chaos_star_count": 33,
                 }}},
                 "characters": [],
             })
@@ -371,6 +372,7 @@ class ProgressPageTests(unittest.TestCase):
             self.app.processEvents()
             self.assertIn("Mihomo 忘却之庭摘要", page.mode_status.toPlainText())
             self.assertIn("memory_data.chaos_id: 1234", page.mode_status.toPlainText())
+            self.assertIn("memory_data.chaos_star_count: 33", page.mode_status.toPlainText())
             for mode in _ProgressPage.MODES:
                 self.assertIn(f"{mode}：未知", page.mode_status.toPlainText())
             page.record_period.setText("fixture-cycle-1")
@@ -1317,6 +1319,7 @@ class ImportAndPrivacyTests(unittest.TestCase):
                     "level": 8,
                     "chaos_id": 1234,
                     "chaos_level": 12,
+                    "chaos_star_count": 33,
                     "negative": -1,
                     "malformed_bool": True,
                     "unexpected": "ignored",
@@ -1331,6 +1334,7 @@ class ImportAndPrivacyTests(unittest.TestCase):
                 "progress:mihomo-memory-summary:level": 8,
                 "progress:mihomo-memory-summary:chaos_id": 1234,
                 "progress:mihomo-memory-summary:chaos_level": 12,
+                "progress:mihomo-memory-summary:chaos_star_count": 33,
             },
         )
         self.assertEqual(proposal.coverage, frozenset(proposal.fields))

@@ -236,7 +236,7 @@ class MihomoPublicProfileClient:
         if isinstance(memory_data, dict):
             # Preserve only the provider's explicitly named summary fields. Their cycle,
             # stage, and current three-mode semantics are not inferred here.
-            for source_key in ("level", "chaos_id", "chaos_level"):
+            for source_key in ("level", "chaos_id", "chaos_level", "chaos_star_count"):
                 value = memory_data.get(source_key)
                 if _finite_integer(value) and value >= 0:
                     path = f"progress:mihomo-memory-summary:{source_key}"

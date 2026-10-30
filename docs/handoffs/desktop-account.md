@@ -1346,3 +1346,19 @@ The Mihomo equipment regression now also mirrors the documented relic `main_affi
 shape. It verifies provider field/value/count/step retention, needs-review state, and ambiguous
 physical-copy identity. The parser already supported these fields; this change adds representative
 coverage only. Full synthetic suite remains 73/73.
+
+## Mihomo memory star-count summary candidate (2026-10-30)
+
+The provider allowlist now retains documented `chaos_star_count` from
+`player.space_info.memory_data`, alongside the existing named summary values. The Progress UI shows
+it as a raw summary; no challenge-mode semantics are inferred. A synthetic UI/parser regression covers
+value `33`, and the existing separate test still keeps all three challenge modes unknown. All 73
+package tests pass; `compileall -q src packaging` and `git diff --check` pass.
+
+Rebuilt the unsigned PyInstaller 6.22.3 candidate with pinned C 0.4.0. Exact manifest verification
+passed for 920 entries; manifest SHA-256 is
+`50e1294a3eef2ffc7ad0f0f044898df55cb0ef07d6a29916f54cc902d26baeb2`, GUI executable SHA-256 is
+`caa142919f10f1d03d98f02ebacb24ae8a0d04b83fdd278287a6e686ee6e16c7`, and worker SHA-256 is
+`dd238c91eacac8b8e2d4a5b9237412bbc56e695234bc9a84e3bf8a0fca23c840`. Candidate OCR recognized
+synthetic `LEVEL 80`; the GUI stayed active eight seconds with Qt6Core/Qt6Widgets loaded; the
+packaged worker passed signed synthetic S3 interop/report replay. No real UID/account data was used.
