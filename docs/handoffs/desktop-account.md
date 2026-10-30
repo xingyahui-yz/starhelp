@@ -1362,3 +1362,14 @@ passed for 920 entries; manifest SHA-256 is
 `dd238c91eacac8b8e2d4a5b9237412bbc56e695234bc9a84e3bf8a0fca23c840`. Candidate OCR recognized
 synthetic `LEVEL 80`; the GUI stayed active eight seconds with Qt6Core/Qt6Widgets loaded; the
 packaged worker passed signed synthetic S3 interop/report replay. No real UID/account data was used.
+
+## Installed current candidate in an isolated workspace target (2026-10-30)
+
+The current 920-entry candidate was installed through `packaging/install-candidate.ps1` into a new,
+unique test directory under `dist-smoke-target/verified-current-candidate/Programs/StarHelp`; the
+installer validated the full candidate manifest before and after staging. The installed `StarHelp.exe`
+then remained alive for eight seconds and loaded `Qt6Core.dll` and `Qt6Widgets.dll`. The test stopped
+that process and removed only the path created for this run after checking its exact workspace parent
+and name. The installer’s fixture smoke also passed install, upgrade, two-direction rollback, and
+tamper rejection with its temporary directory scoped inside the package workspace. This is still
+build-host-only unsigned synthetic evidence and does not establish target-user Windows acceptance.
