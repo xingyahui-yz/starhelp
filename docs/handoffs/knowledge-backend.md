@@ -1,10 +1,12 @@
 # StarHelp Knowledge Backend Handoff
 
-Status: S3 producer code and synthetic artifact delivery are committed. This is a public-only backend component; this handoff does not claim the StarHelp MVP is complete or production content is published.
+Status: A 0.4.0 code is committed on `codex/mvp-knowledge-backend`; the S4.1 synthetic metadata fixture set is generated and checksummed below. This is a public-only backend component; this handoff does not claim the StarHelp MVP is complete or production content is published.
 
-S4.1 proposal: [`packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md`](../../packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md) records a reviewable candidate for signed distribution metadata, revocation, local service lifecycle, and public RAG slices. It is documentation only: endpoints/schema are not frozen or implemented, and S3 code, fixtures, shared contracts, and coordination locks remain unchanged.
+S4.1 design history: [`packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md`](../../packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md) records the original A-side candidate. The implementation baseline is the subsequently frozen [public sync/local execution v0.2 contract](../../docs/contracts/public-sync-local-execution-v0.2.md). A 0.4.0 now implements A-owned signed metadata, immutable envelope serving, readiness, and a local public RAG slice. S3 files remain unchanged. Production publishing and external deployment remain disabled.
 
 S3 final technical acceptance is closed by the root coordinator: C final `fa512b6` was verified remotely; the new set has 83 checks (62 source + packaged), with independent measurement 37/30; B2 is `c248daa`; B has a 65 tests/920 candidate/install report. These are S3 technical acceptance records, not approval of a production compatibility tuple or a production release.
+
+The A 0.4.0 code commit is `96eb4f2968c91f288799f5e5900028a52acbf843`. Its S4.1 fixtures use the prior S3 envelope only as a **legacy transport fixture**. The recorded A0.3/B1/C0.4 descriptor is not a current/final compatibility tuple; no B2/C0.5 identity was invented or approved. The new fixture receipt records `allow_production=false` and identifies the exact builder source commit/blob.
 
 ## Ownership and boundary
 
@@ -38,8 +40,8 @@ The notes below record the A-side proposal before the coordinated S2 freeze. The
 - Mode IDs, cycle IDs, stage keys, external entity ID mapping, and their source-of-truth are not yet verified.
 - Declarative condition operator set is `eq`, `ne`, `gt`, `gte`, `lt`, `lte`, `in`, and `not_in`. Units and attribute dictionaries still need a shared M0 mapping.
 - Bundle hashes use SHA-256 over canonical UTF-8 JSON (sorted keys, compact separators), and each record/evidence member carries its own content hash. Manifest signatures and any cross-thread canonicalization agreement remain open.
-- Search currently uses deterministic local substring/keyword matching. No embedding model, vector database, remote answer model, or authorized live search source is configured.
-- The current trigger for controlled public search is an empty local result. Other trigger states (stale, conflicting, latest-requested) need source-specific freshness and an agreed query shape.
+- Historical note at this section's original date: search used deterministic local substring/keyword matching. The A 0.4.0 addendum below now records persistent BM25 evidence retrieval and explicit stale/conflict abstention. No semantic model, remote answer model, or authorized live search source is configured.
+- The A 0.4.0 public-question route uses only approved evidence in a published release; it never creates a candidate. Its result is local/extractive or an abstention.
 - Error codes and the WSGI paths are draft implementation choices; align them with B/C before freezing.
 - `VerifiedJSONSourceAdapter` is only an allowlisted HTTPS JSON transport. It requires an allowed policy and source/version-matched verified capability snapshot; it does not implement a real named source, and its coverage remains unknown.
 
@@ -108,15 +110,19 @@ The independent command above reported `valid: true`, signature algorithm `ed255
 
 ## Implemented package areas
 
-The package currently provides SQLite migrations and tables for sources/policies/capability snapshots, entities and revisions, public records and immutable revisions, evidence, reviews, index releases, disabled references, audit events, command receipts, update runs, tasks, leases, and checkpoints. The service implements strict request validation, candidate creation, explicit hash-bound review, release build/validation/activation/rollback, same-release complete template retrieval, deterministic public search, empty-result search triggering, and idempotent update-task recovery. A least-privilege maintainer may hold updater, reviewer, and publisher permissions, explicitly review their own immutable candidate by exact content hash, and separately authorize each release operation. Build, validation, activation, and rollback remain explicit and audited; the service does not approve or publish automatically. Publisher permission is still required for each release operation, and the trusted `admin` role does not bypass review, state, or release-integrity checks. The CLI exports validated release bundles and verifies them without a database; bundle verification checks member hashes, manifest hash, dependencies, and evidence closure.
+The package provides SQLite migrations and tables for sources/policies/capability snapshots, entities and revisions, public records and immutable revisions, evidence, reviews, index releases, disabled references, audit events, command receipts, update runs, tasks, leases, checkpoints, and persistent public RAG chunks/index state. The service implements strict request validation, candidate creation, explicit hash-bound review, release build/validation/activation/rollback, same-release complete template retrieval, deterministic public search, and idempotent update-task recovery. The A 0.4.0 public RAG slice chunks published confirmed evidence with stable identities, ranks locally with BM25, rechecks permission/license/validity/disable state, and returns extractive citations or abstains on stale, conflicting, unconfirmed, scope-mismatched, or missing evidence. A `SemanticEncoder` adapter can be injected through the Python service interface; no encoder or model is configured by the CLI/server. Questions never enter the candidate/review/publish chain.
+
+A 0.4.0 also adds strict duplicate-key JSON parsing, profile-domain Ed25519 metadata signatures, purpose-bound trust checks, 24-hour development metadata TTL, sequence conflict checks, cumulative tombstone preservation, exact raw-byte artifact storage/HTTP routes, `/health/ready`, and an offline synthetic publisher. `serve` binds only `127.0.0.1`; the publisher hard-disables production purposes and does not persist private keys. B-side durable execution state, artifact qualification, B2/C0.5 allowlists, lifecycle controller, and production configuration are outside this A branch.
+
+The existing least-privilege release lifecycle remains explicit and audited. The CLI exports validated native/public distributions and verifies them without a database; bundle verification checks member hashes, manifest hash, dependencies, and evidence closure.
 
 ### Not yet proven or delivered
 
 - No genuine external source integration or full source coverage report has been verified beyond the research matrix above.
 - No real game template, complete production alternative, or no-match content case has been curated, reviewed, or published. Synthetic tests do not substitute for those human content gates.
-- No vector/semantic search or remote public-answer provider is active.
+- No model-backed semantic search or remote public-answer provider is active; only the optional local encoder interface exists.
 - No shared server has been provisioned; current CLI uses a local WSGI server and bearer-token hash configuration. TLS, deployment hardening, backups, monitoring and recovery drills remain deployment work.
-- The original `rel_fixture_0001` interoperability fixture was exercised against pinned B/C components. For S3, B's pinned outer-envelope validator and C's pinned core planner replay pass, while full B/C adapter acceptance remains pending explicit support for A producer version 0.3.0. Production signing keys are not provisioned, and frozen draft interfaces are not production acceptance.
+- The original `rel_fixture_0001` interoperability fixture was exercised against pinned B/C components. The S3 synthetic technical acceptance is closed as recorded above. The old A 0.3.0/B1/C0.4 tuple remains a legacy fixture; it does not establish an A0.4/B2/C0.5 tuple. Production signing keys are not provisioned, and the A-side synthetic metadata fixtures are not production acceptance.
 - M6 identity management is file-provisioned for local operation; invite workflow, secure secret distribution, storage ACL review and server identity provider selection remain outstanding.
 
 ## Verification evidence
@@ -157,3 +163,32 @@ python -m starhelp_knowledge verify-distribution --path .\packages\starhelp-know
 ```
 
 The full A package suite passed 23 tests after the producer commit; `compileall` and `git diff --check` passed. Ruff was unavailable in the execution runtime. Tests, records, UUIDs, and signing identity are synthetic only; the fixture does not grant production trust, approve real game content, or establish real account or game coverage.
+
+## A 0.4.0 S4.1 implementation and synthetic fixtures (2026-10-30)
+
+Code commit: `96eb4f2968c91f288799f5e5900028a52acbf843`. It implements A-owned strict catalog/revocation schemas and purpose-bound Ed25519 verification, same-sequence byte conflict rejection, cumulative tombstone enforcement, exact immutable envelope storage and read-only HTTP downloads, `/health/ready`, fixed-loopback server binding, and synthetic-only metadata publishing. The A implementation does not implement B's durable sync journal/artifact qualification, B2/C0.5 compatibility, a production keyring, controller lifecycle, live source, or remote model.
+
+The generic public RAG slice persists deterministic evidence chunks in SQLite, indexes only evidence from a published release with current `allowed` source permission, `allowed` license, `confirmed` status, and valid/non-disabled evidence, then retrieves by BM25 with scope and current-permission filters. It abstains for no match, mismatch, stale-only evidence (180-day development default, configurable in the Python service), unconfirmed evidence, and conflicting support/refutation. Answers are extractive and cite evidence ID, revision, native content hash, URL, title, locator, observation/publication date, quote, and chunk ID. A `SemanticEncoder` interface is available for an injected local adapter; none is configured by the CLI/server. Query/answer never creates candidates.
+
+The immutable synthetic fixture set is under `packages/starhelp-knowledge/artifacts/public-distribution-v0.2-synthetic/`. It contains normal sequence-1 catalog/revocation bytes, a different validly signed catalog reusing sequence 1, a cumulative sequence-2 tombstone pair naming a deliberately unavailable replacement artifact, explicit P1 record/evidence hash vectors, a source-reference receipt, and checksums. The expected absent replacement bytes digest is `dcc7f769508cb49459658a0c2328352a89c1fb23e6ec62517974430fd729db6d`.
+
+| Fixture | Raw SHA-256 |
+|---|---|
+| `catalog-normal-seq-0001.json` | `41d4ab626c74cd2301ed07eb6df1e0ea7d117e66d82ff3f8e148556a19ea110d` |
+| `revocations-normal-seq-0001.json` | `8862d2bb422591c9e173c24609579a6803b973f5971d31454d64ee3f9859aa0e` |
+| `same-sequence-conflict/catalog-seq-0001-different-bytes.json` | `a3bd056c3aba84bdcc424fc555e1e6fd6284e07e05a69339d54e273675316a00` |
+| `replacement-unavailable/catalog-seq-0002.json` | `4a7122165d9a1a3034007881052f697a9a29d27a917fa203e92e9e78a5f2025d` |
+| `replacement-unavailable/revocations-seq-0002.json` | `ec879a4f3cb5b79265389a2be9f3a965e90a42bc1d2cc5e588f14bf033bbd47f` |
+| `p1-native-test-vectors.json` | `15229f879eba1b5da5e7697b96f09bb4060038be5d89e911b080501c7d3cb2d8` |
+| `SHA256SUMS.txt` | `73acf5499005b3a1e38666e441d37c6e62faa042516bb38e3af4b4c8ce86b121` |
+
+The fixture receipt identifies builder commit `96eb4f2968c91f288799f5e5900028a52acbf843`, module `packages/starhelp-knowledge/tools/build_s4_1_synthetic_fixtures.py`, blob `c88e9e8ac2cd9c602666bf0afc3ef90ee4390091`, builder source SHA-256 `f288ea571732098ff1de49e2efab3d17e44b972f127e0f2980157905f80646f3`, package version `0.4.0`, and `allow_production=false`. The old S3 envelope is referenced by raw digest `f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772` and was not rewritten. The old tuple is labeled transport-only; these fixtures do not establish a final A/B/C producer tuple or production acceptance.
+
+Verification on this implementation: full package suite **37 tests passed**; the targeted public metadata/RAG suite passed 28 tests; `compileall` and `git diff --check` passed. A wheel build was not available in the runtime because `hatchling` is not installed. No real account data, live collector, production key, or deployment was used.
+
+Regenerate into a new, non-existing output directory from the A package directory with Python 3.12+ and `cryptography` installed:
+
+```powershell
+$env:PYTHONPATH = '.\src'
+python .\tools\build_s4_1_synthetic_fixtures.py --output .\artifacts\public-distribution-v0.2-synthetic-rebuild
+```

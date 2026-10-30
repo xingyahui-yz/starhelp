@@ -1,0 +1,5 @@
+# S4.1 synthetic public distribution fixtures
+
+All signed metadata and examples are synthetic. The normal catalog references the frozen S3 envelope as a legacy transport-only fixture. Its A 0.3.0, B1, and C 0.4.0 values are not a final compatibility tuple. The second catalog/revocations pair cumulatively revokes that old release and one exact native public ref, then names a deliberately absent synthetic replacement artifact; a client fetching it should observe an unavailable-artifact response while preserving the tombstone. The same-sequence directory contains a validly signed catalog with different raw bytes at sequence 1 and must be rejected as a sequence conflict.
+
+`p1-native-test-vectors.json` records one record and evidence hash from A's own verified native content-hash fields. Evidence revision 1 is taken only from the matching verified planner projection. The deterministic test key is not production trust. This package build hard-disables production metadata publishing. No real account, source collector, remote model, or production key was used. `receipt.json` identifies the exact builder commit/blob and frozen source digest.
