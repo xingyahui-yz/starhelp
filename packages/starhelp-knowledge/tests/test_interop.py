@@ -350,6 +350,11 @@ class InteropTests(unittest.TestCase):
             sys.path.remove(str(c_source))
 
     def test_s3_artifact_has_closed_equipment_types_and_finite_account_replay(self) -> None:
+        frozen_artifact = Path(__file__).parents[1] / "artifacts" / S3_ARTIFACT_DIRECTORY / "starhelp-interop-min-v0.1-s3.bpublic.json"
+        self.assertEqual(
+            hashlib.sha256(frozen_artifact.read_bytes()).hexdigest(),
+            "f777d05bdb269b2e92a612e4fc96a9ad076f9d5b2bc36760c34c1209ff323772",
+        )
         s3_dir = self.artifacts / S3_ARTIFACT_DIRECTORY
         s3_dir.mkdir()
         created = build_s3_fixture_artifacts(s3_dir, b_root=B_ROOT)
@@ -375,7 +380,7 @@ class InteropTests(unittest.TestCase):
             supported_planner_capabilities={PLANNER_CAPABILITY},
         )
         self.assertEqual(a_verified["release_id"], created["release_id"])
-        self.assertEqual(created["producer_version"], "0.3.0")
+        self.assertEqual(created["producer_version"], "0.4.0")
         self.assertEqual(created["coverage"], "synthetic-test-only")
         self.assertEqual(
             json.loads((s3_dir / "equipment-type-table.json").read_text(encoding="utf-8"))["items"],

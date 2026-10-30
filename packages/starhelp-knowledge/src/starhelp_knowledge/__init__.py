@@ -5,4 +5,4 @@ from starhelp_knowledge.service import KnowledgeService
 
 __all__ = ["KnowledgeDatabase", "KnowledgeService"]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

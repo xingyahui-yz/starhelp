@@ -10,7 +10,7 @@ from typing import Iterator
 
 from starhelp_knowledge.errors import KnowledgeError
 
-MIGRATION_VERSION = 1
+MIGRATION_VERSION = 2
 
 
 class KnowledgeDatabase:
@@ -58,17 +58,19 @@ class KnowledgeDatabase:
             current = int(row["version"] or 0)
             if current > MIGRATION_VERSION:
                 raise KnowledgeError("database schema is newer than this application")
-            if current == 0:
+            while current < MIGRATION_VERSION:
+                next_version = current + 1
                 migration = importlib.resources.files("starhelp_knowledge.migrations").joinpath(
-                    "001_initial.sql"
+                    f"{next_version:03d}_{'initial' if next_version == 1 else 'public_rag'}.sql"
                 ).read_text(encoding="utf-8")
                 connection.executescript(migration)
                 from datetime import UTC, datetime
 
                 connection.execute(
                     "INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (?, ?)",
-                    (MIGRATION_VERSION, datetime.now(UTC).isoformat()),
+                    (next_version, datetime.now(UTC).isoformat()),
                 )
-            return MIGRATION_VERSION
+                current = next_version
+            return current
         finally:
             connection.close()

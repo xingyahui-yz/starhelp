@@ -1,6 +1,6 @@
 # StarHelp Knowledge
 
-An independently installable Python package for StarHelp's **public-only** knowledge service. Version 0.3.0 uses the Python standard library and SQLite for the service; cross-version Ed25519 signing and verification are an optional `crypto` dependency. Supported Python is 3.12 or later.
+An independently installable Python package for StarHelp's **public-only** knowledge service. Version 0.4.0 uses the Python standard library and SQLite for the service; Ed25519 signing and verification are an optional `crypto` dependency. Supported Python is 3.12 or later.
 
 ## Local development
 
@@ -41,11 +41,15 @@ The command prints the random bearer token once and stores only its SHA-256 hash
 - `GET /v1/releases/{release_id}/bundle`
 - `GET /v1/templates/{template_id}?release={release_id}` (complete stage, variants, and evidence from one release)
 - `POST /v1/query` (strict `PublicQuery` allowlist)
-- `POST /v1/public-search` (local query first; if no local match, returns a trigger result)
+- `POST /v1/public-search` (local approved-evidence retrieval, extractive answer with citations, or abstention)
+- `GET /v1/distributions?profile=starhelp.local.v0.2&channel={channel}` (exact signed catalog bytes)
+- `GET /v1/distribution-revocations?profile=starhelp.local.v0.2&channel={channel}` (exact signed cumulative revocation bytes)
+- `GET /v1/distributions/{release_id}` (exact immutable envelope bytes named by the current catalog)
+- `GET /health/ready` (database/migration/distribution readiness and configured instance ID)
 - `GET /v1/admin/source-report` (latest recorded permission and capability snapshots; updater role)
 - `/v1/admin/*` (source policy, evidence, candidate, review, release, and update-task commands; bearer auth required)
 
-The local HTTP request schema and route names remain implementation drafts. The separate A/B/C interoperability scope is frozen in the shared contract. Unknown request fields are rejected, error responses do not include input values, and request bodies are not logged by the application. No request may contain account fields or derived account signals. Free-text public questions are used only for local keyword lookup while no authorized remote search provider is configured.
+The separate A/B/C interoperability scope is frozen in the shared contract. Unknown request fields are rejected, error responses do not include input values, and request bodies are not logged by the application. No request may contain account fields or derived account signals. Public questions only retrieve from the persistent index of currently permitted, licensed, confirmed evidence in a published release. Answers quote an evidence excerpt, include evidence ID/URL/locator/revision/hash citations, and abstain on no match, scope mismatch, unconfirmed evidence, or conflict. A local semantic encoder can be injected through the service API; none is configured by the server or CLI. The question never calls a source collector or remote model and never creates a candidate.
 
 ## Content lifecycle
 
@@ -55,7 +59,7 @@ Templates reference one stage and one or more complete variants. Every variant c
 
 ## Sources and current M0 status
 
-No source-specific real adapter is enabled. `VerifiedJSONSourceAdapter` is a generic, permission-gated HTTPS JSON transport only; it requires a matching allowed policy and dated verified capability snapshot, constrains host/path, rejects redirects and query strings, sends no credentials, and reports endpoint coverage as unknown. It does not parse any named provider or claim complete data. `SyntheticFixtureAdapter` exists only for offline tests and always returns `status: synthetic` and unknown real coverage. The Bilibili guide crawler, Nanoka and StarRailRes imports, live public search, and vector retrieval remain disabled until their source access, storage permission, rate limits, field coverage, and reproducible IDs have been verified and recorded. See `docs/handoffs/knowledge-backend.md` for the source matrix and decisions still required.
+No source-specific real adapter is enabled. `VerifiedJSONSourceAdapter` is a generic, permission-gated HTTPS JSON transport only; it requires a matching allowed policy and dated verified capability snapshot, constrains host/path, rejects redirects and query strings, sends no credentials, and reports endpoint coverage as unknown. It does not parse any named provider or claim complete data. `SyntheticFixtureAdapter` exists only for offline tests and always returns `status: synthetic` and unknown real coverage. The Bilibili guide crawler, Nanoka and StarRailRes imports, live public search, and model-backed embedding remain disabled until their source access, storage permission, rate limits, field coverage, and reproducible IDs have been verified and recorded. See `docs/handoffs/knowledge-backend.md` for the source matrix and decisions still required.
 
 ## Public release files
 
@@ -99,6 +103,14 @@ python -m starhelp_knowledge verify-distribution --path .\artifacts\interop-min-
 ```
 
 The S3 output includes the A public bundle, public test key, finite equipment type table, B-pinned synthetic snapshot input, and raw-file checksums. The snapshot is generated only by B's pinned serializer. The three-mode alpha equipment case is partial-inventory coverage; a locked instance stays fixed and unresolved inventory is reported as pending, never as proof that no other item exists. The replay checks C's pinned core planner against normalized fixture input; it does not establish full C producer-adapter support for A 0.3.0 or full B host-flow acceptance. All S3 records and approvals are synthetic and are not production trust or content approval.
+
+## Immutable public distribution service
+
+Version 0.4.0 stores exact envelope bytes and signed catalog/revocation bytes under a filesystem store, then serves those bytes without request-time reserialization. Catalog and revocation metadata use distinct Ed25519 signature domains and key-purpose checks, reject duplicate JSON keys and unknown fields, bind the exact revocation bytes by size and SHA-256, retain cumulative tombstones, and reject sequence rollback or same-sequence byte conflicts. The store publishes only synthetic metadata in this build. Production purposes and keys remain disabled.
+
+`publish-public-distribution` accepts an explicit JSON config containing an `envelope_paths` map, the envelope verification key path and key ID, a metadata key ID, and complete `catalog_payload` and `revocations_payload` objects. The signer fills immutable envelope digests/sizes and the revocation-byte binding from the exact files, verifies each envelope, and requires the caller to supply every producer tuple value. The private key is passed separately and is not copied into the store. Start the service with `--distribution-store` to expose its current signed pair and artifact. `serve` accepts only the fixed `127.0.0.1` bind.
+
+The public RAG index is rebuilt from evidence already included in an approved release. It stores deterministic source/evidence/revision/hash/chunker chunk identities in SQLite. Retrieval rechecks current source permission, evidence validity, license status, and disable tombstones. Confirmed evidence observed more than 180 days ago follows the development freshness default and causes abstention when it is the only match; A callers can set `max_evidence_age_seconds` explicitly. No collector or model is started by index rebuild or question handling.
 
 ## Verification
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from http import HTTPStatus
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import unquote
 
@@ -18,6 +19,8 @@ from starhelp_knowledge.errors import (
     UnsupportedContract,
 )
 from starhelp_knowledge.policy import Principal, TokenAuthenticator
+from starhelp_knowledge.database import MIGRATION_VERSION
+from starhelp_knowledge.public_distribution import PublicDistributionStore, canonical_json_bytes
 from starhelp_knowledge.service import KnowledgeService
 
 
@@ -40,9 +43,18 @@ def _status(error: KnowledgeError) -> int:
 
 
 class KnowledgeApplication:
-    def __init__(self, service: KnowledgeService, authenticator: TokenAuthenticator) -> None:
+    def __init__(
+        self,
+        service: KnowledgeService,
+        authenticator: TokenAuthenticator,
+        *,
+        distribution_store: PublicDistributionStore | None = None,
+        instance_id: str = "starhelp-knowledge-local",
+    ) -> None:
         self.service = service
         self.authenticator = authenticator
+        self.distribution_store = distribution_store
+        self.instance_id = instance_id
 
     def __call__(self, environ: dict[str, Any], start_response: Any) -> list[bytes]:
         method = environ.get("REQUEST_METHOD", "GET").upper()
@@ -50,6 +62,33 @@ class KnowledgeApplication:
         try:
             if method == "GET" and path == "/health":
                 return self._respond(start_response, HTTPStatus.OK, {"status": "ok", "service": "starhelp-knowledge"})
+            if method == "GET" and path == "/health/ready":
+                return self._respond(start_response, HTTPStatus.OK, self._readiness())
+            if method == "GET" and path == "/v1/distributions":
+                query = _parse_query(environ.get("QUERY_STRING", ""))
+                if set(query) != {"profile", "channel"} or self.distribution_store is None:
+                    raise InvalidPayload("distribution discovery requires profile and channel")
+                return self._respond_raw(
+                    start_response, HTTPStatus.OK,
+                    self.distribution_store.get_catalog(profile=query["profile"], channel=query["channel"]),
+                )
+            if method == "GET" and path == "/v1/distribution-revocations":
+                query = _parse_query(environ.get("QUERY_STRING", ""))
+                if set(query) != {"profile", "channel"} or self.distribution_store is None:
+                    raise InvalidPayload("revocation discovery requires profile and channel")
+                return self._respond_raw(
+                    start_response, HTTPStatus.OK,
+                    self.distribution_store.get_revocations(profile=query["profile"], channel=query["channel"]),
+                )
+            distribution_match = re.fullmatch(r"/v1/distributions/([A-Za-z0-9][A-Za-z0-9._:-]{0,199})", path)
+            if method == "GET" and distribution_match:
+                if self.distribution_store is None:
+                    raise NotFound()
+                return self._respond_raw(
+                    start_response, HTTPStatus.OK,
+                    self.distribution_store.get_artifact(distribution_match.group(1)),
+                    content_type="application/vnd.starhelp.publicbundle+json",
+                )
             if method == "GET" and path == "/v1/releases":
                 data = self.service.search({"query_kind": "release_discovery"})
                 return self._respond(start_response, HTTPStatus.OK, data)
@@ -173,6 +212,34 @@ class KnowledgeApplication:
             raise PermissionDenied()
         return principal
 
+    def _readiness(self) -> dict[str, Any]:
+        database_status, migration_status, schema_version = "ready", "current", None
+        try:
+            with self.service.database.reader() as db:
+                row = db.execute("SELECT MAX(version) AS version FROM schema_migrations").fetchone()
+                schema_version = int(row["version"] or 0)
+            if schema_version < MIGRATION_VERSION:
+                migration_status = "pending"
+        except Exception:
+            database_status, migration_status = "unavailable", "failed"
+        if self.distribution_store is None:
+            catalog_status, active_release = "not_configured", None
+        else:
+            catalog_status, active_release = self.distribution_store.readiness()
+        status = "ready" if database_status == "ready" and migration_status == "current" and catalog_status != "unavailable" else "not_ready"
+        return {
+            "status": status,
+            "service": "starhelp-knowledge",
+            "application_version": __import__("starhelp_knowledge").__version__,
+            "schema_version": schema_version,
+            "database": database_status,
+            "migration": migration_status,
+            "active_release_id": active_release,
+            "distribution_catalog": catalog_status,
+            "instance_id": self.instance_id,
+            "checked_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        }
+
     def _body(self, environ: dict[str, Any]) -> dict[str, Any]:
         length_text = environ.get("CONTENT_LENGTH") or "0"
         try:
@@ -192,6 +259,26 @@ class KnowledgeApplication:
         body = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         phrase = HTTPStatus(status).phrase
         start_response(f"{status} {phrase}", [("Content-Type", "application/json; charset=utf-8"), ("Content-Length", str(len(body))), ("Cache-Control", "no-store")])
+        return [body]
+
+    @staticmethod
+    def _respond_raw(
+        start_response: Any,
+        status: int,
+        body: bytes,
+        *,
+        content_type: str = "application/json; charset=utf-8",
+    ) -> list[bytes]:
+        import hashlib
+
+        phrase = HTTPStatus(status).phrase
+        headers = [
+            ("Content-Type", content_type),
+            ("Content-Length", str(len(body))),
+            ("Cache-Control", "no-store"),
+            ("ETag", f'"{hashlib.sha256(body).hexdigest()}"'),
+        ]
+        start_response(f"{status} {phrase}", headers)
         return [body]
 
 

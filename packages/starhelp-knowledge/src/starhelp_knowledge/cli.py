@@ -9,6 +9,7 @@ import secrets
 import socketserver
 import sys
 from pathlib import Path
+from urllib.parse import quote
 from wsgiref.simple_server import WSGIServer, make_server
 
 from starhelp_knowledge import __version__
@@ -24,6 +25,12 @@ from starhelp_knowledge.errors import KnowledgeError
 from starhelp_knowledge.fixture import build_fixture_artifacts
 from starhelp_knowledge.http import KnowledgeApplication
 from starhelp_knowledge.policy import ROLE_PERMISSIONS, TokenAuthenticator
+from starhelp_knowledge.public_distribution import (
+    CATALOG_PROFILE,
+    REVOCATIONS_PROFILE,
+    PublicDistributionStore,
+    sign_metadata,
+)
 from starhelp_knowledge.s3_fixture import build_s3_fixture_artifacts
 from starhelp_knowledge.service import KnowledgeService
 
@@ -73,6 +80,8 @@ def _parser() -> argparse.ArgumentParser:
     serve.add_argument("--auth-config", type=Path, default=_default_auth_path())
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--distribution-store", type=Path)
+    serve.add_argument("--instance-id", default="starhelp-knowledge-local")
     token = subcommands.add_parser("create-token", help="provision one invite identity with one or more roles")
     token.add_argument("--auth-config", type=Path, default=_default_auth_path())
     token.add_argument("--actor-id", required=True)
@@ -119,6 +128,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     s3_fixture.add_argument("--output-dir", required=True, type=Path)
     s3_fixture.add_argument("--b-root", required=True, type=Path)
+    publish = subcommands.add_parser(
+        "publish-public-distribution", help="verify and publish immutable synthetic public distribution bytes"
+    )
+    publish.add_argument("--config", required=True, type=Path)
+    publish.add_argument("--metadata-private-key", required=True, type=Path)
+    publish.add_argument("--output-store", required=True, type=Path)
     return parser
 
 
@@ -256,13 +271,110 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         print(json.dumps({**result, "fixture_only": True}, sort_keys=True))
         return 0
+    if args.command == "publish-public-distribution":
+        try:
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+
+            config = json.loads(args.config.read_text(encoding="utf-8"))
+            if not isinstance(config, dict) or set(config) != {
+                "envelope_paths", "envelope_trusted_public_key", "envelope_trusted_key_id",
+                "metadata_key_id", "catalog_payload", "revocations_payload",
+            }:
+                raise ValueError
+            envelope_paths = config["envelope_paths"]
+            if not isinstance(envelope_paths, dict) or not envelope_paths:
+                raise ValueError
+            envelope_key = serialization.load_pem_public_key(Path(config["envelope_trusted_public_key"]).read_bytes())
+            if not isinstance(envelope_key, Ed25519PublicKey):
+                raise ValueError
+            envelope_key_bytes = envelope_key.public_bytes_raw()
+            verified_envelopes: dict[str, bytes] = {}
+            for release_id, path_value in envelope_paths.items():
+                envelope_raw = Path(path_value).read_bytes()
+                envelope = json.loads(envelope_raw.decode("utf-8"))
+                result = verify_distribution_envelope(
+                    envelope,
+                    trusted_public_keys={config["envelope_trusted_key_id"]: envelope_key_bytes},
+                    trusted_key_id=config["envelope_trusted_key_id"],
+                    supported_distribution_capabilities={DISTRIBUTION_CAPABILITY},
+                    supported_planner_capabilities={PLANNER_CAPABILITY},
+                )
+                if envelope.get("manifest", {}).get("index_release_id") != release_id or result.get("release_id") != release_id:
+                    raise ValueError
+                verified_envelopes[release_id] = envelope_raw
+            listed_release_ids = {item.get("release_id") for item in config["catalog_payload"].get("distributions", [])}
+            if listed_release_ids != set(verified_envelopes):
+                raise ValueError
+            metadata_key = serialization.load_pem_private_key(args.metadata_private_key.read_bytes(), password=None)
+            if not isinstance(metadata_key, Ed25519PrivateKey):
+                raise ValueError
+            revocations_raw = sign_metadata(
+                REVOCATIONS_PROFILE, config["revocations_payload"], signing_private_key=metadata_key,
+                key_id=config["metadata_key_id"],
+            )
+            catalog_payload = dict(config["catalog_payload"])
+            descriptors = config["catalog_payload"]["distributions"]
+            catalog_payload["distributions"] = []
+            for descriptor in descriptors:
+                entry = dict(descriptor)
+                artifact_raw = verified_envelopes[entry["release_id"]]
+                entry["envelope_sha256"] = hashlib.sha256(artifact_raw).hexdigest()
+                entry["size_bytes"] = len(artifact_raw)
+                catalog_payload["distributions"].append(entry)
+            rev_snapshot = dict(catalog_payload["revocation_snapshot"])
+            rev_snapshot.update({
+                "path": f"/v1/distribution-revocations?profile={catalog_payload['consumer_profile']}&channel={quote(catalog_payload['channel'], safe='')}",
+                "sha256": hashlib.sha256(revocations_raw).hexdigest(),
+                "size_bytes": len(revocations_raw),
+                "sequence": config["revocations_payload"]["sequence"],
+            })
+            catalog_payload["revocation_snapshot"] = rev_snapshot
+            catalog_raw = sign_metadata(
+                CATALOG_PROFILE, catalog_payload, signing_private_key=metadata_key,
+                key_id=config["metadata_key_id"],
+            )
+            store = PublicDistributionStore(args.output_store)
+            for release_id, envelope_raw in verified_envelopes.items():
+                store.store_artifact(release_id, envelope_raw)
+            metadata_public = metadata_key.public_key().public_bytes_raw()
+            receipt = store.publish_metadata(
+                catalog_raw,
+                revocations_raw,
+                trusted_keys={config["metadata_key_id"]: {
+                    "public_key": metadata_public,
+                    "purposes": ["synthetic-catalog", "synthetic-revocations"],
+                    "not_before": "1970-01-01T00:00:00Z",
+                    "not_after": "9999-12-31T23:59:59Z",
+                    "revoked": False,
+                }},
+                purpose_prefix="synthetic",
+            )
+        except ImportError:
+            print("the optional cryptography package is required for signed distribution publishing", file=sys.stderr)
+            return 2
+        except KnowledgeError as exc:
+            print(f"public distribution publish failed: {exc.code}", file=sys.stderr)
+            return 2
+        except Exception as exc:
+            print(f"public distribution publish failed ({type(exc).__name__}); inspect configuration without exposing keys", file=sys.stderr)
+            return 2
+        print(json.dumps({**receipt, "fixture_only": True}, sort_keys=True))
+        return 0
     if args.command == "serve":
         if not 1 <= args.port <= 65535:
             print("port must be between 1 and 65535", file=sys.stderr)
             return 2
+        if args.host != "127.0.0.1":
+            print("serve is restricted to the fixed loopback address 127.0.0.1", file=sys.stderr)
+            return 2
+        if not args.instance_id or len(args.instance_id) > 120 or any(ord(ch) < 33 or ord(ch) > 126 for ch in args.instance_id):
+            print("instance-id must be a short printable non-sensitive identifier", file=sys.stderr)
+            return 2
         service = KnowledgeService(KnowledgeDatabase(args.database))
         authenticator = TokenAuthenticator(_load_actors(args.auth_config))
-        app = KnowledgeApplication(service, authenticator)
+        distribution_store = PublicDistributionStore(args.distribution_store) if args.distribution_store else None
+        app = KnowledgeApplication(service, authenticator, distribution_store=distribution_store, instance_id=args.instance_id)
         with make_server(args.host, args.port, app, server_class=ThreadedWSGIServer) as server:
             print(f"StarHelp knowledge service listening on {args.host}:{args.port}")
             try:

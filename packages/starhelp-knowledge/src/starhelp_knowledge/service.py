@@ -22,6 +22,16 @@ from starhelp_knowledge.errors import (
     WithdrawnEvidence,
 )
 from starhelp_knowledge.policy import CONTRACT_VERSION, Principal, validate_public_query
+from starhelp_knowledge.public_rag import (
+    CHUNKER_PROFILE,
+    DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
+    SemanticEncoder,
+    chunk_identity,
+    chunk_text,
+    grounded_answer,
+    indexed_at_utc,
+    retrieve_chunks,
+)
 from starhelp_knowledge.records import canonical_json, content_hash, validate_public_record
 
 UPDATE_STAGES = ("discover", "fetch", "normalize", "extract", "review")
@@ -39,8 +49,16 @@ def _new_id(prefix: str) -> str:
 
 
 class KnowledgeService:
-    def __init__(self, database: KnowledgeDatabase) -> None:
+    def __init__(
+        self,
+        database: KnowledgeDatabase,
+        *,
+        semantic_encoder: SemanticEncoder | None = None,
+        max_evidence_age_seconds: int = DEFAULT_MAX_EVIDENCE_AGE_SECONDS,
+    ) -> None:
         self.database = database
+        self.semantic_encoder = semantic_encoder
+        self.max_evidence_age_seconds = max_evidence_age_seconds
         self.database.migrate()
 
     def add_source(
@@ -586,11 +604,7 @@ class KnowledgeService:
         }
 
     def search_public(self, query: dict[str, Any]) -> dict[str, Any]:
-        """Run local public retrieval, then report whether controlled search can run.
-
-        No network search adapter is enabled until M0 verifies a source's permission,
-        capabilities, and coverage. This method never forwards the question elsewhere.
-        """
+        """Answer from the persisted index of approved public evidence, or abstain."""
         normalized = validate_public_query(query)
         if normalized["query_kind"] != "public_question":
             raise InvalidPayload("public search requires a public question")
@@ -600,19 +614,126 @@ class KnowledgeService:
             existing = self.search(local_query)
         except NotFound:
             existing = {"contract_version": CONTRACT_VERSION, "index_release_id": None, "results": [], "retrieval": {"method": "none"}}
-        results = existing.get("results", [])
-        needs_search = not results
+        release_id = normalized.get("index_release_id") or existing.get("index_release_id")
+        hits: list[dict[str, Any]] = []
+        if release_id is not None:
+            bundle = self.get_release_bundle(release_id)
+            self._ensure_public_rag_index(release_id, bundle)
+            with self.database.reader() as db:
+                rows = [dict(row) for row in db.execute(
+                    "SELECT c.* FROM public_rag_chunks c WHERE c.release_id=? ORDER BY c.evidence_id,c.chunk_index",
+                    (release_id,),
+                ).fetchall()]
+                rows = [row for row in rows if self._public_evidence_is_current(db, row["evidence_id"], row["source_id"])]
+            hits = retrieve_chunks(
+                normalized.get("public_question") or "",
+                rows,
+                scope=normalized.get("scope", {}),
+                limit=min(normalized.get("limit", 5), 20),
+                encoder=self.semantic_encoder,
+                max_evidence_age_seconds=self.max_evidence_age_seconds,
+            )
+        answer = grounded_answer(hits)
+        needs_search = not hits
         return {
             "contract_version": CONTRACT_VERSION,
-            "index_release_id": existing.get("index_release_id"),
-            "local_results": results,
+            "index_release_id": release_id,
+            "local_results": existing.get("results", []),
             "temporary_evidence": [],
             "triggered": needs_search,
             "trigger_reason": "no_local_match" if needs_search else None,
             "provider_status": "not_configured",
-            "message": "No authorized public search adapter is configured; no request was sent externally.",
+            "retrieval": {"method": "bm25+optional-local-semantic", "index_profile": "starhelp.public-rag-index.v1", "candidate_count": len(hits)},
+            **answer,
+            "message": "Answer uses approved public evidence locally; no remote provider or source collector was invoked.",
             "candidate_queue": "not_created",
         }
+
+    def rebuild_public_rag_index(self, release_id: str) -> dict[str, Any]:
+        """Rebuild deterministic chunks for one already published release."""
+        bundle = self.get_release_bundle(release_id)
+        manifest_hash = bundle["manifest"]["content_hash"]
+        evidence_by_id = {item["id"]: item for item in bundle["evidence"]}
+        indexed_at = indexed_at_utc()
+        encoder_profile = self.semantic_encoder.profile if self.semantic_encoder else "none"
+        if type(encoder_profile) is not str or not encoder_profile or len(encoder_profile) > 160:
+            raise InvalidPayload("semantic encoder profile is invalid")
+        prepared: list[tuple[Any, ...]] = []
+        with self.database.reader() as db:
+            for evidence_id, evidence in sorted(evidence_by_id.items()):
+                row = db.execute(
+                    "SELECT e.evidence_id,e.validity_status,e.content_hash AS evidence_hash,"
+                    "d.revision,d.title,d.excerpt,d.license_status,d.published_at,d.observed_at,"
+                    "doc.source_id,s.enabled,(SELECT permission_status FROM source_policy_revisions "
+                    "WHERE source_id=doc.source_id ORDER BY revision DESC LIMIT 1) AS permission_status "
+                    "FROM evidence e JOIN document_revisions d USING(document_revision_id) "
+                    "JOIN documents doc ON doc.document_id=d.document_id "
+                    "JOIN sources s ON s.source_id=doc.source_id WHERE e.evidence_id=?",
+                    (evidence_id,),
+                ).fetchone()
+                if (row is None or not row["enabled"] or row["permission_status"] != "allowed"
+                    or row["validity_status"] != "valid" or row["license_status"] != "allowed"
+                    or evidence.get("license_status") != "allowed" or evidence.get("evidence_status") != "confirmed"
+                    or not isinstance(evidence.get("excerpt"), str) or not evidence["excerpt"].strip()
+                    or row["evidence_hash"] != evidence.get("content_hash") or self._is_disabled(db, "evidence", evidence_id, None)):
+                    continue
+                chunks = chunk_text(evidence["excerpt"])
+                for index, chunk in enumerate(chunks):
+                    chunk_id = chunk_identity(
+                        source_id=row["source_id"], evidence_id=evidence_id,
+                        revision=row["revision"], content_hash=evidence["content_hash"], chunk_index=index,
+                    )
+                    embedding = self.semantic_encoder.encode(chunk) if self.semantic_encoder else None
+                    if embedding is not None:
+                        import math
+
+                        if not isinstance(embedding, list) or not embedding or any(type(value) not in (int, float) or not math.isfinite(value) for value in embedding):
+                            raise InvalidPayload("semantic encoder returned an invalid vector")
+                        embedding_json = canonical_json([float(value) for value in embedding])
+                    else:
+                        embedding_json = None
+                    prepared.append((
+                        chunk_id, row["source_id"], evidence_id, row["revision"], evidence["content_hash"],
+                        CHUNKER_PROFILE, index, release_id, chunk, evidence["title"], evidence["url"],
+                        canonical_json(evidence["locator"]), canonical_json(evidence["scope"]), evidence["relation"],
+                        evidence["evidence_status"], evidence.get("published_at"), row["observed_at"],
+                        embedding_json, encoder_profile if embedding_json is not None else None, indexed_at,
+                    ))
+        with self.database.transaction() as db:
+            db.execute("DELETE FROM public_rag_chunks WHERE release_id=?", (release_id,))
+            db.executemany(
+                "INSERT INTO public_rag_chunks VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", prepared,
+            )
+            db.execute(
+                "INSERT INTO public_rag_index_state VALUES(?,?,?,?,?,?) "
+                "ON CONFLICT(release_id) DO UPDATE SET manifest_hash=excluded.manifest_hash,"
+                "chunker_profile=excluded.chunker_profile,semantic_encoder_profile=excluded.semantic_encoder_profile,"
+                "chunk_count=excluded.chunk_count,indexed_at=excluded.indexed_at",
+                (release_id, manifest_hash, CHUNKER_PROFILE, encoder_profile, len(prepared), indexed_at),
+            )
+        return {"release_id": release_id, "chunker_profile": CHUNKER_PROFILE, "semantic_encoder_profile": encoder_profile, "chunk_count": len(prepared), "indexed_at": indexed_at}
+
+    def _ensure_public_rag_index(self, release_id: str, bundle: dict[str, Any]) -> None:
+        with self.database.reader() as db:
+            state = db.execute("SELECT manifest_hash,chunker_profile,semantic_encoder_profile FROM public_rag_index_state WHERE release_id=?", (release_id,)).fetchone()
+        encoder_profile = self.semantic_encoder.profile if self.semantic_encoder else "none"
+        if state is None or state["manifest_hash"] != bundle["manifest"]["content_hash"] or state["chunker_profile"] != CHUNKER_PROFILE or state["semantic_encoder_profile"] != encoder_profile:
+            self.rebuild_public_rag_index(release_id)
+
+    def _public_evidence_is_current(self, db: Any, evidence_id: str, source_id: str) -> bool:
+        row = db.execute(
+            "SELECT e.validity_status,d.license_status,s.enabled,(SELECT permission_status "
+            "FROM source_policy_revisions WHERE source_id=? ORDER BY revision DESC LIMIT 1) AS permission_status "
+            "FROM evidence e JOIN document_revisions d USING(document_revision_id) "
+            "JOIN documents doc ON doc.document_id=d.document_id JOIN sources s ON s.source_id=doc.source_id "
+            "WHERE e.evidence_id=? AND doc.source_id=?",
+            (source_id, evidence_id, source_id),
+        ).fetchone()
+        return bool(
+            row is not None and row["validity_status"] == "valid" and row["license_status"] == "allowed"
+            and row["enabled"] and row["permission_status"] == "allowed"
+            and not self._is_disabled(db, "evidence", evidence_id, None)
+        )
 
     def search(self, query: dict[str, Any]) -> dict[str, Any]:
         normalized = validate_public_query(query)

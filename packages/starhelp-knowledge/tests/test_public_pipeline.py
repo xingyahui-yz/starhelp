@@ -629,6 +629,62 @@ class PublicPipelineTests(unittest.TestCase):
         self.assertEqual(result["temporary_evidence"], [])
         self.assertNotIn("fixture question", json.dumps(result))
 
+    def test_public_rag_indexes_approved_release_and_answers_with_citations(self) -> None:
+        release = self.build_synthetic_release()
+        self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="rag-validate")
+        self.service.activate_release(
+            PUBLISHER, release["index_release_id"], expected_active_release_id=None, idempotency_key="rag-activate"
+        )
+        before = self.service.search({"query_kind": "release_discovery"})
+        result = self.service.search_public({"query_kind": "public_question", "public_question": "fixture synthetic evidence"})
+        self.assertFalse(result["abstained"])
+        self.assertIn("Synthetic fixture, not real game data.", result["answer"])
+        self.assertEqual(result["answer_mode"], "extractive_local_no_model")
+        self.assertEqual(result["candidate_queue"], "not_created")
+        self.assertEqual(result["provider_status"], "not_configured")
+        self.assertEqual(result["citations"][0]["evidence_id"], self.evidence_ref[0]["id"])
+        self.assertEqual(result["citations"][0]["url"], "https://example.test/public/fixture")
+        self.assertEqual(result["retrieval"]["candidate_count"], 1)
+        after = self.service.search({"query_kind": "release_discovery"})
+        self.assertEqual(before, after)
+        with self.service.database.reader() as db:
+            state = db.execute("SELECT chunk_count,chunker_profile FROM public_rag_index_state WHERE release_id=?", (release["index_release_id"],)).fetchone()
+            self.assertEqual(state["chunk_count"], 1)
+            self.assertEqual(state["chunker_profile"], "starhelp.public-rag-chunker.v1")
+
+    def test_public_rag_abstains_when_scope_has_no_approved_evidence(self) -> None:
+        release = self.build_synthetic_release()
+        self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="rag-scope-validate")
+        self.service.activate_release(
+            PUBLISHER, release["index_release_id"], expected_active_release_id=None, idempotency_key="rag-scope-activate"
+        )
+        result = self.service.search_public({
+            "query_kind": "public_question", "public_question": "fixture evidence",
+            "scope": {"game_version": "unrelated:version"},
+        })
+        self.assertTrue(result["abstained"])
+        self.assertEqual(result["abstention_reason"], "no_matching_approved_evidence")
+        self.assertIsNone(result["answer"])
+        self.assertEqual(result["citations"], [])
+
+    def test_public_rag_abstains_on_stale_evidence_and_cites_its_age(self) -> None:
+        release = self.build_synthetic_release()
+        self.service.validate_release(PUBLISHER, release["index_release_id"], idempotency_key="rag-stale-validate")
+        self.service.activate_release(
+            PUBLISHER, release["index_release_id"], expected_active_release_id=None, idempotency_key="rag-stale-activate"
+        )
+        with self.service.database.transaction() as db:
+            db.execute(
+                "UPDATE document_revisions SET observed_at='2020-01-01T00:00:00Z' "
+                "WHERE document_revision_id=(SELECT document_revision_id FROM evidence WHERE evidence_id=?)",
+                (self.evidence_ref[0]["id"],),
+            )
+        result = self.service.search_public({"query_kind": "public_question", "public_question": "fixture evidence"})
+        self.assertTrue(result["abstained"])
+        self.assertEqual(result["abstention_reason"], "evidence_stale")
+        self.assertIsNone(result["answer"])
+        self.assertEqual(result["citations"][0]["freshness"], "stale")
+
 
 if __name__ == "__main__":
     unittest.main()
