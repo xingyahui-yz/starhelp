@@ -1396,3 +1396,25 @@ B remains fail-closed: production TaskPage analysis, public synchronization, and
 remain unavailable until A/B/C freeze one versioned contract and tuple and A delivers the matching
 artifact/interface. The next code step depends on that reviewable frozen input; no sibling worktree,
 shared contract, fixed S3 artifact, or C wheel was changed.
+
+## B 0.2 implementation resumed (2026-10-30)
+
+The coordinator froze `docs/contracts/public-sync-local-execution-v0.2.md` at SHA-256
+`b50aa1ae99c5373a399554d10bbc7995f7d76b56be8d65a182f6f21c32d3aa5e`. B work has resumed against
+that document only; the branch remains `codex/mvp-desktop-account`, and the untracked
+`packages/starhelp-desktop/.tmp/` directory is preserved.
+
+The package target is now `0.2.0`. New isolated modules add strict producer v0.2 request/basis and
+typed tombstone validation, source-lock loading and generation, DPAPI-protected durable metadata
+high-water/tombstone/per-artifact qualification state, epoch guarded report staging/save, a separate
+v0.2 stdio bridge with result-digest/correlation checks, fixed-origin anonymous raw-byte transport,
+and a digest-pinned owned-process controller for local A. The v0.1 builder and worker remain separate.
+Seven new synthetic protocol/state/controller tests plus the full package suite pass (80 tests total);
+source compiles and `git diff --check` passes. These checks do not exercise C 0.5 or A metadata signatures.
+
+The source-lock generator is `packages/starhelp-desktop/packaging/build-source-lock.py`; generate the
+lock only after committing the builder sources, then commit and record that exact lock bytes/hash.
+No candidate was rebuilt. Remaining B work is to connect the signed catalog/revocation verifier to
+the durable store once A's frozen metadata artifacts and verifier vectors arrive, and to run a
+unified replay after C's v0.5 API/wheel and the exact A tuple are fixed. No real IDs, accounts,
+production keys, or deployment were used.

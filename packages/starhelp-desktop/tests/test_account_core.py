@@ -1822,6 +1822,32 @@ class StorageLifecycleTests(unittest.TestCase):
             )[0]
             self.assertEqual(recovered.validity, ReportValidity.CURRENT)
 
+            basis_report = reports.make_temporary(
+                profile_id=profile_id, generation=1, task={"fixture": "v02"},
+                result={"fixture": "historical"}, snapshot_revision=1,
+                public_release_id="fixture-release", planner_version="fixture-v02",
+                public_basis_sha256="a" * 64, public_epoch=7,
+            )
+            reports.save_explicitly(
+                basis_report, current_snapshot_revision=1,
+                current_public_release_id="fixture-release", withdrawal_status_known=True,
+                current_public_basis_sha256="a" * 64, current_public_epoch=7,
+            )
+            basis_changed = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=1,
+                current_public_release_id="fixture-release", withdrawal_status_known=True,
+                current_public_basis_sha256="b" * 64, current_public_epoch=8,
+            )
+            basis_by_id = {item.report_id: item for item in basis_changed}
+            self.assertEqual(basis_by_id[basis_report.report_id].validity, ReportValidity.NEEDS_REVIEW)
+            restored = reports.list_saved(
+                profile_id=profile_id, generation=1, current_snapshot_revision=1,
+                current_public_release_id="fixture-release", withdrawal_status_known=True,
+                current_public_basis_sha256="a" * 64, current_public_epoch=7,
+            )
+            restored_by_id = {item.report_id: item for item in restored}
+            self.assertEqual(restored_by_id[basis_report.report_id].validity, ReportValidity.NEEDS_REVIEW)
+
     def test_profiles_store_only_confirmed_local_snapshot_and_revoke_survives_restart(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

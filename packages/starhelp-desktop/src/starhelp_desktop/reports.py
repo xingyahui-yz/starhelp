@@ -23,6 +23,7 @@ _SNAPSHOT_UNAVAILABLE = "当前账号快照不可用，无法核验报告依据"
 _PUBLIC_RELEASE_UNAVAILABLE = "本机当前公共资料版本未知，无法核对报告依据"
 _PUBLIC_RELEASE_CHANGED = "本机当前公共资料版本已变化；旧报告保留原版本依据"
 _WITHDRAWAL_STATUS_UNKNOWN = "最新公共资料撤回/禁用状态未知"
+_PUBLIC_BASIS_CHANGED = "生成报告后公共依据 epoch 已变化；报告保留历史依据，不能恢复为当前方案"
 _RECHECKABLE_REASONS = frozenset({
     _SNAPSHOT_UNAVAILABLE,
     _PUBLIC_RELEASE_UNAVAILABLE,
@@ -48,6 +49,8 @@ class AnalysisReport:
     # not inherit an optimistic status before that assessment.
     validity: ReportValidity = ReportValidity.NEEDS_REVIEW
     validity_reason: str | None = _PUBLIC_RELEASE_UNAVAILABLE
+    public_basis_sha256: str | None = None
+    public_epoch: int | None = None
 
 
 class ReportLifecycle:
@@ -63,6 +66,8 @@ class ReportLifecycle:
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
         withdrawal_status_known: bool = False,
+        current_public_basis_sha256: str | None = None,
+        current_public_epoch: int | None = None,
     ) -> AnalysisReport:
         """Refresh an unsaved report's validity without persisting the report."""
         self._lifecycle.require_active(
@@ -74,6 +79,8 @@ class ReportLifecycle:
             current_public_release_id=current_public_release_id,
             withdrawn_refs=withdrawn_refs,
             withdrawal_status_known=withdrawal_status_known,
+            current_public_basis_sha256=current_public_basis_sha256,
+            current_public_epoch=current_public_epoch,
         )
 
     def make_temporary(
@@ -87,13 +94,27 @@ class ReportLifecycle:
         public_release_id: str,
         planner_version: str,
         public_refs: frozenset[str] = frozenset(),
+        public_basis_sha256: str | None = None,
+        public_epoch: int | None = None,
     ) -> AnalysisReport:
         self._lifecycle.require_active(profile_id, generation)
+        if ((public_basis_sha256 is None) != (public_epoch is None)
+                or (public_basis_sha256 is not None and (
+                    len(public_basis_sha256) != 64 or any(
+                        character not in "0123456789abcdef" for character in public_basis_sha256
+                    )
+                ))
+                or (public_epoch is not None and (
+                    not isinstance(public_epoch, int) or isinstance(public_epoch, bool)
+                    or public_epoch < 1
+                ))):
+            raise ValueError("public basis report identity is malformed")
         return AnalysisReport(
             report_id=uuid4(), profile_id=profile_id, authorization_generation=generation,
             created_at=datetime.now(UTC), task=task, result=result,
             snapshot_revision=snapshot_revision, public_release_id=public_release_id,
             planner_version=planner_version, public_refs=public_refs,
+            public_basis_sha256=public_basis_sha256, public_epoch=public_epoch,
         )
 
     def save_explicitly(
@@ -104,6 +125,8 @@ class ReportLifecycle:
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
         withdrawal_status_known: bool = False,
+        current_public_basis_sha256: str | None = None,
+        current_public_epoch: int | None = None,
     ) -> Path:
         key = f"profile-{report.profile_id.hex}-report-{report.report_id.hex}"
         assessed = self._assess_snapshot(
@@ -112,6 +135,8 @@ class ReportLifecycle:
             current_public_release_id=current_public_release_id,
             withdrawn_refs=withdrawn_refs,
             withdrawal_status_known=withdrawal_status_known,
+            current_public_basis_sha256=current_public_basis_sha256,
+            current_public_epoch=current_public_epoch,
         )
         return self._lifecycle.run_authorized(
             report.profile_id,
@@ -127,6 +152,8 @@ class ReportLifecycle:
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
         withdrawal_status_known: bool = False,
+        current_public_basis_sha256: str | None = None,
+        current_public_epoch: int | None = None,
     ) -> AnalysisReport:
         if not isinstance(withdrawal_status_known, bool):
             raise ValueError("withdrawal status knowledge must be an explicit boolean")
@@ -136,6 +163,8 @@ class ReportLifecycle:
             return replace(report, validity=ReportValidity.EVIDENCE_WITHDRAWN,
                            validity_reason="引用证据已知撤回")
         if report.validity is ReportValidity.EXPIRED:
+            return report
+        if report.validity is ReportValidity.NEEDS_REVIEW and report.validity_reason == _PUBLIC_BASIS_CHANGED:
             return report
         if (report.validity is ReportValidity.NEEDS_REVIEW
                 and report.validity_reason in _RECHECKABLE_REASONS):
@@ -157,6 +186,12 @@ class ReportLifecycle:
         if current_public_release_id != assessed.public_release_id:
             return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
                            validity_reason=_PUBLIC_RELEASE_CHANGED)
+        if report.public_basis_sha256 is not None and (
+            current_public_basis_sha256 != report.public_basis_sha256
+            or current_public_epoch != report.public_epoch
+        ):
+            return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
+                           validity_reason=_PUBLIC_BASIS_CHANGED)
         if not withdrawal_status_known:
             return replace(assessed, validity=ReportValidity.NEEDS_REVIEW,
                            validity_reason=_WITHDRAWAL_STATUS_UNKNOWN)
@@ -189,6 +224,8 @@ class ReportLifecycle:
         current_public_release_id: str | None = None,
         withdrawn_refs: frozenset[str] = frozenset(),
         withdrawal_status_known: bool = False,
+        current_public_basis_sha256: str | None = None,
+        current_public_epoch: int | None = None,
     ) -> tuple[AnalysisReport, ...]:
         return self._lifecycle.run_authorized(
             profile_id,
@@ -200,6 +237,8 @@ class ReportLifecycle:
                 current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
                 withdrawal_status_known=withdrawal_status_known,
+                current_public_basis_sha256=current_public_basis_sha256,
+                current_public_epoch=current_public_epoch,
             ),
         )
 
@@ -212,6 +251,8 @@ class ReportLifecycle:
         current_public_release_id: str | None,
         withdrawn_refs: frozenset[str],
         withdrawal_status_known: bool,
+        current_public_basis_sha256: str | None,
+        current_public_epoch: int | None,
     ) -> tuple[AnalysisReport, ...]:
         reports: list[AnalysisReport] = []
         for key in self._store.list_profile_keys(profile_id, "report"):
@@ -227,6 +268,8 @@ class ReportLifecycle:
                 current_public_release_id=current_public_release_id,
                 withdrawn_refs=withdrawn_refs,
                 withdrawal_status_known=withdrawal_status_known,
+                current_public_basis_sha256=current_public_basis_sha256,
+                current_public_epoch=current_public_epoch,
             )
             if updated != report:
                 self._store.save(key, self._to_dict(updated))
@@ -248,6 +291,8 @@ class ReportLifecycle:
             "public_refs": sorted(report.public_refs),
             "validity": report.validity.value,
             "validity_reason": report.validity_reason,
+            "public_basis_sha256": report.public_basis_sha256,
+            "public_epoch": report.public_epoch,
         }
 
     @staticmethod
@@ -271,4 +316,8 @@ class ReportLifecycle:
             public_refs=frozenset(str(item) for item in data.get("public_refs", [])),
             validity=validity,
             validity_reason=validity_reason,
+            public_basis_sha256=(str(data["public_basis_sha256"])
+                                 if data.get("public_basis_sha256") is not None else None),
+            public_epoch=(int(data["public_epoch"])
+                          if data.get("public_epoch") is not None else None),
         )
