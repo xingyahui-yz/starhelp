@@ -52,6 +52,10 @@ class ProducerAnalysisRunnerV2:
         citations = result.result.get("citations")
         if not isinstance(citations, list) or not citations:
             raise PlannerUnavailable("v0.2 result has no typed public citations")
+        try:
+            self._security.assert_public_refs_usable(citations)
+        except (TypeError, ValueError):
+            raise PlannerUnavailable("v0.2 result cites a revoked or malformed public reference") from None
         refs = frozenset(
             json.dumps(PublicObjectIdentity(**item).as_dict(), ensure_ascii=False,
                        sort_keys=True, separators=(",", ":"))

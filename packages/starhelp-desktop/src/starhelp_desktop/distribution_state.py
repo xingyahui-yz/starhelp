@@ -12,7 +12,16 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence, TypeVar
 
-from .producer_v2 import CumulativeRevocations, ReleaseIdentity, sha256_hex
+from .producer_v2 import (
+    BASIS_PROFILE,
+    CumulativeRevocations,
+    PublicObjectIdentity,
+    ReleaseIdentity,
+    build_public_basis_sha256,
+    canonical_json_bytes,
+    sha256_hex,
+    validate_public_basis,
+)
 from .storage import DataProtector, WindowsDpapiProtector
 
 
@@ -59,7 +68,8 @@ _EMPTY_STATE: dict[str, Any] = {
     "safety_state": "pending", "pending": False, "public_epoch": 1,
     "high_water": {"catalog_sequence": 0, "catalog_sha256": None,
                    "revocations_sequence": 0, "revocations_sha256": None},
-    "latest_pair": None, "known_revoked_releases": [], "known_revoked_public_refs": [],
+    "latest_pair": None, "metadata_documents": {"catalog": None, "revocations": None},
+    "known_revoked_releases": [], "known_revoked_public_refs": [],
     "qualifications": {}, "last_trusted_utc": None,
 }
 _T = TypeVar("_T")
@@ -111,6 +121,35 @@ class DistributionSecurityStore:
             self._state["safety_state"] = "pending"
             self._write()
 
+    def accept_verified_catalog(self, *, sequence: int, digest: str,
+                                observed_at: datetime) -> int:
+        """Persist authenticated catalog high-water before requesting its revocation snapshot."""
+        if not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 1:
+            raise ValueError("catalog sequence must be a positive integer")
+        if (not isinstance(digest, str) or len(digest) != 64
+                or any(char not in "0123456789abcdef" for char in digest)):
+            raise ValueError("catalog raw digest must be lowercase SHA-256")
+        if observed_at.tzinfo is None:
+            raise ValueError("trusted observation time must be timezone aware")
+        with self._lock:
+            self._check_clock(observed_at)
+            if not self._state["pending"]:
+                raise ValueError("catalog high-water can advance only during a pending sync")
+            high_water = self._state["high_water"]
+            old_sequence, old_digest = high_water["catalog_sequence"], high_water["catalog_sha256"]
+            if sequence < old_sequence:
+                raise ValueError("catalog metadata sequence rollback")
+            if sequence == old_sequence and old_sequence and digest != old_digest:
+                raise ValueError("catalog metadata sequence digest conflict")
+            changed = sequence != old_sequence or digest != old_digest
+            high_water["catalog_sequence"] = sequence
+            high_water["catalog_sha256"] = digest
+            self._state["safety_state"] = "pending"
+            if changed:
+                self._state["public_epoch"] += 1
+            self._write()
+            return self._state["public_epoch"]
+
     def commit_verified_pair(self, pair: VerifiedMetadataPair, *, observed_at: datetime) -> int:
         if observed_at.tzinfo is None:
             raise ValueError("trusted observation time must be timezone aware")
@@ -140,6 +179,10 @@ class DistributionSecurityStore:
                        or new_hwm != hwm or self._state["latest_pair"] != pair.as_pair())
             self._state["high_water"] = new_hwm
             self._state["latest_pair"] = pair.as_pair()
+            self._state["metadata_documents"] = {
+                "catalog": pair.catalog_raw.decode("utf-8"),
+                "revocations": pair.revocations_raw.decode("utf-8"),
+            }
             self._state["known_revoked_releases"] = list(ledger.releases)
             self._state["known_revoked_public_refs"] = list(ledger.objects)
             self._state["last_trusted_utc"] = observed_at.astimezone(UTC).isoformat().replace(
@@ -205,6 +248,10 @@ class DistributionSecurityStore:
             record = {
                 "release_identity": identity.as_dict(), "raw_sha256": identity.envelope_sha256,
                 "pair": pair.as_pair(), "qualified_at": qualified.isoformat().replace("+00:00", "Z"),
+                "metadata_documents": {
+                    "catalog": pair.catalog_raw.decode("utf-8"),
+                    "revocations": pair.revocations_raw.decode("utf-8"),
+                },
                 "fresh_until": fresh_until.isoformat().replace("+00:00", "Z"),
                 "offline_until": offline_until.isoformat().replace("+00:00", "Z"),
             }
@@ -212,6 +259,83 @@ class DistributionSecurityStore:
             self._state["public_epoch"] += 1
             self._write()
             return dict(record)
+
+    def public_documents_for(self, identity: ReleaseIdentity) -> dict[str, dict[str, str]]:
+        """Return the selected qualification pair and latest pair, deduplicated by raw digest."""
+        with self._lock:
+            key = self._qualification_key(identity)
+            qualification = self._state["qualifications"].get(key)
+            latest_pair = self._state["latest_pair"]
+            latest_docs = self._state["metadata_documents"]
+            if not qualification or not latest_pair or not latest_docs["catalog"] or not latest_docs[
+                "revocations"
+            ]:
+                raise ValueError("public basis documents are unavailable")
+            documents: dict[str, dict[str, str]] = {}
+            for pair, raw_docs in (
+                (qualification["pair"], qualification["metadata_documents"]),
+                (latest_pair, latest_docs),
+            ):
+                for profile, digest_key, content_key in (
+                    ("starhelp.public-distribution-catalog.v1", "catalog_sha256", "catalog"),
+                    ("starhelp.public-revocations.v1", "revocations_sha256", "revocations"),
+                ):
+                    raw_text = raw_docs[content_key]
+                    if sha256_hex(raw_text.encode("utf-8")) != pair[digest_key]:
+                        raise ValueError("persisted public metadata document digest mismatch")
+                    documents[pair[digest_key]] = {"profile": profile, "raw_json": raw_text}
+            if len(documents) > 4:
+                raise ValueError("public basis document limit exceeded")
+            return documents
+
+    def create_public_basis(self, identity: ReleaseIdentity, *,
+                            selected_artifact: Mapping[str, Any],
+                            policy_config: Mapping[str, Any],
+                            evaluation_time: datetime) -> tuple[dict[str, Any], str,
+                                                               dict[str, dict[str, str]]]:
+        if evaluation_time.tzinfo is None:
+            raise ValueError("public basis evaluation time must be timezone aware")
+        policy_hash = sha256_hex(canonical_json_bytes(dict(policy_config)))
+        with self._lock:
+            state = self._state
+            if state["safety_state"] != "ready" or state["pending"]:
+                raise ValueError(state["safety_state"])
+            qualification = state["qualifications"].get(self._qualification_key(identity))
+            latest_pair = state["latest_pair"]
+            if qualification is None or latest_pair is None:
+                raise ValueError("selected public artifact has no complete qualification")
+            config_pair = qualification["pair"]
+            basis = {
+                "profile": BASIS_PROFILE,
+                "origin_id": identity.origin_id,
+                "channel": identity.channel,
+                "consumer_profile": identity.consumer_profile,
+                "policy_id": policy_config["policy_id"],
+                "policy_revision": policy_config["revision"],
+                "policy_sha256": policy_hash,
+                "epoch": state["public_epoch"],
+                "selected_artifact": {
+                    "release_id": identity.release_id,
+                    "envelope_sha256": identity.envelope_sha256,
+                    "a_producer": dict(selected_artifact["a_producer"]),
+                    "planner": dict(selected_artifact["planner"]),
+                    "b_snapshot": dict(selected_artifact["b_snapshot"]),
+                },
+                "qualification_pair": config_pair,
+                "latest_pair": latest_pair,
+                "qualified_at": qualification["qualified_at"],
+                "offline_until": qualification["offline_until"],
+                "evaluation_time": evaluation_time.astimezone(UTC).isoformat().replace("+00:00", "Z"),
+                "state": self.effective_state(identity, now=evaluation_time),
+            }
+            documents = self.public_documents_for(identity)
+            digest = build_public_basis_sha256(basis)
+            validate_public_basis(basis, digest, documents)
+            return basis, digest, documents
+
+    @staticmethod
+    def _qualification_key(identity: ReleaseIdentity) -> str:
+        return f"{identity.origin_id}|{identity.channel}|{identity.consumer_profile}|{identity.release_id}|{identity.envelope_sha256}"
 
     def effective_state(self, identity: ReleaseIdentity, *, now: datetime) -> str:
         if now.tzinfo is None:
@@ -240,6 +364,34 @@ class DistributionSecurityStore:
             if evaluation <= offline_until:
                 return "offline_stale"
             return "expired"
+
+    def assert_release_usable(self, identity: ReleaseIdentity, *, now: datetime) -> str:
+        state = self.effective_state(identity, now=now)
+        if state not in {"fresh", "offline_stale"}:
+            raise ValueError(state)
+        return state
+
+    def assert_release_not_revoked(self, identity: ReleaseIdentity) -> None:
+        with self._lock:
+            if self._state["safety_state"] != "ready" or self._state["pending"]:
+                raise ValueError(self._state["safety_state"])
+            ledger = CumulativeRevocations(
+                self._state["known_revoked_releases"], self._state["known_revoked_public_refs"]
+            )
+            if ledger.release_is_revoked(identity):
+                raise ValueError("revoked")
+
+    def assert_public_refs_usable(self, identities: Sequence[Mapping[str, Any]]) -> None:
+        with self._lock:
+            if self._state["safety_state"] != "ready" or self._state["pending"]:
+                raise ValueError(self._state["safety_state"])
+            ledger = CumulativeRevocations(
+                self._state["known_revoked_releases"], self._state["known_revoked_public_refs"]
+            )
+            for item in identities:
+                identity = PublicObjectIdentity(**item)
+                if ledger.object_is_revoked(identity):
+                    raise ValueError("revoked_public_reference")
 
     def _check_clock(self, now: datetime) -> None:
         current = now.astimezone(UTC)

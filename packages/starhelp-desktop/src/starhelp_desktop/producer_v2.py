@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .producer_request import _validated_feedback
+from .producer_request import _validate_task_matches_bundle, _validated_feedback
 
 
 PROFILE = "starhelp.producers.v0.2"
@@ -69,6 +69,28 @@ def canonical_json_bytes(value: Any) -> bytes:
         ).encode("utf-8")
     except (TypeError, ValueError, UnicodeError, RecursionError):
         raise ValueError("value is not bounded canonical JSON") from None
+
+
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate JSON object key")
+        result[key] = value
+    return result
+
+
+def _decode_json_object(raw: bytes, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_unique_json_object,
+                           parse_constant=lambda _constant: (_ for _ in ()).throw(
+                               ValueError("non-finite JSON value")
+                           ))
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError, RecursionError):
+        raise ValueError(f"{label} raw JSON is invalid") from None
+    if not isinstance(value, dict):
+        raise ValueError(f"{label} raw JSON root must be an object")
+    return value
 
 
 def sha256_hex(raw: bytes) -> str:
@@ -314,7 +336,7 @@ def build_outer_request_v2(*, request_id: str, authorization_generation: int,
     if auth != {"profile_id": profile_id, "active": True, "generation": generation}:
         raise ValueError("inner authorization does not match outer authorization")
     try:
-        snapshot_data = json.loads(snapshot["raw_json"])
+        snapshot_data = _decode_json_object(snapshot["raw_json"].encode("utf-8"), "inner snapshot")
     except (TypeError, ValueError, RecursionError):
         raise ValueError("inner snapshot raw JSON is invalid") from None
     if (not isinstance(snapshot_data, dict) or snapshot_data.get("revision") != revision
@@ -385,10 +407,7 @@ def validate_inner_request_v2(request: Any) -> dict[str, Any]:
     snapshot_raw = snapshot["raw_json"].encode("utf-8")
     if len(snapshot_raw) > 512 * 1024 or sha256_hex(snapshot_raw) != snapshot["sha256"]:
         raise ValueError("producer account snapshot digest or size is invalid")
-    try:
-        snapshot_data = json.loads(snapshot["raw_json"])
-    except (ValueError, RecursionError):
-        raise ValueError("producer account snapshot raw JSON is invalid") from None
+    snapshot_data = _decode_json_object(snapshot_raw, "producer account snapshot")
     if (not isinstance(snapshot_data, dict)
             or snapshot_data.get("profile_id") != inner["authorization_context"].get("profile_id")):
         raise ValueError("producer account snapshot does not match its authorization context")
@@ -403,6 +422,9 @@ def validate_inner_request_v2(request: Any) -> dict[str, Any]:
     bundle_raw = bundle["raw_json"].encode("utf-8")
     if len(bundle_raw) > 2 * 1024 * 1024 or sha256_hex(bundle_raw) != bundle["sha256"]:
         raise ValueError("producer public bundle digest or size is invalid")
+    bundle_data = _decode_json_object(bundle_raw, "producer public bundle")
+    if bundle_data.get("manifest", {}).get("index_release_id") != bundle["expected_release_id"]:
+        raise ValueError("producer public bundle release ID does not match its envelope")
     _utc(inner["evaluation_time"], "evaluation_time")
     basis = validate_public_basis(inner["public_basis"], inner["public_basis_sha256"],
                                   inner["public_documents"])
@@ -415,6 +437,7 @@ def validate_inner_request_v2(request: Any) -> dict[str, Any]:
         raise ValueError("public basis is not executable")
     if not isinstance(inner["task"], dict):
         raise ValueError("producer task must be an object")
+    _validate_task_matches_bundle(bundle_data, inner["task"])
     if "feedback" in inner:
         feedback = inner["feedback"]
         if feedback is not None:
@@ -637,12 +660,15 @@ def load_request_producer_from_source_lock(path: Path) -> dict[str, str]:
     normalized = []
     paths: set[str] = set()
     builder_path = None
+    metadata_path = False
     for item in dependencies:
         if not isinstance(item, dict) or set(item) != {"path", "git_blob", "raw_sha256"}:
             raise ValueError("source-lock dependency entry is malformed")
         if not isinstance(item["path"], str) or not item["path"] or item["path"] in paths:
             raise ValueError("source-lock dependency path is invalid or duplicated")
         paths.add(item["path"])
+        if item["path"] == "packages/starhelp-desktop/pyproject.toml":
+            metadata_path = True
         if not isinstance(item["git_blob"], str) or not _GIT_OBJECT.fullmatch(item["git_blob"]):
             raise ValueError("source-lock dependency Git blob is invalid")
         _digest(item["raw_sha256"], "source-lock dependency raw digest")
@@ -652,7 +678,8 @@ def load_request_producer_from_source_lock(path: Path) -> dict[str, str]:
                            "raw_sha256": item["raw_sha256"]})
     if [item["path"] for item in normalized] != sorted(paths):
         raise ValueError("source-lock dependency table must use stable path ordering")
-    if builder_path is None or lock["builder_module"] != "starhelp_desktop.producer_v2":
+    if (builder_path is None or not metadata_path
+            or lock["builder_module"] != "starhelp_desktop.producer_v2"):
         raise ValueError("source-lock does not identify the v0.2 builder module")
     if lock["builder_blob"] != builder_path["git_blob"]:
         raise ValueError("source-lock builder blob conflicts with dependency table")

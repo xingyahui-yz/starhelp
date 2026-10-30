@@ -1408,21 +1408,18 @@ The package target is now `0.2.0`. New isolated modules add strict producer v0.2
 typed tombstone validation, source-lock loading and generation, DPAPI-protected durable metadata
 high-water/tombstone/per-artifact qualification state, epoch guarded report staging/save, a separate
 v0.2 stdio bridge with result-digest/correlation checks, fixed-origin anonymous raw-byte transport,
-and a digest-pinned owned-process controller for local A. The v0.1 builder and worker remain separate.
-Seven new synthetic protocol/state/controller tests plus the full package suite pass (80 tests total);
-source compiles and `git diff --check` passes. These checks do not exercise C 0.5 or A metadata signatures.
+an Ed25519 signed catalog/revocation verifier and pending-to-complete state synchronizer, and a
+digest-pinned owned-process controller for local A. A verified metadata pair commits before the
+active envelope is fetched; the candidate artifact must pass its exact raw hash, internal signature,
+release, capability and producer tuple checks before cache qualification/activation. The v0.1
+builder and worker remain separate. Eight new synthetic protocol/state/controller/metadata tests
+plus the full package suite pass (81 tests total); source compiles and `git diff --check` passes.
+The generated signing vectors are synthetic and do not exercise A's delivered service or C 0.5.
 
-The source-lock generator is `packages/starhelp-desktop/packaging/build-source-lock.py`; generate the
-lock only after committing the builder sources, then commit and record that exact lock bytes/hash.
-No candidate was rebuilt. Remaining B work is to connect the signed catalog/revocation verifier to
-the durable store once A's frozen metadata artifacts and verifier vectors arrive, and to run a
-unified replay after C's v0.5 API/wheel and the exact A tuple are fixed. No real IDs, accounts,
-production keys, or deployment were used.
-
-The implementation commit is `f59293a7159dbd947d94c4df7e03ad4daedde573`. Its v0.2 builder source
-blob is `0c3aa43d7377ab0106d17a25c338556e3ae9400f`. The generated source-lock is
-`packages/starhelp-desktop/packaging/source-lock-v0.2.json` (27 dependency entries), with dependency
-table SHA-256 `5ddc05a7ee0e17e909f41e1661211230ec5025ea94d87f8484d63afb5973f3c1` and complete artifact
-SHA-256 `4f37051ef0c374336312b20132ca03e0c6a33fa76d442a3124e20082aaf80e8a`. B's loader independently
-accepted this exact file and produced the corresponding `request_producer` tuple. The source-lock is
-committed separately after its source so it does not contain a self-reference.
+The source-lock generator is `packages/starhelp-desktop/packaging/build-source-lock.py`; it records
+every B package source module and `pyproject.toml`. Generate the replacement lock only after
+committing the updated builder sources, then commit and record those exact lock bytes/hash. The
+previous source-lock is removed with this source change so it cannot identify changed source.
+No candidate was rebuilt. The unified replay still needs A's deployed frozen catalog/revocation
+service and the exact A tuple, plus C's v0.5 API/wheel. No real IDs, accounts, production keys, or
+deployment were used.

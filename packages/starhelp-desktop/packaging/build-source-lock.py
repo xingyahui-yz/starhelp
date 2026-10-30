@@ -33,7 +33,9 @@ def main() -> int:
         raise SystemExit("source-lock requires a full Git commit ID")
     project = tomllib.loads((package / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     dependencies = []
-    for source in sorted((package / "src" / "starhelp_desktop").glob("*.py")):
+    source_files = [*package.joinpath("src", "starhelp_desktop").glob("*.py"),
+                    package / "pyproject.toml"]
+    for source in sorted(source_files):
         relative = source.relative_to(root).as_posix()
         raw = source.read_bytes()
         blob = git(root, "rev-parse", f"{commit}:{relative}")

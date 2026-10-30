@@ -24,7 +24,7 @@ class FixedOriginDistributionSource:
     channel: str
     consumer_profile: str = "starhelp.local.v0.2"
     timeout_seconds: float = 10.0
-    envelope_max_bytes: int = 2 * 1024 * 1024
+    envelope_max_bytes: int = 64 * 1024 * 1024
 
     def __post_init__(self) -> None:
         parsed = urllib.parse.urlsplit(self.origin)
@@ -37,8 +37,8 @@ class FixedOriginDistributionSource:
             raise ValueError("distribution channel must be fixed local configuration")
         if not 0 < self.timeout_seconds <= 30:
             raise ValueError("distribution request timeout is outside the supported range")
-        if not 0 < self.envelope_max_bytes <= 2 * 1024 * 1024:
-            raise ValueError("analyzable envelope limit exceeds the v0.2 maximum")
+        if not 0 < self.envelope_max_bytes <= 64 * 1024 * 1024:
+            raise ValueError("download envelope limit exceeds the frozen maximum")
 
     def fetch_catalog(self) -> bytes:
         query = urllib.parse.urlencode({"profile": self.consumer_profile, "channel": self.channel})

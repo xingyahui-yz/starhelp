@@ -8,12 +8,11 @@ version = "0.2.0"
 description = "Windows desktop and local account component for StarHelp"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["cryptography>=43,<47"]
 
 [project.optional-dependencies]
 desktop = ["PySide6-Essentials>=6.10.3,<6.11"]
 package = ["pyinstaller==6.22.3"]
-crypto = ["cryptography>=43,<47"]
 ocr = ["rapidocr>=3.10,<4", "onnxruntime>=1.20,<2"]
 
 [project.scripts]

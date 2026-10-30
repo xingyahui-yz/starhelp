@@ -9,6 +9,7 @@ import subprocess
 import threading
 import time
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
@@ -23,6 +24,7 @@ from .producer_v2 import (
     load_execution_policy,
     validate_inner_request_v2,
     validate_execution_policy_context,
+    ReleaseIdentity,
 )
 
 
@@ -205,6 +207,15 @@ def _validate_outer_v2(request: Any, profile_id: UUID, generation: int,
         raise PlannerUnavailable(state["safety_state"])
     if state["public_epoch"] != basis["epoch"]:
         raise PlannerUnavailable("public_basis_changed")
+    selected = basis["selected_artifact"]
+    identity = ReleaseIdentity(
+        basis["origin_id"], basis["channel"], basis["consumer_profile"],
+        selected["release_id"], selected["envelope_sha256"],
+    )
+    try:
+        security_state.assert_release_usable(identity, now=datetime.now(UTC))
+    except ValueError as exc:
+        raise PlannerUnavailable(str(exc)) from None
 
 
 def _parse_response_v2(data: bytes, request: dict[str, Any]) -> PlannerResult:

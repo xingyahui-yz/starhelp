@@ -3,6 +3,13 @@
 from .analysis import ProducerAnalysisExecution, ProducerAnalysisRunner
 from .analysis_v2 import ProducerAnalysisExecutionV2, ProducerAnalysisRunnerV2
 from .distribution_http import FixedOriginDistributionSource
+from .distribution_metadata import (
+    DistributionActivationResult,
+    DistributionMetadataRejected,
+    DistributionMetadataSynchronizer,
+    DistributionMetadataTrust,
+    DistributionMetadataVerifier,
+)
 from .distribution_state import DistributionSecurityStore, VerifiedMetadataPair
 from .equipment import (
     EquipmentIdentityService,
@@ -81,5 +88,9 @@ __all__ = [
     "KnowledgeBackendController",
     "LocalBackendConfig",
     "FixedOriginDistributionSource",
+    "DistributionMetadataRejected",
+    "DistributionActivationResult",
+    "DistributionMetadataTrust",
+    "DistributionMetadataVerifier",
     "select_public_task",
 ]
