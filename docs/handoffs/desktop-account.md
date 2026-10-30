@@ -1423,3 +1423,11 @@ previous source-lock is removed with this source change so it cannot identify ch
 No candidate was rebuilt. The unified replay still needs A's deployed frozen catalog/revocation
 service and the exact A tuple, plus C's v0.5 API/wheel. No real IDs, accounts, production keys, or
 deployment were used.
+
+The metadata verifier/persistence implementation was committed as `bbde3fc730d0c22760921ce2a838f4738df3b994`
+(`Verify and persist public distribution metadata`). The replacement source lock was generated from
+that clean tracked source state and loaded successfully with `load_request_producer_from_source_lock`.
+It records builder blob `e44976ff56105faac3f18efe90c8cc09692a7d7d`, dependency lock SHA-256
+`32c9a704cfc8de620e56230debaa188313f5d26158c52bacb1f2bd53ae4bbc22`, lock artifact SHA-256
+`78d71649b008d401fc3ccdf4c4ea9d2001751039e206aabcc48b2c75f2aa19f2`, and 29 dependencies. The
+lock and this handoff update are committed separately after the source commit.
