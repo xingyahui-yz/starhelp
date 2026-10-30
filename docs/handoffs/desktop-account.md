@@ -1373,3 +1373,26 @@ that process and removed only the path created for this run after checking its e
 and name. The installer’s fixture smoke also passed install, upgrade, two-direction rollback, and
 tamper rejection with its temporary directory scoped inside the package workspace. This is still
 build-host-only unsigned synthetic evidence and does not establish target-user Windows acceptance.
+
+## Current A distribution candidate and C review dependency (2026-10-30)
+
+Read-only recheck of the local A worktree found branch `codex/mvp-knowledge-backend` at
+`012d69508588b0800053108ef38c4bc753bebc14`, one commit ahead of its `origin` tracking ref. The
+candidate `packages/starhelp-knowledge/docs/public-distribution-local-service-contract-candidate-v0.1.md`
+has raw SHA-256 `88071e56a4b49c3d3cf6dda89aca912559a353139d74e4f81b9f548af7ff989b`, matching the exact
+bytes reviewed by C. A labels it S4.1 discussion material: endpoints and schemas are not frozen,
+implemented, or approved for production. A's own matrix says there is no HTTPS catalog/revocation
+adapter, immutable distribution route, `/health/ready`, or B lifecycle controller.
+
+The candidate proposes two MVP phases: a local B-managed A loopback process, followed by an
+invitation-only shared read service. Its candidate contracts are not a B implementation interface.
+Current B `SettingsPage` explicitly says the lifecycle and invitation maintenance API are not
+connected. C's read-only review of the same A candidate conditionally accepts direction but leaves
+P1 typed withdrawal identity, P2 selected-artifact offline qualification, P3 public-basis result/save
+epoch, P4 full 8 MiB stdio budgeting, and mandatory B builder identity/source-artifact tuple open.
+These cannot be claimed by the fixed C 0.4.0/S3 profile or by an optional field in the old request.
+
+B remains fail-closed: production TaskPage analysis, public synchronization, and service maintenance
+remain unavailable until A/B/C freeze one versioned contract and tuple and A delivers the matching
+artifact/interface. The next code step depends on that reviewable frozen input; no sibling worktree,
+shared contract, fixed S3 artifact, or C wheel was changed.
