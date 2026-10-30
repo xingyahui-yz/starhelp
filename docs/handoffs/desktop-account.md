@@ -1341,3 +1341,8 @@ interop/report replay. The installer script was unchanged and its synthetic inst
 smoke is recorded above from the prior candidate. No real UID, account data, or user screenshot was
 used. The candidate remains unsigned and build-host-only; production M0, publisher signing, and
 target-machine acceptance remain open.
+
+The Mihomo equipment regression now also mirrors the documented relic `main_affix`/`sub_affix`
+shape. It verifies provider field/value/count/step retention, needs-review state, and ambiguous
+physical-copy identity. The parser already supported these fields; this change adds representative
+coverage only. Full synthetic suite remains 73/73.

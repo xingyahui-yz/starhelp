@@ -1282,7 +1282,14 @@ class ImportAndPrivacyTests(unittest.TestCase):
                     "id": "23014", "level": 80, "rank": 1,
                     "attributes": [{"field": "atk", "value": 582.1, "percent": False}],
                 },
-                "relics": [{"id": "61041", "type": 1, "level": 15, "set_id": "104"}],
+                "relics": [{
+                    "id": "61041", "type": 1, "level": 15, "set_id": "104",
+                    "main_affix": {"field": "hp", "value": 705.6, "percent": False},
+                    "sub_affix": [{
+                        "field": "crit_rate", "value": 0.05832,
+                        "percent": True, "count": 2, "step": 2,
+                    }],
+                }],
                 "attributes": [{"field": "spd", "value": 134.5}],
             }],
         })
@@ -1292,6 +1299,15 @@ class ImportAndPrivacyTests(unittest.TestCase):
         self.assertEqual(proposal.equipment[0].identity, EquipmentIdentity.AMBIGUOUS)
         self.assertFalse(proposal.equipment[0].may_be_reassigned)
         self.assertIn("attribute:0.value", proposal.equipment[0].facts)
+        relic = proposal.equipment[1]
+        self.assertEqual(relic.slot, "relic:1")
+        self.assertEqual(relic.facts["main_affix.value"].value, 705.6)
+        self.assertEqual(relic.facts["sub_affix:0.field"].value, "crit_rate")
+        self.assertEqual(relic.facts["sub_affix:0.count"].value, 2)
+        self.assertEqual(relic.facts["sub_affix:0.step"].value, 2)
+        self.assertTrue(all(fact.status is FieldStatus.NEEDS_REVIEW
+                            for fact in relic.facts.values()))
+        self.assertEqual(relic.identity, EquipmentIdentity.AMBIGUOUS)
 
     def test_mihomo_preserves_only_named_memory_summary_values_without_mode_mapping(self) -> None:
         proposal = MihomoPublicProfileClient().to_preview({
