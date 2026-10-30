@@ -1418,3 +1418,11 @@ No candidate was rebuilt. Remaining B work is to connect the signed catalog/revo
 the durable store once A's frozen metadata artifacts and verifier vectors arrive, and to run a
 unified replay after C's v0.5 API/wheel and the exact A tuple are fixed. No real IDs, accounts,
 production keys, or deployment were used.
+
+The implementation commit is `f59293a7159dbd947d94c4df7e03ad4daedde573`. Its v0.2 builder source
+blob is `0c3aa43d7377ab0106d17a25c338556e3ae9400f`. The generated source-lock is
+`packages/starhelp-desktop/packaging/source-lock-v0.2.json` (27 dependency entries), with dependency
+table SHA-256 `5ddc05a7ee0e17e909f41e1661211230ec5025ea94d87f8484d63afb5973f3c1` and complete artifact
+SHA-256 `4f37051ef0c374336312b20132ca03e0c6a33fa76d442a3124e20082aaf80e8a`. B's loader independently
+accepted this exact file and produced the corresponding `request_producer` tuple. The source-lock is
+committed separately after its source so it does not contain a self-reference.
