@@ -3,8 +3,10 @@ from __future__ import annotations
 import hashlib
 import json
 import tempfile
+import threading
 import unittest
 from datetime import UTC, datetime, timedelta
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from cryptography.hazmat.primitives import serialization
@@ -20,6 +22,7 @@ from starhelp_desktop.distribution_metadata import (
     DistributionMetadataTrust,
     DistributionMetadataVerifier,
 )
+from starhelp_desktop.distribution_http import FixedOriginDistributionSource
 from starhelp_desktop.distribution_state import DistributionSecurityStore, VerifiedMetadataPair
 from starhelp_desktop.lifecycle import ProfileLifecycle
 from starhelp_desktop.local_backend import KnowledgeBackendController, LocalBackendConfig
@@ -70,6 +73,72 @@ class _AuthorizedPlanner:
                        "starhelp.request-producer.v1"}),
             self.result,
         )
+
+
+class DistributionHttpSourceTests(unittest.TestCase):
+    def test_fixed_origin_sends_only_public_query_fields_and_rejects_redirects(self) -> None:
+        requests: list[tuple[str, dict[str, str]]] = []
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                headers = {key.lower(): value for key, value in self.headers.items()}
+                requests.append((self.path, headers))
+                if self.path == "/v1/distributions/redirect":
+                    self.send_response(302)
+                    self.send_header("Location", "/followed")
+                    self.end_headers()
+                    return
+                if self.path == "/followed":
+                    self.send_response(500)
+                    self.end_headers()
+                    return
+                payload = b'{"synthetic":true}'
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+
+            def log_message(self, _format: str, *args: object) -> None:
+                return
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        try:
+            origin = f"http://127.0.0.1:{server.server_port}"
+            source = FixedOriginDistributionSource(origin, "synthetic/stable")
+            self.assertEqual(source.fetch_catalog(), b'{"synthetic":true}')
+            self.assertEqual(source.fetch_revocations(), b'{"synthetic":true}')
+            self.assertEqual(source.fetch_envelope("release_1"), b'{"synthetic":true}')
+            with self.assertRaisesRegex(ValueError, "without following redirects"):
+                source.fetch_envelope("redirect")
+        finally:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=2)
+
+        paths = [path for path, _headers in requests]
+        self.assertEqual(paths[:3], [
+            "/v1/distributions?profile=starhelp.local.v0.2&channel=synthetic%2Fstable",
+            "/v1/distribution-revocations?profile=starhelp.local.v0.2&channel=synthetic%2Fstable",
+            "/v1/distributions/release_1",
+        ])
+        self.assertEqual(paths[3], "/v1/distributions/redirect")
+        self.assertNotIn("/followed", paths)
+        for _path, headers in requests:
+            self.assertNotIn("authorization", headers)
+            self.assertNotIn("cookie", headers)
+        for path in paths:
+            self.assertNotIn("uid", path.lower())
+            self.assertNotIn("profile_id", path.lower())
+
+    def test_plain_http_distribution_source_is_limited_to_loopback(self) -> None:
+        for origin in ("http://example.invalid", "http://192.0.2.1"):
+            with self.subTest(origin=origin), self.assertRaisesRegex(
+                ValueError, "loopback development service",
+            ):
+                FixedOriginDistributionSource(origin, "synthetic/stable")
 
 
 def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:

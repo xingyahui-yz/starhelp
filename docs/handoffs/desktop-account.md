@@ -1576,3 +1576,9 @@ source-lock 从 B source commit `f65fa5c17bfb6614af1e6b272fa87eb8fd288d88` 生�
 复核 M5 回滚后补上同步竞争保护：回滚在开始时记录已验证的 `public_epoch`；最终撤回复查、目标资格登记和 current 指针切换均在 `DistributionSecurityStore.run_if_epoch_current()` 的同一锁内完成。若更高 sequence 的 catalog/revocation 在此期间先提交，旧 epoch 回滚会失败关闭，current 仍保持原版本。扩展合成测试以新的签名 catalog/revocations 在最终提交边界推进撤回，验证旧目标不被重新激活。全套 B suite 仍为 86 tests，`compileall` 和 `git diff --check` 通过。
 
 source-lock 对应源提交 `8fc3656066abd90d11fa2f19295c1cbf997fe733`，31 项依赖；dependency lock SHA-256 `c465845327c771250cf98bf8c1bac79ab15edd74c13b7d03a5e5742aaa4dbce8`，source-lock SHA-256 `17d4b8fdfaab9fecca8bfdd64cab5444df847e4376792c118541a4d2124c2dd5`。重建候选含 1,166 个文件且全量清单/摘要匹配；manifest SHA-256 `75f667fa6d93f2d4300e00c7b467bf51d570022fc0aafccfd4d2b5246b0f75bc`，GUI SHA-256 `8b2859ed9497857155f5abdb1c0c155bf065830a9bcb1a6e8fcf10b534599594`，C 0.5.1 worker SHA-256 `a0f14b5ef0ff01a7ebbf75b8a0ff99f4b29811eab4ff0c846cb4e43511d5c45d`。冻结 OCR 仍识别 synthetic `LEVEL 80`；候选安装/升级/双向恢复/篡改拒绝通过。
+
+## Fixed-origin 分发传输合成回归（2026-11-03）
+
+新增 localhost-only `FixedOriginDistributionSource` 回归：对 catalog、revocations 和 release 的请求 URI 只含固定 profile/channel/release ID，不发送 authorization 或 cookie；redirect 响应被拒绝且不会请求 Location；plain HTTP 只接受 loopback，公网/非 loopback origin 在构造时拒绝。sandbox 默认禁止本机监听（WinError 10013），因此该组测试和全套 suite 在允许本地 loopback 的权限下运行；未访问公网。
+
+全套 B suite 为 88 tests；`compileall -q src tests` 与 `git diff --check` 通过。该改动只新增测试和交接记录，没有改包源码，因此最近已验证的候选/source-lock 不变。未读取或发送真实 UID/账号资料。
