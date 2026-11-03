@@ -1500,3 +1500,20 @@ the planner response is a test double, and the metadata pair is injected as alre
 covers B's report lifecycle boundary only. It does not replace the Windows DPAPI checks, separate
 signed-metadata verifier, C 0.5.1 worker replay, or A/B/C production integration evidence. The full
 B suite now passes 83 tests.
+
+## v0.2 TaskPage integration gate audit (2026-11-03)
+
+Rechecked A's committed `public-distribution-v0.2-synthetic/catalog-normal-seq-0001.json`. Its
+selected artifact is still the legacy transport tuple: A 0.3.0 / `dcb1e3ee…`, C 0.4.0 with
+`starhelp.producers.v0.1` / wheel `3b5b8d…`, and B snapshot `103741e…` / interop-min v0.1. A's
+handoff labels this tuple transport-only. It does not match B's v0.2 source lock (source
+`3c2a535…`, artifact SHA-256 `ff9ab9…`) and C 0.5.1 / producer v0.2. A 0.4.0 has not published a
+catalog/envelope for that exact tuple.
+
+B's `load_execution_policy` also currently accepts only an explicitly synthetic execution policy;
+the v0.2 runner cannot be given production admission by current code/config. Therefore normal
+TaskPage remains in its M0 waiting state. Re-labeling the legacy catalog or synthesizing production
+trust would violate tuple binding. The coordinator has been sent the exact mismatch and the required
+next input: a frozen A+B snapshot+C tuple with matching capabilities/channel, then B TaskPage wiring.
+Evidence is synthetic metadata and source inspection only; no account or production request was
+made.
