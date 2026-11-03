@@ -39,6 +39,7 @@ from starhelp_desktop.producer_v2 import (
 )
 from starhelp_desktop.reports import ReportLifecycle, ReportValidity
 from starhelp_desktop.storage import EncryptedPrivateStore
+from starhelp_desktop.synthetic_demo_v2 import prepare_synthetic_demo_v2
 
 
 class _IdentityProtector:
@@ -108,6 +109,56 @@ def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:
 
 
 class ProducerV2Tests(unittest.TestCase):
+    def test_v2_synthetic_demo_runs_pinned_worker_and_saves_basis_bound_report(self) -> None:
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            root = Path(directory)
+            private_store = EncryptedPrivateStore(
+                root / "private", _SyntheticPrivateProtector(),
+            )
+            lifecycle = ProfileLifecycle(private_store, root / "temp")
+            profiles = ProfileRepository(private_store, lifecycle)
+            prepared = prepare_synthetic_demo_v2(
+                profiles, lifecycle, private_store, protector=_IdentityProtector(),
+                temporary_root=root,
+            )
+            session = prepared.session
+            try:
+                execution = session.runner.run(
+                    request=prepared.request,
+                    profile_id=session.fixture.profile.profile_id,
+                    authorization_generation=session.fixture.profile.generation,
+                    lifecycle=lifecycle,
+                )
+                report = execution.temporary_report
+                self.assertIsNotNone(report, execution.planner_result.result)
+                assert report is not None
+                self.assertEqual(session.release.origin_id, "starhelp.synthetic.fixture")
+                self.assertFalse(session.policy_config["allow_production"])
+                self.assertEqual(report.planner_version, "0.5.1")
+                self.assertIn("current_equipment_plans", report.result)
+                self.assertEqual(report.result["producer_response"]["status"], "plans_available")
+                citation = report.result["citations"][0]
+                self.assertEqual(citation["kind"], "evidence")
+                self.assertEqual(citation["id"], "ev_fixture_s3_0001")
+                self.assertEqual(
+                    citation["content_hash"],
+                    "31fd2606d894719b33a1e552d3655fc8a712bfbd7375fa6d7021c33413b129a1",
+                )
+                self.assertEqual(
+                    report.result["producer_response"]["analysis_citations"][0]["id"],
+                    citation["id"],
+                )
+                self.assertEqual(report.public_basis_sha256,
+                                 prepared.request["producer_request"]["public_basis_sha256"])
+                self.assertEqual(private_store.list_profile_keys(report.profile_id, "report"), ())
+
+                session.save_report(report, current_snapshot_revision=session.fixture.snapshot.revision)
+                saved = private_store.list_profile_keys(report.profile_id, "report")
+                self.assertEqual(len(saved), 1)
+                self.assertEqual(private_store.load(saved[0])["validity"], "current")
+            finally:
+                session.temporary_directory.cleanup()
+
     def test_v2_runner_stages_unsaved_basis_bound_report_then_saves_explicitly(self) -> None:
         now = datetime.now(UTC).replace(microsecond=0)
         pair = VerifiedMetadataPair(

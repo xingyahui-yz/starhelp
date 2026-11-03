@@ -53,6 +53,11 @@ from .public_profile import MihomoPublicProfileClient, PublicProfileSelection
 from .reports import AnalysisReport, ReportLifecycle, ReportValidity
 from .storage import EncryptedPrivateStore
 from .synthetic_demo import SyntheticDemoContext, prepare_synthetic_demo
+from .synthetic_demo_v2 import (
+    SyntheticDemoV2Prepared,
+    SyntheticDemoV2Session,
+    prepare_synthetic_demo_v2,
+)
 from .tasks import AnalysisTaskDraft, TaskRepository
 
 
@@ -79,6 +84,11 @@ class _ProgressBus(QObject):
 
 class _SyntheticAnalysisSignals(QObject):
     completed = Signal(object)
+    failed = Signal(str)
+
+
+class _SyntheticAnalysisV2Signals(QObject):
+    completed = Signal(object, object)
     failed = Signal(str)
 
 
@@ -110,6 +120,29 @@ class _SyntheticAnalysisWorker(QRunnable):
             self.signals.failed.emit(str(exc))
         else:
             self.signals.completed.emit(execution)
+
+
+class _SyntheticAnalysisV2Worker(QRunnable):
+    def __init__(self, prepared: SyntheticDemoV2Prepared, lifecycle: ProfileLifecycle) -> None:
+        super().__init__()
+        self.prepared = prepared
+        self.lifecycle = lifecycle
+        self.signals = _SyntheticAnalysisV2Signals()
+
+    def run(self) -> None:
+        session = self.prepared.session
+        try:
+            execution = session.runner.run(
+                request=self.prepared.request,
+                profile_id=session.fixture.profile.profile_id,
+                authorization_generation=session.fixture.profile.generation,
+                lifecycle=self.lifecycle,
+            )
+        except Exception as exc:
+            session.temporary_directory.cleanup()
+            self.signals.failed.emit(str(exc))
+        else:
+            self.signals.completed.emit(execution, session)
 
 
 class _ProfileFetchWorker(QRunnable):
@@ -185,10 +218,11 @@ class _Page(QWidget):
 
 class TaskPage(_Page):
     temporary_report_ready = Signal(object)
+    temporary_v2_report_ready = Signal(object, object)
 
     def __init__(self, profiles: ProfileRepository, tasks: TaskRepository,
                  progress_bus: _ProgressBus, lifecycle: ProfileLifecycle,
-                 store: EncryptedPrivateStore) -> None:
+                 store: EncryptedPrivateStore, temp_root: Path | None = None) -> None:
         super().__init__(
             "任务",
             "常规任务仅加密记忆目标；生产规划仍待 M0 接通。单独的合成联调按钮只运行内置 fixture。",
@@ -198,8 +232,10 @@ class TaskPage(_Page):
         self.progress_bus = progress_bus
         self.lifecycle = lifecycle
         self.store = store
+        self.temp_root = temp_root or lifecycle.temporary_root
         self.thread_pool = QThreadPool.globalInstance()
         self._demo_worker: _SyntheticAnalysisWorker | None = None
+        self._demo_v2_worker: _SyntheticAnalysisV2Worker | None = None
         form = QFormLayout()
         self.mode = QComboBox()
         self.mode.addItems(["混沌回忆", "虚构叙事", "末日幻影"])
@@ -260,9 +296,16 @@ class TaskPage(_Page):
         row.addWidget(self.analyze)
         self.content.addLayout(row)
         self.content.addWidget(self.synthetic_demo)
+        self.synthetic_demo_v2 = QPushButton("运行 v0.2 合成联调演示（仅 fixture）")
+        self.synthetic_demo_v2.setToolTip(
+            "仅使用内置合成资料、临时测试签名与固定的本地 C 0.5.1 worker；"
+            "禁用生产执行，不读取当前所选档案，不访问网络，结果不代表真实游戏建议。"
+        )
+        self.content.addWidget(self.synthetic_demo_v2)
         self.refresh_profiles.clicked.connect(self.reload_profiles)
         self.analyze.clicked.connect(self.create_task)
         self.synthetic_demo.clicked.connect(self.run_synthetic_demo)
+        self.synthetic_demo_v2.clicked.connect(self.run_synthetic_demo_v2)
         self.choose_locked_equipment.clicked.connect(self.open_equipment_lock_picker)
         self.choose_fixed.clicked.connect(
             lambda: self.open_character_picker(self.fixed, "固定角色", owned_only=True)
@@ -276,6 +319,89 @@ class TaskPage(_Page):
     def run_synthetic_demo(self) -> None:
         self._run_synthetic_demo()
 
+    def run_synthetic_demo_v2(self) -> None:
+        if self._demo_worker is not None or self._demo_v2_worker is not None:
+            return
+        choice = QMessageBox.question(
+            self,
+            "运行 v0.2 合成联调演示",
+            "将使用内置 A 签名 fixture、临时合成目录和固定版本的本地 C worker。"
+            "执行策略明确禁用生产运行；不读取当前选中的真实档案，也不访问网络。"
+            "结果只用于 v0.2 技术联调，不代表真实游戏建议。是否继续？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if choice != QMessageBox.StandardButton.Yes:
+            return
+        self.synthetic_demo_v2.setEnabled(False)
+        self.synthetic_demo.setEnabled(False)
+        self.progress.setRange(0, 0)
+        self.status.setText("正在准备 v0.2 合成资料和生产禁用策略…")
+        prepared = None
+        try:
+            prepared = prepare_synthetic_demo_v2(
+                self.profiles, self.lifecycle, self.store, temporary_root=self.temp_root,
+            )
+            scope = prepared.session.fixture.task["scope"]
+            public_goal = prepared.session.fixture.task["public_goal"]
+            draft = AnalysisTaskDraft.create(
+                profile_id=prepared.session.fixture.profile.profile_id,
+                authorization_generation=prepared.session.fixture.profile.generation,
+                mode_label=scope["mode_id"], cycle_id=scope["cycle_id"],
+                stage_id=scope["stage_id"], goal_label=public_goal["kind"],
+            )
+            self.tasks.save_last(draft)
+        except Exception as exc:
+            if prepared is not None:
+                prepared.session.temporary_directory.cleanup()
+            self.synthetic_demo_v2.setEnabled(True)
+            self.synthetic_demo.setEnabled(True)
+            self.progress.setRange(0, 100)
+            self.status.setText(f"v0.2 合成演示未启动：{exc}")
+            return
+        self.reload_profiles()
+        profile_index = self.profile.findData(str(prepared.session.fixture.profile.profile_id))
+        if profile_index >= 0:
+            self.profile.setCurrentIndex(profile_index)
+        worker = _SyntheticAnalysisV2Worker(prepared, self.lifecycle)
+        worker.signals.completed.connect(self._synthetic_demo_v2_completed)
+        worker.signals.failed.connect(self._synthetic_demo_v2_failed)
+        self._demo_v2_worker = worker
+        self.status.setText("v0.2 合成请求已固定；正在调用本地 C 0.5.1 worker…")
+        self.progress_bus.updated.emit("仅合成 fixture：v0.2 本地 worker 运行中。", -1)
+        self.thread_pool.start(worker)
+
+    def _synthetic_demo_v2_completed(
+        self, execution: object, session: SyntheticDemoV2Session,
+    ) -> None:
+        self._demo_v2_worker = None
+        self.synthetic_demo_v2.setEnabled(True)
+        self.synthetic_demo.setEnabled(True)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(100)
+        report = getattr(execution, "temporary_report", None)
+        if report is None:
+            session.temporary_directory.cleanup()
+            status = getattr(getattr(execution, "planner_result", None), "result", {}).get(
+                "status", "unknown"
+            )
+            self.status.setText(f"v0.2 合成分析未生成报告（状态：{status}）。")
+            return
+        report = replace(report, task={**report.task, "synthetic_demo": True})
+        self.status.setText(
+            "v0.2 合成联调完成；报告仅在报告页预览，尚未保存。结果不代表真实建议。"
+        )
+        self.progress_bus.updated.emit("v0.2 合成 fixture 完成；报告待用户主动保存。", 100)
+        self.temporary_v2_report_ready.emit(report, session)
+
+    def _synthetic_demo_v2_failed(self, message: str) -> None:
+        self._demo_v2_worker = None
+        self.synthetic_demo_v2.setEnabled(True)
+        self.synthetic_demo.setEnabled(True)
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.status.setText(f"v0.2 合成联调失败：{message}；没有报告可保存。")
+
     def run_synthetic_feedback_demo(self, feedback: object) -> None:
         if not isinstance(feedback, dict):
             self.status.setText("反馈格式无效；没有运行合成分析。")
@@ -283,7 +409,7 @@ class TaskPage(_Page):
         self._run_synthetic_demo(feedback=feedback)
 
     def _run_synthetic_demo(self, *, feedback: dict[str, Any] | None = None) -> None:
-        if self._demo_worker is not None:
+        if self._demo_worker is not None or self._demo_v2_worker is not None:
             return
         if feedback is None:
             choice = QMessageBox.question(
@@ -299,6 +425,7 @@ class TaskPage(_Page):
             if choice != QMessageBox.StandardButton.Yes:
                 return
         self.synthetic_demo.setEnabled(False)
+        self.synthetic_demo_v2.setEnabled(False)
         self.status.setText(
             "正在验证内置合成 fixture…" if feedback is None
             else "正在准备带玩家自述字段的合成重新分析…"
@@ -319,6 +446,7 @@ class TaskPage(_Page):
             self.tasks.save_last(draft)
         except Exception as exc:
             self.synthetic_demo.setEnabled(True)
+            self.synthetic_demo_v2.setEnabled(True)
             self.progress.setRange(0, 100)
             self.status.setText(f"合成演示未启动：{exc}")
             self.progress_bus.updated.emit("合成联调演示未启动。", 0)
@@ -339,6 +467,7 @@ class TaskPage(_Page):
     def _synthetic_demo_completed(self, execution: object) -> None:
         self._demo_worker = None
         self.synthetic_demo.setEnabled(True)
+        self.synthetic_demo_v2.setEnabled(True)
         self.progress.setRange(0, 100)
         self.progress.setValue(100)
         report = getattr(execution, "temporary_report", None)
@@ -365,6 +494,7 @@ class TaskPage(_Page):
     def _synthetic_demo_failed(self, message: str) -> None:
         self._demo_worker = None
         self.synthetic_demo.setEnabled(True)
+        self.synthetic_demo_v2.setEnabled(True)
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
         self.status.setText(f"合成联调失败：{message}。演示档案可在账号页撤权。")
@@ -1565,6 +1695,8 @@ class ReportsPage(_Page):
         self.reports = ReportLifecycle(store, lifecycle)
         self.saved_reports: dict[str, AnalysisReport] = {}
         self.pending_report: AnalysisReport | None = None
+        self.v2_sessions: dict[str, SyntheticDemoV2Session] = {}
+        self.pending_v2_session: SyntheticDemoV2Session | None = None
         self.profile_list = QComboBox()
         self.refresh_button = QPushButton("刷新档案与报告状态")
         self.save_pending_button = QPushButton("主动保存当前分析结果")
@@ -1666,6 +1798,21 @@ class ReportsPage(_Page):
         }
         for report in reports:
             report_key = str(report.report_id)
+            session = self.v2_sessions.get(report_key)
+            if session is not None:
+                current_basis = session.current_report_basis(report)
+                try:
+                    report = self.reports.assess_for_display(
+                        report,
+                        current_snapshot_revision=revision,
+                        current_public_release_id=session.release.release_id,
+                        withdrawn_refs=current_basis[2] if current_basis else frozenset(),
+                        withdrawal_status_known=current_basis is not None,
+                        current_public_basis_sha256=current_basis[0] if current_basis else None,
+                        current_public_epoch=current_basis[1] if current_basis else None,
+                    )
+                except (PermissionError, ValueError):
+                    pass
             self.saved_reports[report_key] = report
             demo_label = " · 仅合成 fixture" if report.task.get("synthetic_demo") is True else ""
             item = QListWidgetItem(
@@ -1689,6 +1836,7 @@ class ReportsPage(_Page):
                         if str(item.profile_id) == selected_profile), None)
         self.synthetic_reanalysis_button.setEnabled(
             report.task.get("synthetic_demo") is True
+            and "producer_response" not in report.result
             and profile is not None
             and profile.provider_id == "synthetic-demo"
             and self.lifecycle.is_active(report.profile_id, report.authorization_generation)
@@ -1706,6 +1854,7 @@ class ReportsPage(_Page):
         if (
             report is None
             or report.task.get("synthetic_demo") is not True
+            or "producer_response" in report.result
             or selected_profile != str(report.profile_id)
             or profile is None
             or profile.provider_id != "synthetic-demo"
@@ -1815,6 +1964,7 @@ class ReportsPage(_Page):
         return "\n\n".join(sections)
 
     def stage_temporary_report(self, report: AnalysisReport) -> None:
+        self.pending_v2_session = None
         if not self.lifecycle.is_active(report.profile_id, report.authorization_generation):
             self.status.setText("分析结果所属档案已撤权；不能保存该结果。")
             return
@@ -1829,6 +1979,44 @@ class ReportsPage(_Page):
         self.profile_list.setCurrentIndex(index)
         self.refresh_reports()
 
+    def stage_temporary_v2_report(
+        self, report: AnalysisReport, session: SyntheticDemoV2Session,
+    ) -> None:
+        key = str(report.report_id)
+        self.v2_sessions[key] = session
+        self.pending_v2_session = session
+        self.stage_temporary_report_without_clearing_v2(report)
+
+    def stage_temporary_report_without_clearing_v2(self, report: AnalysisReport) -> None:
+        if not self.lifecycle.is_active(report.profile_id, report.authorization_generation):
+            self.status.setText("分析结果所属档案已撤权；不能保存该结果。")
+            self._cleanup_v2_session(str(report.report_id))
+            return
+        index = self.profile_list.findData(str(report.profile_id))
+        if index < 0:
+            self.reload_profiles()
+            index = self.profile_list.findData(str(report.profile_id))
+        if index < 0:
+            self.status.setText("找不到分析结果所属档案；不能保存该结果。")
+            self._cleanup_v2_session(str(report.report_id))
+            return
+        self.pending_report = report
+        self.profile_list.setCurrentIndex(index)
+        self.refresh_reports()
+
+    def _cleanup_v2_session(self, report_key: str) -> None:
+        session = self.v2_sessions.pop(report_key, None)
+        if session is not None:
+            session.temporary_directory.cleanup()
+        if self.pending_v2_session is session:
+            self.pending_v2_session = None
+
+    def cleanup_demo_sessions(self) -> None:
+        for session in self.v2_sessions.values():
+            session.temporary_directory.cleanup()
+        self.v2_sessions.clear()
+        self.pending_v2_session = None
+
     def _render_pending_report(self, selected_profile_id: str | None) -> None:
         report = self.pending_report
         if report is None or str(report.profile_id) != selected_profile_id:
@@ -1837,6 +2025,7 @@ class ReportsPage(_Page):
             self.pending_report = None
             self.save_pending_button.setEnabled(False)
             self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
+            self._cleanup_v2_session(str(report.report_id))
             return
         try:
             snapshot = self.profiles.load_snapshot(
@@ -1849,13 +2038,26 @@ class ReportsPage(_Page):
             self.pending_report = None
             self.save_pending_button.setEnabled(False)
             self.status.setText("分析结果所属档案已撤权；待保存结果已丢弃。")
+            self._cleanup_v2_session(str(report.report_id))
             return
         try:
-            report = self.reports.assess_for_display(
-                report,
-                current_snapshot_revision=revision,
-                current_public_release_id=self.public_cache.current_release_id(),
-            )
+            if self.pending_v2_session is not None:
+                basis = self.pending_v2_session.current_report_basis(report)
+                report = self.reports.assess_for_display(
+                    report,
+                    current_snapshot_revision=revision,
+                    current_public_release_id=self.pending_v2_session.release.release_id,
+                    withdrawn_refs=basis[2] if basis else frozenset(),
+                    withdrawal_status_known=basis is not None,
+                    current_public_basis_sha256=basis[0] if basis else None,
+                    current_public_epoch=basis[1] if basis else None,
+                )
+            else:
+                report = self.reports.assess_for_display(
+                    report,
+                    current_snapshot_revision=revision,
+                    current_public_release_id=self.public_cache.current_release_id(),
+                )
         except PermissionError:
             self.pending_report = None
             self.save_pending_button.setEnabled(False)
@@ -1893,15 +2095,23 @@ class ReportsPage(_Page):
                 revision: int | None = snapshot.revision
             except FileNotFoundError:
                 revision = None
-            self.reports.save_explicitly(
-                report,
-                current_snapshot_revision=revision,
-                current_public_release_id=self.public_cache.current_release_id(),
-            )
+            if self.pending_v2_session is not None:
+                if revision is None:
+                    raise ValueError("v0.2 报告缺少当前账号快照，不能标记为当前并保存")
+                self.pending_v2_session.save_report(
+                    report, current_snapshot_revision=revision,
+                )
+            else:
+                self.reports.save_explicitly(
+                    report,
+                    current_snapshot_revision=revision,
+                    current_public_release_id=self.public_cache.current_release_id(),
+                )
         except Exception as exc:
             self.status.setText(f"报告未保存：{exc}")
             return
         self.pending_report = None
+        self.pending_v2_session = None
         self.reload_profiles()
         self.status.setText("分析结果已由用户主动确认并加密保存。")
         self.save_pending_button.setEnabled(False)
@@ -2228,7 +2438,7 @@ class StarHelpWindow(QMainWindow):
         self.navigation.setFixedWidth(180)
         self.pages = QStackedWidget()
         self.task_page = TaskPage(
-            self.profiles, self.tasks, self.progress_bus, self.lifecycle, store
+            self.profiles, self.tasks, self.progress_bus, self.lifecycle, store, temp_root
         )
         self.accounts_page = AccountsPage(self.profiles, self.lifecycle, self.progress_bus)
         self.progress_page = _ProgressPage(
@@ -2240,6 +2450,9 @@ class StarHelpWindow(QMainWindow):
         self.pages.addWidget(self.progress_page)
         self.reports_page = ReportsPage(self.profiles, self.lifecycle, store, public_cache)
         self.task_page.temporary_report_ready.connect(self.reports_page.stage_temporary_report)
+        self.task_page.temporary_v2_report_ready.connect(
+            self.reports_page.stage_temporary_v2_report
+        )
         self.reports_page.synthetic_reanalysis_requested.connect(
             self.task_page.run_synthetic_feedback_demo
         )
@@ -2253,6 +2466,7 @@ class StarHelpWindow(QMainWindow):
 
     def closeEvent(self, event: object) -> None:
         self.accounts_page.auto_refresh_timer.stop()
+        self.reports_page.cleanup_demo_sessions()
         self.lifecycle.begin_shutdown()
         super().closeEvent(event)
 

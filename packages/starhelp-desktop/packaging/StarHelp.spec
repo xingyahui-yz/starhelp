@@ -13,6 +13,7 @@ demo_fixture_names = (
     "fixture-ed25519-public.pem",
 )
 demo_datas = [(str(fixture_root / name), "demo-fixtures") for name in demo_fixture_names]
+demo_datas.append((str(root / "packaging" / "source-lock-v0.2.json"), "."))
 
 a = Analysis(
     [str(root / "packaging" / "entrypoint.py")],

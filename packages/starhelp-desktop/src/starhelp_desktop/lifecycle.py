@@ -32,6 +32,10 @@ class ProfileLifecycle:
         self._lock = threading.RLock()
         self._shutting_down = False
 
+    @property
+    def temporary_root(self) -> Path:
+        return self._temp_root
+
     def authorize(self, authorization: ProfileAuthorization) -> None:
         if not authorization.active:
             raise ValueError("cannot register inactive authorization")
