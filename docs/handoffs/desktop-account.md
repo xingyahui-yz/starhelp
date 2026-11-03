@@ -1463,7 +1463,8 @@ B commit `fb6f94b23feaa31f452cba6a8bec752a2756d152` adds a separate producer v0.
 C 0.5.1; commit `3c2a535fcfe0e7982e25f8dd2336839dbd1e42d9` fixes the revocation route check. The
 verifier now requires `/v1/distribution-revocations?profile=<trusted profile>&channel=<trusted
 channel>` with UTF-8 percent encoding, matching the fixed-origin transport and C's v0.2 adapter.
-The regression fixture uses `local/组` to exercise slash and Unicode encoding. The 82-test B suite,
+The regression fixture uses `local/组` to exercise slash and Unicode encoding and confirms that a
+correctly signed catalog with a mismatched channel route is rejected. The 82-test B suite,
 `compileall -q src tests packaging`, and `git diff --check` pass.
 
 The post-commit B source lock identifies source commit `3c2a535fcfe0e7982e25f8dd2336839dbd1e42d9`,

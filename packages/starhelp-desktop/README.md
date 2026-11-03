@@ -45,13 +45,15 @@ identity of a physical copy.
 - Planner and public knowledge components: no source code is imported from their worktrees. The
   desktop package vendors the pinned C 0.4.0 wheel as a black-box artifact and launches its worker
   through the bounded local process bridge. The S3 A bundle, B1 snapshot, and fixture key are
-  synthetic; the B2 bridge and packaged candidate are verified separately in the handoff.
-- The local planner process bridge sends one
+  synthetic; the B2 bridge and packaged candidate are verified separately in the handoff. A
+  distinct producer-v0.2 worker vendors C 0.5.1 and uses the signed metadata/public-basis gate;
+  its synthetic bridge and frozen worker have also been verified.
+- Each local planner process bridge sends one
   complete `AnalysisRequest` as UTF-8 JSON on stdin and accepts one versioned result envelope on
   stdout, checks declared capabilities, bounds payload sizes and runtime, discards stderr, and kills
   the process when profile authorization is revoked. It binds returned results to request ID,
-  snapshot revision, and authorization generation. The frozen candidate includes a separate stdio
-  worker executable. The GUI still does not construct a production request or call the worker:
+  snapshot revision, and authorization generation. The frozen candidate includes separate stdio
+  worker executables for v0.1 and producer v0.2. Neither worker is called by the regular GUI task flow:
   there is no production-signed A bundle/trust key, shared M0 field and task mapping, or complete
   bundle/snapshot/task request builder. TaskPage correctly remains in the explicit waiting state.
 - The task form saves the latest target and local constraints under the selected encrypted profile,

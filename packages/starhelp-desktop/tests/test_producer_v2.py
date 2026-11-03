@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
@@ -227,6 +228,14 @@ class ProducerV2Tests(unittest.TestCase):
                 ({**key, "purposes": ["synthetic-release"]},),
                 supported_capabilities=frozenset({"starhelp.public-basis.v1"}),
             )).verify_pair(catalog_raw, revocations_raw, now=now)
+
+        wrong_route_payload = json.loads(json.dumps(catalog_payload))
+        wrong_route_payload["revocation_snapshot"]["path"] += "&channel=other"
+        wrong_route = self._signed(CATALOG_PROFILE, wrong_route_payload, key_id, private)
+        with self.assertRaisesRegex(
+            DistributionMetadataRejected, "distribution_catalog_revocation_invalid",
+        ):
+            verifier.verify_pair(wrong_route, revocations_raw, now=now)
 
     def test_typed_tombstones_merge_monotonically_and_match_full_identity(self) -> None:
         release = ReleaseIdentity("origin", "stable", "native", "r1", "a" * 64)
