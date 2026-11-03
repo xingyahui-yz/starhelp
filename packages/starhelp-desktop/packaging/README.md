@@ -43,7 +43,9 @@ snapshot, creates an ephemeral signed metadata pair with a generated test key, p
 sets `allow_production` to false. It runs through the frozen v0.2 worker, stages a basis-bound
 report, and uses the existing explicit save action. The source lock is bundled at the frozen root.
 This path does not call a live A service, register the fixture tuple as a current shared tuple, or
-enable regular TaskPage analysis; v0.2 feedback reanalysis remains disabled in the UI.
+enable regular TaskPage analysis. A saved v0.2 fixture report can request a labeled feedback rerun
+while its verified metadata/public-basis session is current; the new result is staged and still
+requires explicit save. This control is disabled after restart when the in-memory session is absent.
 
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release

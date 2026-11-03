@@ -1550,3 +1550,13 @@ This is a fixture-only B/C compatibility demonstration, not full A/B/C acceptanc
 shared production tuple, live A service, production trust anchor, frozen M0 mappings, publisher
 signature, or user-provided target-device acceptance was established. No real UID or account data
 was read or sent. `packages/starhelp-desktop/.tmp/` remained untouched.
+
+## v0.2 合成反馈重分析与候选重建（2026-11-03）
+
+ReportsPage 现在也支持对当前进程内仍有有效元数据/依据 session 的 v0.2 合成报告提交固定标签反馈。它先要求报告已主动保存、档案仍有效、报告仍为当前状态且 session basis 未变化，再经 `prepare_synthetic_demo_v2` 构造新 request ID 和反馈摘要，调用同一个本地 C 0.5.1 worker。新结果只暂存待预览，不覆盖或自动保存原报告；session 在应用重启后不可恢复，故该报告的 v0.2 反馈入口会禁用。反馈只用于 fixture，不访问网络。
+
+新增 Qt 端到端测试 `test_v2_synthetic_report_reanalysis_runs_feedback_through_pinned_worker`，覆盖原报告主动保存、合成反馈选择、C 0.5.1 重放、新报告未自动保存且原报告仍保留。完整 B suite 为 85 tests；`compileall`、`git diff --check` 及现有 v0.1 合成反馈测试通过。
+
+source-lock 从 B source commit `c4f8800608cff27e761b2907776b1744a9aa0063` 生成，31 项依赖；lock SHA-256 为 `5eae730c787bd7e16648e165101b4e3917c86498644d3050f2be9f7d8cd7a8b2`。重建的 unsigned Windows candidate 有 1,166 项；manifest SHA-256 `64c9a310aa26d13aaf28d56a90ecee6e33b858a5188e5f64cb45bd92c5ec6074`，`StarHelp.exe` SHA-256 `8f603907861234c7b775e15649e13d8448c163fa9877d13876410a8b7151c767`，v0.2 worker SHA-256 `9cfc9e5cb0133a119adad5e69ee4b3baa11df3b95de0004da271552bdcf8a07b`。冻结 C worker 在生产禁用策略下以匹配的 feedback digest 返回 `plans_available`。Candidate OCR `LEVEL 80`、manifest 校验、安装/升级/双向回滚/篡改拒绝、隔离安装后 8 秒 GUI 运行及 Qt6Core/Qt6Widgets 加载均通过。
+
+这仍是 B/C 合成演示，不是生产反馈或 A/B/C 验收。常规 TaskPage 仍等待 M0 映射和匹配共享 tuple；生产信任、A 在线服务、审核排障内容、发布签名及目标设备验收未完成。没有读取或发送真实 UID/账号资料。
