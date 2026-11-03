@@ -1456,3 +1456,35 @@ The rebuilt candidate is still unsigned and build-host-only. This evidence does 
 TaskPage to a production request or prove a unified A service/C v0.5 replay. Frozen shared mappings,
 the matching A catalog/revocation service and exact artifact tuple, C v0.5 API/wheel, publisher
 signing, and user-provided target-machine acceptance remain open.
+
+## B v0.2 isolated C 0.5.1 worker and candidate (2026-11-03)
+
+B commit `fb6f94b23feaa31f452cba6a8bec752a2756d152` adds a separate producer v0.2 worker pinned to
+C 0.5.1; commit `3c2a535fcfe0e7982e25f8dd2336839dbd1e42d9` fixes the revocation route check. The
+verifier now requires `/v1/distribution-revocations?profile=<trusted profile>&channel=<trusted
+channel>` with UTF-8 percent encoding, matching the fixed-origin transport and C's v0.2 adapter.
+The regression fixture uses `local/组` to exercise slash and Unicode encoding. The 82-test B suite,
+`compileall -q src tests packaging`, and `git diff --check` pass.
+
+The post-commit B source lock identifies source commit `3c2a535fcfe0e7982e25f8dd2336839dbd1e42d9`,
+has 30 dependencies, dependency-lock SHA-256 `41e75cbe6200ca67cdbad40b998e2e40515ed9b0cdb2bad3cd9f1a37d979bd3b`,
+and artifact SHA-256 `ff9ab9b03e3cec730aeafbfdeceac333639132da831558493d265e6de0d35fc9`. The signed synthetic
+metadata pair passed B trust verification and public-basis qualification. `LocalProducerV2Process`
+then replayed the historical synthetic S3 bundle and B1 snapshot through the pinned C 0.5.1 wheel
+(SHA-256 `c79ceb58e78d11cf947c0c9f7c5c862ccad8155886fab715a76f7d8977f98322`); the packaged frozen
+`StarHelpPlannerV2Worker.exe` also returned a correlated v0.2 result at planner version 0.5.1. This
+is synthetic compatibility evidence only; it does not register a current A/B/C production tuple.
+
+Rebuilt the unsigned Windows candidate with PyInstaller 6.22.3. Its manifest covers 1,165 files and
+has SHA-256 `067b1f21863f27dd1baa658ef4ee7b3e18f39adb7bab3095f77f1f628aeb9a59`; `StarHelp.exe` SHA-256
+is `afc09a77b090985742138be24e60099dc7baf60d154952b0e654001e9a95f8cd`, and the v0.2 worker SHA-256
+is `eb5be464538d225d30375d82f9d99a82d5f5320321165ae2f0f42e8863158e8c`. Manifest verification,
+candidate OCR (`LEVEL 80`), installer install/upgrade/two-way rollback/tamper smoke, and an isolated
+install followed by an eight-second GUI launch with Qt6Core/Qt6Widgets loaded all passed. The
+installer smoke temporary root was scoped under `build/`; `packages/starhelp-desktop/.tmp/` remains
+untouched.
+
+The v0.2 worker is still not connected to regular TaskPage analysis. C 0.5.1's production execution
+gate remains disabled, and no matching live A service/catalog, production trust anchor, frozen M0
+task mappings, code signature, or user-provided target-machine acceptance has been established.
+No real UID, account data, production key, or deployment was used.
