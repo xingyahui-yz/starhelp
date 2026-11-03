@@ -105,6 +105,7 @@ class ProducerV2Tests(unittest.TestCase):
     def test_signed_metadata_verifier_checks_raw_pair_and_typed_revocations(self) -> None:
         now = datetime.now(UTC).replace(microsecond=0)
         key_id = "synthetic-key"
+        channel = "local/组"
         private = Ed25519PrivateKey.generate()
         public = private.public_key().public_bytes(
             encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw,
@@ -113,7 +114,7 @@ class ProducerV2Tests(unittest.TestCase):
         expiry = (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
         revocations_payload: dict[str, object] = {
             "schema_version": REVOCATIONS_PROFILE, "origin_id": "synthetic-origin",
-            "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 1,
+            "channel": channel, "consumer_profile": "starhelp.local.v0.2", "sequence": 1,
             "issued_at": issued, "valid_until": expiry,
             "revoked_releases": [{
                 "release_id": "revoked-release", "envelope_sha256": "a" * 64,
@@ -127,7 +128,7 @@ class ProducerV2Tests(unittest.TestCase):
         revocations_raw = self._signed(REVOCATIONS_PROFILE, revocations_payload, key_id, private)
         catalog_payload: dict[str, object] = {
             "schema_version": CATALOG_PROFILE, "origin_id": "synthetic-origin",
-            "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 4,
+            "channel": channel, "consumer_profile": "starhelp.local.v0.2", "sequence": 4,
             "issued_at": issued, "valid_until": expiry, "active_release_id": "release-1",
             "distributions": [{
                 "release_id": "release-1", "download_path": "/v1/distributions/release-1",
@@ -143,7 +144,7 @@ class ProducerV2Tests(unittest.TestCase):
                 "rollback_allowed": False,
             }],
             "revocation_snapshot": {
-                "path": "/v1/distribution-revocations",
+                "path": "/v1/distribution-revocations?profile=starhelp.local.v0.2&channel=local%2F%E7%BB%84",
                 "sha256": hashlib.sha256(revocations_raw).hexdigest(),
                 "size_bytes": len(revocations_raw), "sequence": 1,
             },
@@ -156,7 +157,7 @@ class ProducerV2Tests(unittest.TestCase):
             "not_after": expiry, "revoked": False,
         }
         verifier = DistributionMetadataVerifier(DistributionMetadataTrust(
-            "synthetic-origin", "test", "starhelp.local.v0.2", (key,),
+            "synthetic-origin", channel, "starhelp.local.v0.2", (key,),
             supported_capabilities=frozenset({"starhelp.public-basis.v1"}),
         ))
         pair = verifier.verify_pair(catalog_raw, revocations_raw, now=now)
@@ -178,7 +179,7 @@ class ProducerV2Tests(unittest.TestCase):
             accepted = DistributionMetadataSynchronizer(Source(), verifier, store).sync(now=now)
             self.assertEqual(accepted.catalog_sequence, 4)
             self.assertEqual(store.snapshot()["high_water"]["catalog_sequence"], 4)
-            active = ReleaseIdentity("synthetic-origin", "test", "starhelp.local.v0.2",
+            active = ReleaseIdentity("synthetic-origin", channel, "starhelp.local.v0.2",
                                      "release-1", "c" * 64)
             store.qualify_artifact(active, pair=accepted, allowed=True, observed_at=now)
             documents = store.public_documents_for(active)
@@ -222,7 +223,7 @@ class ProducerV2Tests(unittest.TestCase):
 
         with self.assertRaises(DistributionMetadataRejected):
             DistributionMetadataVerifier(DistributionMetadataTrust(
-                "synthetic-origin", "test", "starhelp.local.v0.2",
+                "synthetic-origin", channel, "starhelp.local.v0.2",
                 ({**key, "purposes": ["synthetic-release"]},),
                 supported_capabilities=frozenset({"starhelp.public-basis.v1"}),
             )).verify_pair(catalog_raw, revocations_raw, now=now)

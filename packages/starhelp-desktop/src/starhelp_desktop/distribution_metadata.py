@@ -288,8 +288,13 @@ class DistributionMetadataVerifier:
             "path", "sha256", "size_bytes", "sequence",
         }:
             raise DistributionMetadataRejected("distribution_catalog_revocation_invalid")
+        expected_revocations_path = (
+            "/v1/distribution-revocations?profile="
+            f"{quote(self._trust.consumer_profile, safe='')}"
+            f"&channel={quote(self._trust.channel, safe='')}"
+        )
         if (not isinstance(revocation["path"], str)
-                or revocation["path"] != "/v1/distribution-revocations"
+                or revocation["path"] != expected_revocations_path
                 or not isinstance(revocation["sha256"], str)
                 or not _SHA256.fullmatch(revocation["sha256"])
                 or not isinstance(revocation["size_bytes"], int)
