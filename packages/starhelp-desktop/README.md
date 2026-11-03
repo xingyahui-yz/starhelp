@@ -96,6 +96,11 @@ identity of a physical copy.
 - The two-release public cache revalidates signed bytes every time a cached release is loaded.
   Byte-oriented sources retain the exact UTF-8 release bytes across activation and restart so the
   producer adapter can verify its recorded digest; test object sources use canonical JSON bytes.
+  The v0.2 metadata synchronizer also exposes an explicit rollback operation: it refreshes the
+  signed catalog and revocation snapshot, requires the catalog to allow the target, checks its
+  exact A/C/B tuple, cached size/digest, bundle signature and capabilities, then verifies the
+  typed revocation ledger before switching the current pointer. A rejected target or failed pointer
+  write leaves the previous current release selected.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated

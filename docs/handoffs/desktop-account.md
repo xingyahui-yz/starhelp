@@ -1560,3 +1560,13 @@ ReportsPage 现在也支持对当前进程内仍有有效元数据/依据 sessio
 source-lock 从 B source commit `c4f8800608cff27e761b2907776b1744a9aa0063` 生成，31 项依赖；lock SHA-256 为 `5eae730c787bd7e16648e165101b4e3917c86498644d3050f2be9f7d8cd7a8b2`。重建的 unsigned Windows candidate 有 1,166 项；manifest SHA-256 `64c9a310aa26d13aaf28d56a90ecee6e33b858a5188e5f64cb45bd92c5ec6074`，`StarHelp.exe` SHA-256 `8f603907861234c7b775e15649e13d8448c163fa9877d13876410a8b7151c767`，v0.2 worker SHA-256 `9cfc9e5cb0133a119adad5e69ee4b3baa11df3b95de0004da271552bdcf8a07b`。冻结 C worker 在生产禁用策略下以匹配的 feedback digest 返回 `plans_available`。Candidate OCR `LEVEL 80`、manifest 校验、安装/升级/双向回滚/篡改拒绝、隔离安装后 8 秒 GUI 运行及 Qt6Core/Qt6Widgets 加载均通过。
 
 这仍是 B/C 合成演示，不是生产反馈或 A/B/C 验收。常规 TaskPage 仍等待 M0 映射和匹配共享 tuple；生产信任、A 在线服务、审核排障内容、发布签名及目标设备验收未完成。没有读取或发送真实 UID/账号资料。
+
+## M5 已验签目录约束的公共包恢复（2026-11-03）
+
+`DistributionMetadataSynchronizer.rollback()` 新增服务层恢复入口。操作先重新同步并验证最新 catalog/revocations；只有目录中声明 `rollback_allowed` 的非 active release 才能恢复。目标还必须存在于本地双版本缓存，大小和 SHA-256 与目录相符，重新通过 bundle 签名、能力及精确 A/C/B tuple 校验，并未命中累计撤回记录。只从已验证的本地字节恢复，不重新下载 envelope。签名目录未许可、撤回、缓存缺失/被改、tuple 不兼容时拒绝；current 指针写入失败保持之前选择。未接入普通 GUI，因为生产 transport/trust 和共享 tuple 尚未冻结；这是后端 API 和 synthetic evidence，不声称在线生产恢复已可用。
+
+新增 `test_rollback_requires_current_signed_admission_and_keeps_current_on_failure`，使用临时 Ed25519 key、合成目录/撤回快照与两份合成 bundle，覆盖目录不授权拒绝、写 current 指针失败后仍保留 `release-2`、再次恢复成功，以及已撤回目标拒绝。完整 B suite 为 86 tests；`compileall`、`git diff --check` 通过。
+
+source-lock 从 B source commit `f65fa5c17bfb6614af1e6b272fa87eb8fd288d88` 生成，31 项依赖；dependency lock SHA-256 `759bf2daae3449bd349ea980061fc9fb7254113ae800fb6cf3a0e5b7c436219d`，source-lock 文件 SHA-256 `f8882e699533508caf9500b235cade728d483b62ad66f9a9f006f5c7dcb2b9ef`。unsigned Windows candidate 含 1,166 项文件，manifest SHA-256 `7cfd4dcf4cb3393c23df84da0d635a6e9eeccf3a9a2efb70d83566e5907f6b23`，GUI SHA-256 `d0ba3b290e96c1d675d7f0ac2a71b56377d902fe0a6d5f736410456a8564c3b4`，v0.2 worker SHA-256 `75d873b16b2c3059ac4eb9146fe8516a2e936961352388a60dbb6308c1ec3887`。manifest 全量文件集和摘要匹配；候选 OCR 识别 synthetic `LEVEL 80`；安装、升级、双向安装回滚及篡改拒绝通过。
+
+仍未完成的是目录/服务协议的协调冻结、共享服务信任和 production tuple、GUI 中的正式同步/恢复入口、A/B/C live 服务联调、发布签名与目标设备验收。未触及固定 A/C 产物或 `packages/starhelp-desktop/.tmp/`，无真实账号资料。
