@@ -2,19 +2,19 @@
 
 Status: in progress. This is an implementation log, not an MVP acceptance statement.
 
-Current verification baseline (2026-10-20): the source changes in `imports.py` and its regression
-test passed 63 package tests plus `compileall` and `git diff --check`. The candidate was built from
-base commit `8aa39937672a03e3c4668f6aacad7a5ca8f26b19` plus the exact package source patch SHA-256
-`35edd65ad7a9dd56915b1bcaa8ab63a88388c1076f49ddf445e8c4e3ac11adb9`. PyInstaller 6.22.3 / Python
-3.12.14 produced 919 files; manifest SHA-256 is
-`1ffb65b7560ade002d4611a518bc83cab1ca2f0048d792035bf5a976a57cf2eb`, `StarHelp.exe` SHA-256 is
-`4c5cf94a2b42beddc24eee22f6ceee8dc8c6f26128ab7a384baa4a342b8a7448`, and packaged worker SHA-256
-is `ce7b6722b432a12030a88f8610d548f5c6cc25ab7b363a3445552b920266f2aa`. The local verification
-record is `packages/starhelp-desktop/build/candidate-verification-2026-10-20.txt` (SHA-256
-`01258da05b55e0fe757966cfa54a18fb9f04b8cccb039caa4d5ca4afbd3dd178`); PyInstaller warning logs are
-under the corresponding `build/StarHelp/` and `build/StarHelpPlannerWorker/` directories. The
-candidate is unsigned. Fixed A/B/C producer versions and artifact digests are recorded below and
-in the fixture README; these synthetic profiles are compatibility evidence, not a frozen contract.
+Current verification baseline (2026-11-03): the package suite passes 88 tests; `compileall` and
+`git diff --check` pass. The latest source-backed unsigned Windows candidate and its manifest,
+worker, OCR, installer rollback/tamper and isolated GUI evidence are recorded under “公共包恢复的
+并发撤回保护” below. Subsequent commits `2eab5af` and `7007236` changed tests and handoff only, so
+the packaged application source, candidate and source lock remain unchanged. No publisher
+signature or target-device acceptance has been established.
+
+The current production path remains gated: normal TaskPage analysis and production synchronization
+are unavailable until M0 mappings, a matched frozen A/B/C tuple, distribution/revocation trust and
+an A service endpoint are supplied and validated. The v0.2 TaskPage replay is fixture-only, uses
+synthetic data and an explicit `allow_production=false` policy. Real account acceptance waits for
+the user; no UID or account data was queried. Historical verification records and older candidate
+hashes below remain dated evidence, not the current baseline.
 
 ## Boundary and current baseline
 
