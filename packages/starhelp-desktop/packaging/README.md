@@ -38,6 +38,13 @@ production trust anchor are frozen. The source fixture files are under
 The older `producer-interop-v1` fixture remains an immutable compatibility sample and is not used
 by the current demo.
 
+TaskPage also has a separate v0.2 synthetic demo button. It uses the historical S3 A bundle and B1
+snapshot, creates an ephemeral signed metadata pair with a generated test key, pins C 0.5.1, and
+sets `allow_production` to false. It runs through the frozen v0.2 worker, stages a basis-bound
+report, and uses the existing explicit save action. The source lock is bundled at the frozen root.
+This path does not call a live A service, register the fixture tuple as a current shared tuple, or
+enable regular TaskPage analysis; v0.2 feedback reanalysis remains disabled in the UI.
+
 The result remains an unsigned folder-style candidate. SHA-256 verification detects accidental
 corruption but does not authenticate the publisher because the manifest is unsigned. The release
 still needs an approved code-signing certificate, signed update metadata, and target-Windows

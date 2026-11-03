@@ -55,7 +55,12 @@ identity of a physical copy.
   snapshot revision, and authorization generation. The frozen candidate includes separate stdio
   worker executables for v0.1 and producer v0.2. Neither worker is called by the regular GUI task flow:
   there is no production-signed A bundle/trust key, shared M0 field and task mapping, or complete
-  bundle/snapshot/task request builder. TaskPage correctly remains in the explicit waiting state.
+  production bundle/snapshot/task request builder. TaskPage correctly remains in the explicit
+  waiting state. A separate v0.2 demo button runs only the historical S3/B1 synthetic fixtures,
+  creates ephemeral signed test metadata, pins C 0.5.1, and uses an execution policy with production
+  disabled. It stages a basis-bound report for preview and explicit save, resolves C evidence
+  citations against the bundle's native and planner-view evidence hashes, and does not create a
+  production tuple or unlock regular task analysis.
 - The task form saves the latest target and local constraints under the selected encrypted profile,
   restores that profile's values, and clears them on profile revocation. It records a waiting state;
   it does not call a planner or present a recommendation.

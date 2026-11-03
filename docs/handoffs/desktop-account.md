@@ -1517,3 +1517,36 @@ trust would violate tuple binding. The coordinator has been sent the exact misma
 next input: a frozen A+B snapshot+C tuple with matching capabilities/channel, then B TaskPage wiring.
 Evidence is synthetic metadata and source inspection only; no account or production request was
 made.
+
+## v0.2 fixture-only TaskPage demo and candidate (2026-11-03)
+
+Added a separate TaskPage action for a no-network v0.2 synthetic replay; the production integration
+gate above still applies to normal task creation. The demo uses the historical signed S3 A bundle,
+synthetic B1 snapshot, ephemeral Ed25519 metadata keys, an isolated metadata/revocation store, and
+an execution policy with `allow_production=false`. It pins C 0.5.1 and never consumes the selected
+real profile. Its report is previewed first, bound to the current public-basis digest/epoch, and
+saved only after the explicit user action. v0.2 feedback reanalysis remains disabled.
+
+Fixed B's result adapter for C 0.5.1: the domain result is nested under `analysis`, while correlation
+and provenance fields remain in the producer response envelope. B now renders the domain result and
+retains the response metadata. It binds C's legacy evidence citations to the signed bundle by
+cross-checking the planner-view evidence revision/source hash against the native evidence hash
+before checking typed revocations. The packaged source lock is regenerated from source commit
+`606f326a1cca4190de03699764e804907c1df21f`; lock SHA-256 is
+`17d4b1f8398e551416421e9f3aa5519865dabb8272f96af239cff908ee439882` with 31 dependencies.
+
+The B package suite passes 84 tests; `compileall`, `git diff --check`, and an offscreen Qt TaskPage →
+C 0.5.1 → ReportsPage preview/explicit-save exercise pass. The unsigned Windows candidate contains
+1,166 files; manifest SHA-256 is `e9e939a9f8bff6ab9c4c835a0fa6333978d3fd170de416568a5c4037e8ae60e0`,
+`StarHelp.exe` SHA-256 is `28cb52f8074668ae68f5144c7d672f34d76b28e956367a4d22406da190b26b36`, and
+the bundled v0.2 worker SHA-256 is `bb7ae5fa55a30dc3e72f49a337cb932b1fbab8c6f8a8f0222307cd36899d12c1`.
+The frozen C worker returned a correlated `plans_available` result at version 0.5.1 under the
+production-disabled policy. Candidate OCR recognized synthetic `LEVEL 80`; installer install,
+upgrade, two-way rollback and tamper rejection passed; an isolated installed GUI stayed alive for
+eight seconds with Qt6Core/Qt6Widgets loaded. All account and source data in these checks were
+synthetic; the launch used a fresh workspace-local `LOCALAPPDATA`.
+
+This is a fixture-only B/C compatibility demonstration, not full A/B/C acceptance. No current
+shared production tuple, live A service, production trust anchor, frozen M0 mappings, publisher
+signature, or user-provided target-device acceptance was established. No real UID or account data
+was read or sent. `packages/starhelp-desktop/.tmp/` remained untouched.
