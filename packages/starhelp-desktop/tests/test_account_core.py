@@ -767,6 +767,73 @@ class ProgressPageTests(unittest.TestCase):
             task_page.close()
             reports_page.close()
 
+    def test_v2_synthetic_report_reanalysis_runs_feedback_through_pinned_worker(self) -> None:
+        with temporary_directory() as directory:
+            root = Path(directory)
+            store = EncryptedPrivateStore(root / "private", TestProtector())
+            lifecycle = ProfileLifecycle(store, root / "temp")
+            profiles = ProfileRepository(store, lifecycle)
+            tasks = TaskRepository(store, lifecycle)
+            cache = PublicBundleCache(root / "public-cache")
+            task_page = TaskPage(profiles, tasks, _ProgressBus(), lifecycle, store)
+            reports_page = ReportsPage(profiles, lifecycle, store, cache)
+            task_page.temporary_v2_report_ready.connect(reports_page.stage_temporary_v2_report)
+            reports_page.synthetic_v2_reanalysis_requested.connect(
+                task_page.run_synthetic_feedback_demo_v2
+            )
+
+            with patch(
+                "starhelp_desktop.gui.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                task_page.synthetic_demo_v2.click()
+
+            deadline = time.monotonic() + 30
+            while reports_page.pending_report is None and time.monotonic() < deadline:
+                self.app.processEvents()
+                time.sleep(0.01)
+
+            self.assertIsNotNone(reports_page.pending_report, task_page.status.text())
+            initial = reports_page.pending_report
+            assert initial is not None
+            self.assertIn("producer_response", initial.result)
+            report_key = initial.profile_id
+            reports_page.save_pending_button.click()
+            self.assertIsNone(reports_page.pending_report)
+            self.assertEqual(len(store.list_profile_keys(report_key, "report")), 1)
+            reports_page.report_list.setCurrentRow(0)
+            self.assertTrue(reports_page.synthetic_reanalysis_button.isEnabled())
+
+            with patch(
+                "starhelp_desktop.gui.QInputDialog.getItem",
+                return_value=("生存问题（仅合成标记）", True),
+            ):
+                reports_page.synthetic_reanalysis_button.click()
+
+            deadline = time.monotonic() + 30
+            while (
+                reports_page.pending_report is None
+                and task_page._demo_v2_worker is not None
+                and time.monotonic() < deadline
+            ):
+                self.app.processEvents()
+                time.sleep(0.01)
+            self.assertIsNotNone(reports_page.pending_report, task_page.status.text())
+            feedback_report = reports_page.pending_report
+            assert feedback_report is not None
+            self.assertEqual(
+                feedback_report.task["feedback"]["fields"]["fixture:failure_kind"]["value"],
+                "fixture:survival",
+            )
+            self.assertNotEqual(
+                feedback_report.result["producer_response"]["request_id"],
+                initial.result["producer_response"]["request_id"],
+            )
+            self.assertEqual(len(store.list_profile_keys(report_key, "report")), 1)
+            reports_page.cleanup_demo_sessions()
+            task_page.close()
+            reports_page.close()
+
     def test_public_knowledge_page_shows_cached_coverage_and_marks_it_unverified(self) -> None:
         with temporary_directory() as directory:
             root = Path(directory)

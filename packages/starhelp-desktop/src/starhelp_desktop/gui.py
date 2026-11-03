@@ -320,19 +320,40 @@ class TaskPage(_Page):
         self._run_synthetic_demo()
 
     def run_synthetic_demo_v2(self) -> None:
+        self._start_synthetic_demo_v2()
+
+    def run_synthetic_feedback_demo_v2(self, report: object, feedback: object) -> None:
+        if (
+            not isinstance(report, AnalysisReport)
+            or not isinstance(feedback, dict)
+            or report.task.get("synthetic_demo") is not True
+            or "producer_response" not in report.result
+            or not self.lifecycle.is_active(report.profile_id, report.authorization_generation)
+        ):
+            self.status.setText("v0.2 合成报告或反馈状态无效；没有重新分析。")
+            return
+        profile = next((item for item in self.profiles.list_profiles()
+                        if item.profile_id == report.profile_id), None)
+        if profile is None or profile.provider_id != "synthetic-demo":
+            self.status.setText("v0.2 演示档案不可用；没有重新分析。")
+            return
+        self._start_synthetic_demo_v2(feedback=feedback)
+
+    def _start_synthetic_demo_v2(self, *, feedback: dict[str, Any] | None = None) -> None:
         if self._demo_worker is not None or self._demo_v2_worker is not None:
             return
-        choice = QMessageBox.question(
-            self,
-            "运行 v0.2 合成联调演示",
-            "将使用内置 A 签名 fixture、临时合成目录和固定版本的本地 C worker。"
-            "执行策略明确禁用生产运行；不读取当前选中的真实档案，也不访问网络。"
-            "结果只用于 v0.2 技术联调，不代表真实游戏建议。是否继续？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
-        )
-        if choice != QMessageBox.StandardButton.Yes:
-            return
+        if feedback is None:
+            choice = QMessageBox.question(
+                self,
+                "运行 v0.2 合成联调演示",
+                "将使用内置 A 签名 fixture、临时合成目录和固定版本的本地 C worker。"
+                "执行策略明确禁用生产运行；不读取当前选中的真实档案，也不访问网络。"
+                "结果只用于 v0.2 技术联调，不代表真实游戏建议。是否继续？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel,
+            )
+            if choice != QMessageBox.StandardButton.Yes:
+                return
         self.synthetic_demo_v2.setEnabled(False)
         self.synthetic_demo.setEnabled(False)
         self.progress.setRange(0, 0)
@@ -341,6 +362,7 @@ class TaskPage(_Page):
         try:
             prepared = prepare_synthetic_demo_v2(
                 self.profiles, self.lifecycle, self.store, temporary_root=self.temp_root,
+                feedback=feedback,
             )
             scope = prepared.session.fixture.task["scope"]
             public_goal = prepared.session.fixture.task["public_goal"]
@@ -367,8 +389,15 @@ class TaskPage(_Page):
         worker.signals.completed.connect(self._synthetic_demo_v2_completed)
         worker.signals.failed.connect(self._synthetic_demo_v2_failed)
         self._demo_v2_worker = worker
-        self.status.setText("v0.2 合成请求已固定；正在调用本地 C 0.5.1 worker…")
-        self.progress_bus.updated.emit("仅合成 fixture：v0.2 本地 worker 运行中。", -1)
+        self.status.setText(
+            "v0.2 合成请求已固定；正在调用本地 C 0.5.1 worker…"
+            if feedback is None else
+            "合成反馈已固定在本地请求中；正在调用 C 0.5.1 worker 重新分析…"
+        )
+        self.progress_bus.updated.emit(
+            "仅合成 fixture：v0.2 本地 worker 运行中。" if feedback is None
+            else "仅合成 fixture：v0.2 本地反馈重新分析中。", -1,
+        )
         self.thread_pool.start(worker)
 
     def _synthetic_demo_v2_completed(
@@ -389,9 +418,15 @@ class TaskPage(_Page):
             return
         report = replace(report, task={**report.task, "synthetic_demo": True})
         self.status.setText(
+            "v0.2 合成反馈重分析完成；报告仅待预览，尚未保存。结果不代表真实建议。"
+            if report.task.get("feedback") is not None else
             "v0.2 合成联调完成；报告仅在报告页预览，尚未保存。结果不代表真实建议。"
         )
-        self.progress_bus.updated.emit("v0.2 合成 fixture 完成；报告待用户主动保存。", 100)
+        self.progress_bus.updated.emit(
+            "v0.2 合成反馈重分析完成；报告待用户主动保存。"
+            if report.task.get("feedback") is not None else
+            "v0.2 合成 fixture 完成；报告待用户主动保存。", 100,
+        )
         self.temporary_v2_report_ready.emit(report, session)
 
     def _synthetic_demo_v2_failed(self, message: str) -> None:
@@ -1682,6 +1717,7 @@ class AccountsPage(_Page):
 
 class ReportsPage(_Page):
     synthetic_reanalysis_requested = Signal(object)
+    synthetic_v2_reanalysis_requested = Signal(object, object)
 
     def __init__(self, profiles: ProfileRepository, lifecycle: ProfileLifecycle,
                  store: EncryptedPrivateStore, public_cache: PublicBundleCache) -> None:
@@ -1834,9 +1870,18 @@ class ReportsPage(_Page):
         selected_profile = self.profile_list.currentData()
         profile = next((item for item in self.profiles.list_profiles()
                         if str(item.profile_id) == selected_profile), None)
+        v2_session = self.v2_sessions.get(str(report.report_id))
+        v2_reanalysis_available = (
+            "producer_response" not in report.result
+            or (
+                report.validity is ReportValidity.CURRENT
+                and v2_session is not None
+                and v2_session.current_report_basis(report) is not None
+            )
+        )
         self.synthetic_reanalysis_button.setEnabled(
             report.task.get("synthetic_demo") is True
-            and "producer_response" not in report.result
+            and v2_reanalysis_available
             and profile is not None
             and profile.provider_id == "synthetic-demo"
             and self.lifecycle.is_active(report.profile_id, report.authorization_generation)
@@ -1851,14 +1896,18 @@ class ReportsPage(_Page):
         selected_profile = self.profile_list.currentData()
         profile = next((item for item in self.profiles.list_profiles()
                         if str(item.profile_id) == selected_profile), None)
+        v2_session = self.v2_sessions.get(str(report.report_id)) if report is not None else None
         if (
             report is None
             or report.task.get("synthetic_demo") is not True
-            or "producer_response" in report.result
             or selected_profile != str(report.profile_id)
             or profile is None
             or profile.provider_id != "synthetic-demo"
             or not self.lifecycle.is_active(report.profile_id, report.authorization_generation)
+            or ("producer_response" in report.result
+                and (report.validity is not ReportValidity.CURRENT
+                     or v2_session is None
+                     or v2_session.current_report_basis(report) is None))
         ):
             self.status.setText("只有当前有效的已保存合成联调报告可以执行反馈重跑。")
             return
@@ -1889,7 +1938,7 @@ class ReportsPage(_Page):
         if failure_value is None:
             self.status.setText("未知的合成反馈选项；没有运行反馈重跑。")
             return
-        self.synthetic_reanalysis_requested.emit({
+        feedback = {
             "scope": dict(scope),
             "fields": {
                 "fixture:failure_kind": {
@@ -1902,7 +1951,11 @@ class ReportsPage(_Page):
                     },
                 },
             },
-        })
+        }
+        if "producer_response" in report.result:
+            self.synthetic_v2_reanalysis_requested.emit(report, feedback)
+        else:
+            self.synthetic_reanalysis_requested.emit(feedback)
 
     def _render_report_detail(self, report: AnalysisReport, *, include_created_at: bool) -> str:
         metadata = {
@@ -2455,6 +2508,9 @@ class StarHelpWindow(QMainWindow):
         )
         self.reports_page.synthetic_reanalysis_requested.connect(
             self.task_page.run_synthetic_feedback_demo
+        )
+        self.reports_page.synthetic_v2_reanalysis_requested.connect(
+            self.task_page.run_synthetic_feedback_demo_v2
         )
         self.pages.addWidget(self.reports_page)
         self.pages.addWidget(SettingsPage())
