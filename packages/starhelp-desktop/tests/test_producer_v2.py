@@ -580,7 +580,8 @@ class ProducerV2Tests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
             root = Path(directory)
 
-            def make_case(name: str, rollback_allowed: bool, *, revoke_target: bool = False) -> tuple[
+            def make_case(name: str, rollback_allowed: bool, *, revoke_target: bool = False,
+                          seed_cache: bool = True, fetch_envelopes: bool = False) -> tuple[
                     DistributionMetadataSynchronizer, PublicBundleCache]:
                 revoked_raw = make_revocations(revoke_target=revoke_target)
                 catalog_raw = make_catalog(
@@ -594,22 +595,53 @@ class ProducerV2Tests(unittest.TestCase):
                     def fetch_revocations(self) -> bytes:
                         return revoked_raw
 
-                    def fetch_envelope(self, _release_id: str) -> bytes:
+                    def fetch_envelope(self, release_id: str) -> bytes:
+                        if fetch_envelopes:
+                            return bundles[release_id]
                         raise AssertionError("rollback must use the exact cached release bytes")
 
                 case_root = root / name
                 case_root.mkdir()
                 cache = PublicBundleCache(case_root / "cache")
                 bundle_validator = BundleValidator()
-                for release_id in ("release-1", "release-2"):
-                    cache.activate(bundle_validator.validate(
-                        bundles[release_id], supported_capabilities=frozenset(),
-                        expected_release_id=release_id, signature_verifier=bundle_verifier,
-                    ))
+                if seed_cache:
+                    for release_id in ("release-1", "release-2"):
+                        cache.activate(bundle_validator.validate(
+                            bundles[release_id], supported_capabilities=frozenset(),
+                            expected_release_id=release_id, signature_verifier=bundle_verifier,
+                        ))
                 store = DistributionSecurityStore(
                     case_root / "state.bin", protector=_IdentityProtector(),
                 )
                 return DistributionMetadataSynchronizer(Source(), verifier, store), cache
+
+            fresh, fresh_cache = make_case(
+                "fresh", True, seed_cache=False, fetch_envelopes=True,
+            )
+            fresh_result = fresh.sync_and_activate(
+                fresh_cache, signature_verifier=bundle_verifier,
+                supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+            )
+            self.assertIsNone(fresh_result.previous_release_id)
+            self.assertEqual(fresh_result.current_release_id, "release-2")
+            self.assertTrue(fresh_result.updated)
+            self.assertEqual(fresh_cache.current_release_id(), "release-2")
+            self.assertEqual(fresh._security.effective_state(ReleaseIdentity(
+                "synthetic-origin", "test", "starhelp.local.v0.2", "release-2",
+                hashlib.sha256(bundles["release-2"]).hexdigest(),
+            ), now=now), "fresh")
+
+            mismatched, mismatch_cache = make_case(
+                "mismatched", True, seed_cache=False, fetch_envelopes=True,
+            )
+            with self.assertRaisesRegex(BundleRejected, "distribution_unsupported"):
+                mismatched.sync_and_activate(
+                    mismatch_cache, signature_verifier=bundle_verifier,
+                    supported_capabilities=frozenset(), allowed_a_producers=(),
+                    allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+                )
+            self.assertIsNone(mismatch_cache.current_release_id())
 
             denied, denied_cache = make_case("denied", False)
             with self.assertRaisesRegex(BundleRejected, "not_allowed_by_verified_catalog"):
