@@ -216,7 +216,7 @@ def prepare_synthetic_demo_v2(
         "distributions": [descriptor],
         "revocation_snapshot": {
             "path": (f"/v1/distribution-revocations?profile={_CONSUMER_PROFILE}"
-                     f"&channel={quote(_CHANNEL, safe='')}") ,
+                     f"&channel={quote(_CHANNEL, safe='')}"),
             "sha256": hashlib.sha256(revocations_raw).hexdigest(),
             "size_bytes": len(revocations_raw),
             "sequence": 1,
@@ -389,5 +389,3 @@ def _fixture_public_key_path() -> Path:
     if getattr(sys, "frozen", False) and isinstance(frozen_root, str):
         return Path(frozen_root) / "demo-fixtures" / "fixture-ed25519-public.pem"
     return _package_root() / "tests" / "fixtures" / "producer-interop-s3" / "fixture-ed25519-public.pem"
-
-
