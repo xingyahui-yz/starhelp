@@ -407,8 +407,9 @@ class ProducerV2Tests(unittest.TestCase):
                 return revocations_raw
 
         with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            state_path = Path(directory) / "state.bin"
             store = DistributionSecurityStore(
-                Path(directory) / "state.bin", protector=_IdentityProtector(),
+                state_path, protector=_IdentityProtector(),
             )
             accepted = DistributionMetadataSynchronizer(Source(), verifier, store).sync(now=now)
             self.assertEqual(accepted.catalog_sequence, 4)
@@ -432,6 +433,15 @@ class ProducerV2Tests(unittest.TestCase):
             self.assertEqual(basis["state"], "fresh")
             self.assertEqual(basis["epoch"], store.snapshot()["public_epoch"])
             self.assertEqual(validate_public_basis(basis, basis_digest, basis_documents), basis)
+
+            restarted = DistributionSecurityStore(
+                state_path, protector=_IdentityProtector(),
+            )
+            self.assertEqual(restarted.effective_state(active, now=now), "fresh")
+            revoked_identity = ReleaseIdentity(
+                "synthetic-origin", channel, "starhelp.local.v0.2", "revoked-release", "a" * 64,
+            )
+            self.assertEqual(restarted.effective_state(revoked_identity, now=now), "revoked")
 
             class UnavailableRevocations:
                 def fetch_catalog(self) -> bytes:
