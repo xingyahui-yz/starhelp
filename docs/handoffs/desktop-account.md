@@ -1577,6 +1577,8 @@ source-lock 从 B source commit `f65fa5c17bfb6614af1e6b272fa87eb8fd288d88` 生�
 
 source-lock 对应源提交 `8fc3656066abd90d11fa2f19295c1cbf997fe733`，31 项依赖；dependency lock SHA-256 `c465845327c771250cf98bf8c1bac79ab15edd74c13b7d03a5e5742aaa4dbce8`，source-lock SHA-256 `17d4b8fdfaab9fecca8bfdd64cab5444df847e4376792c118541a4d2124c2dd5`。重建候选含 1,166 个文件且全量清单/摘要匹配；manifest SHA-256 `75f667fa6d93f2d4300e00c7b467bf51d570022fc0aafccfd4d2b5246b0f75bc`，GUI SHA-256 `8b2859ed9497857155f5abdb1c0c155bf065830a9bcb1a6e8fcf10b534599594`，C 0.5.1 worker SHA-256 `a0f14b5ef0ff01a7ebbf75b8a0ff99f4b29811eab4ff0c846cb4e43511d5c45d`。冻结 OCR 仍识别 synthetic `LEVEL 80`；候选安装/升级/双向恢复/篡改拒绝通过。
 
+2026-11-03 对当前工作树复核：package 源文件与锁定源提交一致，31 个依赖的 Git blob 和原始 SHA-256 均匹配 source-lock；当前候选的 1,166 个实际文件与 manifest 完全一致，manifest、GUI 与 v0.2 worker 摘要与上列相同。因此本轮未重建候选。该候选仍为 unsigned build，未替代发布签名或目标设备验收。
+
 ## Fixed-origin 分发传输合成回归（2026-11-03）
 
 新增 localhost-only `FixedOriginDistributionSource` 回归：对 catalog、revocations 和 release 的请求 URI 只含固定 profile/channel/release ID，不发送 authorization 或 cookie；redirect 响应被拒绝且不会请求 Location；plain HTTP 只接受 loopback，公网/非 loopback origin 在构造时拒绝。sandbox 默认禁止本机监听（WinError 10013），因此该组测试和全套 suite 在允许本地 loopback 的权限下运行；未访问公网。
