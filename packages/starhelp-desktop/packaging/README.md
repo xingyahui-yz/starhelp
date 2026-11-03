@@ -3,9 +3,12 @@
 Run `packaging/build-candidate.ps1` from a Windows PowerShell session with this component's
 `[desktop,package,ocr,crypto]` extras installed. The script checks the expected repository, branch
 and origin before writing into this component's `build/` and `dist/` directories. It verifies and
-installs the pinned offline planner wheel from `vendor/PLANNER-ARTIFACT.md`, builds the desktop and
-separate `planner-worker/StarHelpPlannerWorker.exe` stdio process, creates a SHA-256 manifest for
-the candidate, and copies `install-candidate.ps1` beside the app folder.
+installs the pinned offline C 0.4.0 planner wheel from `vendor/PLANNER-ARTIFACT.md`, builds the
+desktop and separate `planner-worker/StarHelpPlannerWorker.exe` stdio process. It also verifies and
+embeds the pinned C 0.5.1 wheel from `vendor/PLANNER-V2-ARTIFACT.md` in an isolated
+`planner-v2-worker/StarHelpPlannerV2Worker.exe` process. The two protocol workers are versioned
+separately. The script creates a SHA-256 manifest for the candidate and copies `install-candidate.ps1`
+beside the app folder.
 
 The install script verifies every file against the manifest, stages the new folder beside the target,
 then swaps it into the per-user default location `%LOCALAPPDATA%\Programs\StarHelp`. Upgrades keep
@@ -16,18 +19,21 @@ Run the synthetic installer smoke flow with
 `pwsh -File tests/Install-Candidate.Smoke.ps1`; it exercises install, upgrade, two-way rollback, and
 tamper rejection in a temporary directory.
 
-The worker, reusable producer request builder, and analysis-to-temporary-report runner are included
-for the local adapter interface. TaskPage has a separate, explicit “synthetic interop demo” button.
+The v0.1 worker, v0.2 worker, reusable producer request builders, and basis-bound
+analysis-to-temporary-report runner are included for the local adapter interfaces. TaskPage has a
+separate, explicit “synthetic interop demo” button for the historical v0.1 fixture.
 After confirmation, it verifies bundled fixture hashes and the test-only Ed25519 key, creates or
 reuses an encrypted profile labeled as synthetic, saves the fixture's canonical task IDs to that
 profile, and runs the local planner worker in a background thread. It never reads the selected
 profile or accesses the network. Any eligible report is staged for preview and still requires the
 existing explicit save action. The synthetic profile can be revoked and deleted from Accounts.
 
-This UI is only a synthetic integration substitute. Regular task creation still saves an encrypted
-draft and does not submit a production request. Production submission remains unavailable until M0
-task mappings, the snapshot/request contract, complete representative fixtures, and a separately
-provisioned production trust anchor are frozen. The source fixture files are under
+The v0.2 worker is not yet connected to the regular TaskPage flow; both workers are transport
+components, not proof that production mappings or trust are available. The v0.1 UI demo is only a
+synthetic integration substitute. Regular task creation still saves an encrypted draft and does not
+submit a production request. Production submission remains unavailable until M0 task mappings, the
+snapshot/request contract, complete representative fixtures, and a separately provisioned
+production trust anchor are frozen. The source fixture files are under
 `tests/fixtures/producer-interop-s3/` and are embedded in the candidate under `demo-fixtures/`.
 The older `producer-interop-v1` fixture remains an immutable compatibility sample and is not used
 by the current demo.

@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -34,6 +35,20 @@ MAX_RESPONSE_BYTES_V2 = 16 * 1024 * 1024
 REQUIRED_CAPABILITIES_V2 = frozenset({
     "starhelp.producers.v0.2", "starhelp.public-basis.v1", "starhelp.request-producer.v1",
 })
+
+
+def bundled_producer_v2_command() -> tuple[str, ...]:
+    """Return the fixed C 0.5.1 worker command for source or frozen desktop builds."""
+    if getattr(sys, "frozen", False):
+        worker = (
+            Path(sys.executable).resolve().parent
+            / "planner-v2-worker"
+            / "StarHelpPlannerV2Worker.exe"
+        )
+        if not worker.is_file():
+            raise PlannerUnavailable("the bundled producer v0.2 worker is unavailable")
+        return (str(worker),)
+    return (sys.executable, "-m", "starhelp_desktop.planner_v2_worker")
 
 
 @dataclass(frozen=True, slots=True)

@@ -27,6 +27,23 @@ if ($actualPlannerHash -ne $expectedPlannerHash) { throw 'Pinned planner artifac
 if ($LASTEXITCODE -ne 0) { throw 'Pinned local planner wheel installation failed' }
 & $python -c "from starhelp_planner import COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE; assert (COMPONENT_VERSION, PRODUCER_ADAPTER_PROFILE) == ('0.4.0', 'starhelp.producers.v0.1')"
 if ($LASTEXITCODE -ne 0) { throw 'Installed local planner artifact is incompatible' }
+$plannerV2Wheel = Join-Path $component 'packaging\vendor\starhelp_planner-0.5.1-py3-none-any.whl'
+$expectedPlannerV2Hash = 'c79ceb58e78d11cf947c0c9f7c5c862ccad8155886fab715a76f7d8977f98322'
+$plannerV2Lock = Join-Path $component 'packaging\vendor\starhelp_planner-0.5.1.lock.json'
+$expectedPlannerV2LockHash = 'aceb07b0b8bec677e2ccfc39ce6b1018662991dd22524c6340eb3995134f9121'
+if (-not (Test-Path -LiteralPath $plannerV2Wheel)) { throw 'Pinned producer v0.2 planner artifact is missing' }
+$actualPlannerV2LockHash = (Get-FileHash -LiteralPath $plannerV2Lock -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualPlannerV2LockHash -ne $expectedPlannerV2LockHash) { throw 'Pinned producer v0.2 artifact lock hash mismatch' }
+$actualPlannerV2Hash = (Get-FileHash -LiteralPath $plannerV2Wheel -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualPlannerV2Hash -ne $expectedPlannerV2Hash) { throw 'Pinned producer v0.2 planner artifact hash mismatch' }
+$plannerV2Dependencies = Join-Path $component 'build\planner-v2-deps'
+New-Item -ItemType Directory -Path $plannerV2Dependencies -Force | Out-Null
+& $python -m pip install --no-index --no-deps --upgrade --target $plannerV2Dependencies $plannerV2Wheel
+if ($LASTEXITCODE -ne 0) { throw 'Pinned producer v0.2 planner artifact extraction failed' }
+$env:STARHELP_PLANNER_V2_DEPENDENCIES = $plannerV2Dependencies
+& $python -c "import os, sys; sys.path.insert(0, os.environ['STARHELP_PLANNER_V2_DEPENDENCIES']); import starhelp_planner; assert starhelp_planner.COMPONENT_VERSION == '0.5.1' and 'starhelp.producers.v0.2' in starhelp_planner.PRODUCER_V2_CAPABILITIES"
+if ($LASTEXITCODE -ne 0) { throw 'Pinned producer v0.2 planner artifact is incompatible' }
+Remove-Item Env:\STARHELP_PLANNER_V2_DEPENDENCIES
 $originalPath = $env:PATH
 try {
     # Do not let unrelated installations contribute same-named DLLs (for example,
@@ -41,6 +58,10 @@ try {
             --workpath (Join-Path $component 'build\StarHelpPlannerWorker') `
             (Join-Path $PSScriptRoot 'StarHelpPlannerWorker.spec')
         if ($LASTEXITCODE -ne 0) { throw 'PyInstaller planner worker build failed' }
+        & $python -m PyInstaller --clean --noconfirm --distpath (Join-Path $component 'dist') `
+            --workpath (Join-Path $component 'build\StarHelpPlannerV2Worker') `
+            (Join-Path $PSScriptRoot 'StarHelpPlannerV2Worker.spec')
+        if ($LASTEXITCODE -ne 0) { throw 'PyInstaller producer v0.2 worker build failed' }
     } finally {
         Pop-Location
     }
@@ -50,11 +71,17 @@ try {
 
 $candidate = Join-Path $component 'dist\StarHelp'
 $workerBuild = Join-Path $component 'dist\StarHelpPlannerWorker'
+$workerV2Build = Join-Path $component 'dist\StarHelpPlannerV2Worker'
 $workerDestination = Join-Path $candidate 'planner-worker'
+$workerV2Destination = Join-Path $candidate 'planner-v2-worker'
 if (-not (Test-Path -LiteralPath (Join-Path $workerBuild 'StarHelpPlannerWorker.exe'))) {
     throw 'Planner worker build output is incomplete'
 }
+if (-not (Test-Path -LiteralPath (Join-Path $workerV2Build 'StarHelpPlannerV2Worker.exe'))) {
+    throw 'Producer v0.2 worker build output is incomplete'
+}
 Copy-Item -LiteralPath $workerBuild -Destination $workerDestination -Recurse
+Copy-Item -LiteralPath $workerV2Build -Destination $workerV2Destination -Recurse
 $manifest = Join-Path $candidate 'candidate-manifest.sha256'
 $manifestRows = Get-ChildItem -LiteralPath $candidate -File -Recurse | ForEach-Object {
     $relative = $_.FullName.Substring($candidate.TrimEnd('\').Length + 1)

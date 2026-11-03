@@ -29,6 +29,7 @@ from starhelp_desktop.distribution_metadata import (
     DistributionMetadataVerifier,
 )
 from starhelp_desktop.planner_v2 import _parse_response_v2
+from starhelp_desktop.planner_v2_worker import _decode_object
 from starhelp_desktop.local_backend import KnowledgeBackendController, LocalBackendConfig
 from starhelp_desktop.producer_v2 import canonical_json_bytes
 
@@ -65,7 +66,7 @@ def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:
             "a_producer": {"package": "starhelp-knowledge", "version": "0.4.0",
                             "commit": "4" * 40},
             "planner": {"profile": "starhelp.planner.v0.5", "producer_profile": "starhelp.producers.v0.2",
-                        "component_version": "0.5.0", "wheel_sha256": "5" * 64},
+                        "component_version": "0.5.1", "wheel_sha256": "5" * 64},
             "b_snapshot": {"profile": "starhelp.local.v0.2", "producer_commit": "6" * 40},
         },
         "qualification_pair": pair,
@@ -79,6 +80,14 @@ def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:
 
 
 class ProducerV2Tests(unittest.TestCase):
+    def test_v2_worker_input_parser_rejects_duplicate_keys_and_nonfinite_values(self) -> None:
+        with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
+            _decode_object(b'{"request_id":"first","request_id":"second"}', "request")
+        with self.assertRaisesRegex(ValueError, "non-finite JSON number"):
+            _decode_object(b'{"value":NaN}', "request")
+        with self.assertRaisesRegex(ValueError, "JSON object"):
+            _decode_object(b'[]', "request")
+
     @staticmethod
     def _signed(profile: str, payload: dict[str, object], key_id: str,
                 private_key: Ed25519PrivateKey) -> bytes:
@@ -129,7 +138,7 @@ class ProducerV2Tests(unittest.TestCase):
                 "required_capabilities": ["starhelp.public-basis.v1"],
                 "planner": {"profile": "starhelp.planner.v0.5",
                             "producer_profile": "starhelp.producers.v0.2",
-                            "component_version": "0.5.0", "wheel_sha256": "d" * 64},
+                            "component_version": "0.5.1", "wheel_sha256": "d" * 64},
                 "b_snapshot": {"profile": "starhelp.local.v0.2", "producer_commit": "2" * 40},
                 "rollback_allowed": False,
             }],
@@ -370,7 +379,7 @@ class ProducerV2Tests(unittest.TestCase):
         }
         response = {
             "protocol": "starhelp-local-planner", "protocol_version": "0.2",
-            "planner_version": "0.5.0",
+            "planner_version": "0.5.1",
             "capabilities": ["starhelp.producers.v0.2", "starhelp.public-basis.v1",
                              "starhelp.request-producer.v1"],
             "result": result,
