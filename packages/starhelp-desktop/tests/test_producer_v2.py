@@ -454,7 +454,7 @@ class ProducerV2Tests(unittest.TestCase):
                     return False
 
         bundles = {release_id: make_bundle(release_id) for release_id in ("release-1", "release-2")}
-        def make_revocations(*, revoke_target: bool) -> bytes:
+        def make_revocations(*, revoke_target: bool, sequence: int = 1) -> bytes:
             revoked_releases = ([{
                 "release_id": "release-1",
                 "envelope_sha256": hashlib.sha256(bundles["release-1"]).hexdigest(),
@@ -462,12 +462,14 @@ class ProducerV2Tests(unittest.TestCase):
             }] if revoke_target else [])
             return self._signed(REVOCATIONS_PROFILE, {
                 "schema_version": REVOCATIONS_PROFILE, "origin_id": "synthetic-origin",
-                "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 1,
+                "channel": "test", "consumer_profile": "starhelp.local.v0.2",
+                "sequence": sequence,
                 "issued_at": issued, "valid_until": expiry,
                 "revoked_releases": revoked_releases, "revoked_public_refs": [],
             }, key_id, private)
 
-        def make_catalog(*, rollback_allowed: bool, revocations_raw: bytes) -> bytes:
+        def make_catalog(*, rollback_allowed: bool, revocations_raw: bytes,
+                         sequence: int = 2, revocation_sequence: int = 1) -> bytes:
             distributions = []
             for release_id in ("release-1", "release-2"):
                 distributions.append({
@@ -482,13 +484,14 @@ class ProducerV2Tests(unittest.TestCase):
                 })
             return self._signed(CATALOG_PROFILE, {
                 "schema_version": CATALOG_PROFILE, "origin_id": "synthetic-origin",
-                "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 2,
+                "channel": "test", "consumer_profile": "starhelp.local.v0.2",
+                "sequence": sequence,
                 "issued_at": issued, "valid_until": expiry, "active_release_id": "release-2",
                 "distributions": distributions,
                 "revocation_snapshot": {
                     "path": "/v1/distribution-revocations?profile=starhelp.local.v0.2&channel=test",
                     "sha256": hashlib.sha256(revocations_raw).hexdigest(),
-                    "size_bytes": len(revocations_raw), "sequence": 1,
+                    "size_bytes": len(revocations_raw), "sequence": revocation_sequence,
                 },
             }, key_id, private)
 
@@ -583,6 +586,30 @@ class ProducerV2Tests(unittest.TestCase):
                     allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
                 )
             self.assertEqual(revoked_cache.current_release_id(), "release-2")
+
+            raced, raced_cache = make_case("raced", True)
+            newer_revocations = make_revocations(revoke_target=True, sequence=2)
+            newer_catalog = make_catalog(
+                rollback_allowed=True, revocations_raw=newer_revocations,
+                sequence=3, revocation_sequence=2,
+            )
+            newer_pair = raced._verifier.verify_pair(
+                newer_catalog, newer_revocations, now=now,
+            )
+            original_epoch_guard = raced._security.run_if_epoch_current
+
+            def advance_revocations_then_guard(epoch: int, operation: object) -> object:
+                raced._security.commit_verified_pair(newer_pair, observed_at=now)
+                return original_epoch_guard(epoch, operation)
+
+            raced._security.run_if_epoch_current = advance_revocations_then_guard
+            with self.assertRaisesRegex(BundleRejected, "safety state changed"):
+                raced.rollback(
+                    raced_cache, "release-1", signature_verifier=bundle_verifier,
+                    supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                    allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+                )
+            self.assertEqual(raced_cache.current_release_id(), "release-2")
 
     def test_typed_tombstones_merge_monotonically_and_match_full_identity(self) -> None:
         release = ReleaseIdentity("origin", "stable", "native", "r1", "a" * 64)

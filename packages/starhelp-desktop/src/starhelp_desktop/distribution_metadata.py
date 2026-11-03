@@ -475,6 +475,7 @@ class DistributionMetadataSynchronizer:
             raise ValueError("rollback target release ID is required")
         observed_at = now or datetime.now(UTC)
         pair = self.sync(now=observed_at)
+        expected_epoch = self._security.snapshot()["public_epoch"]
         catalog = self._verifier.verify_catalog(pair.catalog_raw, now=observed_at)
         payload = catalog.payload
         descriptor = next(
@@ -490,10 +491,6 @@ class DistributionMetadataSynchronizer:
             payload["origin_id"], payload["channel"], payload["consumer_profile"],
             target_release_id, descriptor["envelope_sha256"],
         )
-        try:
-            self._security.assert_release_not_revoked(identity)
-        except ValueError as exc:
-            raise BundleRejected(f"rollback target is unusable: {exc}") from None
         a_tuple = descriptor["a_producer"]
         matching_native = next((entry for entry in allowed_a_producers
                                 if all(entry.get(key) == a_tuple[key]
@@ -523,11 +520,22 @@ class DistributionMetadataSynchronizer:
                 or manifest.get("planner_profile") != matching_native["planner_profile"]):
             raise BundleRejected("distribution_tuple_mismatch")
         previous = cache.current_release_id()
-        self._security.qualify_artifact(
-            identity, pair=pair, allowed=True, observed_at=observed_at,
-            artifact_expires_at=min(pair.catalog_expires_at, pair.revocations_expires_at),
-        )
-        cache.activate(parsed_bundle)
+
+        def activate_if_current() -> None:
+            try:
+                self._security.assert_release_not_revoked(identity)
+            except ValueError as exc:
+                raise BundleRejected(f"rollback target is unusable: {exc}") from None
+            self._security.qualify_artifact(
+                identity, pair=pair, allowed=True, observed_at=observed_at,
+                artifact_expires_at=min(pair.catalog_expires_at, pair.revocations_expires_at),
+            )
+            cache.activate(parsed_bundle)
+
+        try:
+            self._security.run_if_epoch_current(expected_epoch, activate_if_current)
+        except ValueError as exc:
+            raise BundleRejected(f"rollback safety state changed: {exc}") from None
         analyzable = len(raw) <= 2 * 1024 * 1024
         return DistributionActivationResult(
             previous, target_release_id, previous != target_release_id,
