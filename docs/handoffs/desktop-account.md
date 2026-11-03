@@ -1431,3 +1431,28 @@ It records builder blob `e44976ff56105faac3f18efe90c8cc09692a7d7d`, dependency l
 `32c9a704cfc8de620e56230debaa188313f5d26158c52bacb1f2bd53ae4bbc22`, lock artifact SHA-256
 `78d71649b008d401fc3ccdf4c4ea9d2001751039e206aabcc48b2c75f2aa19f2`, and 29 dependencies. The
 lock and this handoff update are committed separately after the source commit.
+
+## Current B 0.2 Windows candidate (2026-11-03)
+
+Rebuilt the unsigned folder candidate from B HEAD `63cba8708b871471a600571886aeb85b257a75ed`
+with the pinned C 0.4.0 wheel and PyInstaller 6.22.3 on Windows 11. The exact candidate manifest
+contains 920 files and every listed SHA-256/file-set entry verified. Manifest SHA-256 is
+`807f177bd7a20f7571730a859056de6db8458c1206da564fc81d8e04be8f4d36`, GUI executable SHA-256 is
+`e6bfcacf1d2a95aea9b0d1789b552b7b12716d3da39e1a765e60419cd92e75ef`, and the separate worker
+executable SHA-256 is `a1403a3856967030dc1014c7e000f6acf4814737a8fe9520f35fd7f4373200d3`.
+
+All 81 synthetic package tests pass; `compileall -q src packaging` and `git diff --check` pass.
+The candidate-local OCR smoke recognized synthetic `LEVEL 80`. The packaged worker directly replayed
+the signed synthetic S3 bundle/snapshot through C 0.4.0 and returned `plans_available` with two
+rearrangement plans. The GUI stayed alive for eight seconds and loaded Qt6Core/Qt6Widgets both from
+the built candidate and after install via `install-candidate.ps1` into a unique isolated workspace
+target. `Install-Candidate.Smoke.ps1` passed install, upgrade, two-way rollback and tamper rejection
+when its temporary root was directed to a workspace-local path; the sandbox-provided external temp
+path denied the initial move. The isolated install target was removed after the process exited and
+its exact workspace path was checked. No real UID, account data, production key or deployment was
+used.
+
+The rebuilt candidate is still unsigned and build-host-only. This evidence does not connect the GUI
+TaskPage to a production request or prove a unified A service/C v0.5 replay. Frozen shared mappings,
+the matching A catalog/revocation service and exact artifact tuple, C v0.5 API/wheel, publisher
+signing, and user-provided target-machine acceptance remain open.
