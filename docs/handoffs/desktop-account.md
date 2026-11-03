@@ -1489,3 +1489,14 @@ The v0.2 worker is still not connected to regular TaskPage analysis. C 0.5.1's p
 gate remains disabled, and no matching live A service/catalog, production trust anchor, frozen M0
 task mappings, code signature, or user-provided target-machine acceptance has been established.
 No real UID, account data, production key, or deployment was used.
+
+## B v0.2 report lifecycle regression (2026-11-03)
+
+Added a synthetic regression for `ProducerAnalysisRunnerV2`: it creates a qualified synthetic public
+basis, stages a temporary report carrying that basis digest/epoch and a typed citation, verifies the
+report is not persisted during staging, then explicitly saves it and checks the protected record is
+current for the matching snapshot/release/basis. The private store uses a synthetic test protector;
+the planner response is a test double, and the metadata pair is injected as already verified. This
+covers B's report lifecycle boundary only. It does not replace the Windows DPAPI checks, separate
+signed-metadata verifier, C 0.5.1 worker replay, or A/B/C production integration evidence. The full
+B suite now passes 83 tests.

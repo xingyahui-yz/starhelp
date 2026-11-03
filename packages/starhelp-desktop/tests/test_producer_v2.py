@@ -10,6 +10,22 @@ from pathlib import Path
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from starhelp_desktop.analysis_v2 import ProducerAnalysisRunnerV2
+from starhelp_desktop.distribution_metadata import (
+    CATALOG_PROFILE,
+    REVOCATIONS_PROFILE,
+    DistributionMetadataRejected,
+    DistributionMetadataSynchronizer,
+    DistributionMetadataTrust,
+    DistributionMetadataVerifier,
+)
+from starhelp_desktop.distribution_state import DistributionSecurityStore, VerifiedMetadataPair
+from starhelp_desktop.lifecycle import ProfileLifecycle
+from starhelp_desktop.local_backend import KnowledgeBackendController, LocalBackendConfig
+from starhelp_desktop.planner import PlannerResult
+from starhelp_desktop.planner_v2 import _parse_response_v2
+from starhelp_desktop.planner_v2_worker import _decode_object
+from starhelp_desktop.profiles import ProfileRepository
 from starhelp_desktop.producer_v2 import (
     CumulativeRevocations,
     PublicObjectIdentity,
@@ -17,22 +33,12 @@ from starhelp_desktop.producer_v2 import (
     build_outer_request_v2,
     build_producer_request_v2,
     build_public_basis_sha256,
+    canonical_json_bytes,
     load_request_producer_from_source_lock,
     validate_public_basis,
 )
-from starhelp_desktop.distribution_state import DistributionSecurityStore, VerifiedMetadataPair
-from starhelp_desktop.distribution_metadata import (
-    CATALOG_PROFILE,
-    REVOCATIONS_PROFILE,
-    DistributionMetadataRejected,
-    DistributionMetadataTrust,
-    DistributionMetadataSynchronizer,
-    DistributionMetadataVerifier,
-)
-from starhelp_desktop.planner_v2 import _parse_response_v2
-from starhelp_desktop.planner_v2_worker import _decode_object
-from starhelp_desktop.local_backend import KnowledgeBackendController, LocalBackendConfig
-from starhelp_desktop.producer_v2 import canonical_json_bytes
+from starhelp_desktop.reports import ReportLifecycle, ReportValidity
+from starhelp_desktop.storage import EncryptedPrivateStore
 
 
 class _IdentityProtector:
@@ -41,6 +47,27 @@ class _IdentityProtector:
 
     def unprotect(self, data: bytes) -> bytes:
         return data
+
+
+class _SyntheticPrivateProtector:
+    def protect(self, data: bytes) -> bytes:
+        return bytes(value ^ 0xA5 for value in data)
+
+    def unprotect(self, data: bytes) -> bytes:
+        return bytes(value ^ 0xA5 for value in data)
+
+
+class _AuthorizedPlanner:
+    def __init__(self, result: dict[str, object]) -> None:
+        self.result = result
+
+    def analyze(self, **_kwargs: object) -> PlannerResult:
+        return PlannerResult(
+            "0.5.1",
+            frozenset({"starhelp.producers.v0.2", "starhelp.public-basis.v1",
+                       "starhelp.request-producer.v1"}),
+            self.result,
+        )
 
 
 def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:
@@ -81,6 +108,91 @@ def _basis() -> tuple[dict[str, object], dict[str, dict[str, str]]]:
 
 
 class ProducerV2Tests(unittest.TestCase):
+    def test_v2_runner_stages_unsaved_basis_bound_report_then_saves_explicitly(self) -> None:
+        now = datetime.now(UTC).replace(microsecond=0)
+        pair = VerifiedMetadataPair(
+            b'{"signed":"synthetic catalog"}', b'{"signed":"synthetic revocations"}',
+            1, 1, now + timedelta(hours=4), now + timedelta(hours=4),
+        )
+        identity = ReleaseIdentity("synthetic-origin", "test", "starhelp.local.v0.2",
+                                   "release-runner", "a" * 64)
+        selected_artifact = {
+            "a_producer": {"package": "starhelp-knowledge", "version": "0.4.0",
+                            "commit": "1" * 40},
+            "planner": {"profile": "starhelp.planner.v0.5",
+                        "producer_profile": "starhelp.producers.v0.2",
+                        "component_version": "0.5.1", "wheel_sha256": "b" * 64},
+            "b_snapshot": {"profile": "starhelp.local.v0.2", "producer_commit": "2" * 40},
+        }
+        citation = PublicObjectIdentity(
+            "template", "synthetic-template", 1, "starhelp.a-native-content-field.v1", "c" * 64,
+        ).as_dict()
+
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            root = Path(directory)
+            security = DistributionSecurityStore(
+                root / "distribution-state.bin", protector=_IdentityProtector(),
+            )
+            security.begin_update()
+            security.accept_verified_catalog(
+                sequence=pair.catalog_sequence, digest=pair.catalog_sha256, observed_at=now,
+            )
+            security.commit_verified_pair(pair, observed_at=now)
+            security.qualify_artifact(identity, pair=pair, allowed=True, observed_at=now)
+            basis, basis_digest, _documents = security.create_public_basis(
+                identity, selected_artifact=selected_artifact,
+                policy_config={"policy_id": "synthetic-test", "revision": 1},
+                evaluation_time=now,
+            )
+
+            private_store = EncryptedPrivateStore(root / "private", _SyntheticPrivateProtector())
+            lifecycle = ProfileLifecycle(private_store, root / "temp")
+            profiles = ProfileRepository(private_store, lifecycle)
+            profile = profiles.begin_profile(
+                label="synthetic report runner", provider_id="synthetic-test",
+                server_label="fixture-only",
+            )
+            reports = ReportLifecycle(private_store, lifecycle)
+            runner = ProducerAnalysisRunnerV2(
+                _AuthorizedPlanner({
+                    "status": "plans_available", "index_release_id": identity.release_id,
+                    "citations": [citation], "plans": [{"template_id": "synthetic-template"}],
+                }),
+                reports,
+                security,
+            )
+            raw_snapshot = json.dumps({
+                "profile_id": str(profile.profile_id), "revision": 7,
+            }, separators=(",", ":"))
+            request = {"producer_request": {
+                "account_snapshot": {"raw_json": raw_snapshot},
+                "public_bundle": {"expected_release_id": identity.release_id},
+                "task": {"scope": {"mode_id": "fixture:mode"}},
+                "public_basis": basis,
+                "public_basis_sha256": basis_digest,
+            }}
+
+            execution = runner.run(
+                request=request, profile_id=profile.profile_id,
+                authorization_generation=profile.generation, lifecycle=lifecycle,
+            )
+
+            report = execution.temporary_report
+            self.assertIsNotNone(report)
+            assert report is not None
+            self.assertEqual(report.public_basis_sha256, basis_digest)
+            self.assertEqual(report.public_epoch, basis["epoch"])
+            self.assertEqual(report.validity, ReportValidity.NEEDS_REVIEW)
+            self.assertEqual(private_store.list_profile_keys(profile.profile_id, "report"), ())
+
+            runner.save_current(
+                report, current_snapshot_revision=7,
+                current_release_id=identity.release_id, known_withdrawn_refs=frozenset(),
+            )
+            saved = private_store.list_profile_keys(profile.profile_id, "report")
+            self.assertEqual(len(saved), 1)
+            self.assertEqual(private_store.load(saved[0])["validity"], ReportValidity.CURRENT.value)
+
     def test_v2_worker_input_parser_rejects_duplicate_keys_and_nonfinite_values(self) -> None:
         with self.assertRaisesRegex(ValueError, "duplicate JSON object key"):
             _decode_object(b'{"request_id":"first","request_id":"second"}', "request")
