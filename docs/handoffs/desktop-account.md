@@ -1570,3 +1570,9 @@ source-lock 从 B source commit `c4f8800608cff27e761b2907776b1744a9aa0063` 生�
 source-lock 从 B source commit `f65fa5c17bfb6614af1e6b272fa87eb8fd288d88` 生成，31 项依赖；dependency lock SHA-256 `759bf2daae3449bd349ea980061fc9fb7254113ae800fb6cf3a0e5b7c436219d`，source-lock 文件 SHA-256 `f8882e699533508caf9500b235cade728d483b62ad66f9a9f006f5c7dcb2b9ef`。unsigned Windows candidate 含 1,166 项文件，manifest SHA-256 `7cfd4dcf4cb3393c23df84da0d635a6e9eeccf3a9a2efb70d83566e5907f6b23`，GUI SHA-256 `d0ba3b290e96c1d675d7f0ac2a71b56377d902fe0a6d5f736410456a8564c3b4`，v0.2 worker SHA-256 `75d873b16b2c3059ac4eb9146fe8516a2e936961352388a60dbb6308c1ec3887`。manifest 全量文件集和摘要匹配；候选 OCR 识别 synthetic `LEVEL 80`；安装、升级、双向安装回滚及篡改拒绝通过。
 
 仍未完成的是目录/服务协议的协调冻结、共享服务信任和 production tuple、GUI 中的正式同步/恢复入口、A/B/C live 服务联调、发布签名与目标设备验收。未触及固定 A/C 产物或 `packages/starhelp-desktop/.tmp/`，无真实账号资料。
+
+## 公共包恢复的并发撤回保护（2026-11-03）
+
+复核 M5 回滚后补上同步竞争保护：回滚在开始时记录已验证的 `public_epoch`；最终撤回复查、目标资格登记和 current 指针切换均在 `DistributionSecurityStore.run_if_epoch_current()` 的同一锁内完成。若更高 sequence 的 catalog/revocation 在此期间先提交，旧 epoch 回滚会失败关闭，current 仍保持原版本。扩展合成测试以新的签名 catalog/revocations 在最终提交边界推进撤回，验证旧目标不被重新激活。全套 B suite 仍为 86 tests，`compileall` 和 `git diff --check` 通过。
+
+source-lock 对应源提交 `8fc3656066abd90d11fa2f19295c1cbf997fe733`，31 项依赖；dependency lock SHA-256 `c465845327c771250cf98bf8c1bac79ab15edd74c13b7d03a5e5742aaa4dbce8`，source-lock SHA-256 `17d4b8fdfaab9fecca8bfdd64cab5444df847e4376792c118541a4d2124c2dd5`。重建候选含 1,166 个文件且全量清单/摘要匹配；manifest SHA-256 `75f667fa6d93f2d4300e00c7b467bf51d570022fc0aafccfd4d2b5246b0f75bc`，GUI SHA-256 `8b2859ed9497857155f5abdb1c0c155bf065830a9bcb1a6e8fcf10b534599594`，C 0.5.1 worker SHA-256 `a0f14b5ef0ff01a7ebbf75b8a0ff99f4b29811eab4ff0c846cb4e43511d5c45d`。冻结 OCR 仍识别 synthetic `LEVEL 80`；候选安装/升级/双向恢复/篡改拒绝通过。

@@ -100,7 +100,9 @@ identity of a physical copy.
   signed catalog and revocation snapshot, requires the catalog to allow the target, checks its
   exact A/C/B tuple, cached size/digest, bundle signature and capabilities, then verifies the
   typed revocation ledger before switching the current pointer. A rejected target or failed pointer
-  write leaves the previous current release selected.
+  write leaves the previous current release selected. The final revocation check, qualification,
+  and pointer switch share the distribution safety-state epoch lock, so a concurrent newer
+  revocation update invalidates the pending rollback.
 - An unsigned folder-style candidate builds with PyInstaller 6.22.3. Its per-user installer
   verifies a SHA-256 file manifest, stages upgrades, preserves previous versions, and can roll back.
   The build script limits the dependency search path to Windows system directories so unrelated
