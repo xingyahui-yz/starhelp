@@ -627,10 +627,15 @@ class ProducerV2Tests(unittest.TestCase):
             self.assertEqual(fresh_result.current_release_id, "release-2")
             self.assertTrue(fresh_result.updated)
             self.assertEqual(fresh_cache.current_release_id(), "release-2")
-            self.assertEqual(fresh._security.effective_state(ReleaseIdentity(
+            fresh_identity = ReleaseIdentity(
                 "synthetic-origin", "test", "starhelp.local.v0.2", "release-2",
                 hashlib.sha256(bundles["release-2"]).hexdigest(),
-            ), now=now), "fresh")
+            )
+            self.assertEqual(fresh._security.effective_state(fresh_identity, now=now), "fresh")
+            restarted_security = DistributionSecurityStore(
+                root / "fresh" / "state.bin", protector=_IdentityProtector(),
+            )
+            self.assertEqual(restarted_security.effective_state(fresh_identity, now=now), "fresh")
 
             mismatched, mismatch_cache = make_case(
                 "mismatched", True, seed_cache=False, fetch_envelopes=True,

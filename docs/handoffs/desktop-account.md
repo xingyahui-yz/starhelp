@@ -1585,4 +1585,4 @@ source-lock 对应源提交 `8fc3656066abd90d11fa2f19295c1cbf997fe733`，31 项�
 
 ## 首次目录同步与 bundle 激活合成回归（2026-11-03）
 
-扩展 `test_rollback_requires_current_signed_admission_and_keeps_current_on_failure` 的 synthetic Ed25519 fixture，覆盖空缓存下 `sync_and_activate()` 的完整首次路径：验证签名 catalog/revocations、核对 A/C/B tuple、下载并校验 envelope 大小和摘要、验 bundle 签名与 release/profile、登记 artifact 资格、最后激活 current。断言首个 active release 为 `release-2` 且资格为 `fresh`。另传入不匹配的 A tuple，确认以 `distribution_unsupported` 拒绝并保持 current 为空。定向用例通过；本次只改测试和交接文档，现有候选/source-lock 不变。全部证据为临时合成密钥和数据，不访问公网或真实账号。
+扩展 `test_rollback_requires_current_signed_admission_and_keeps_current_on_failure` 的 synthetic Ed25519 fixture，覆盖空缓存下 `sync_and_activate()` 的完整首次路径：验证签名 catalog/revocations、核对 A/C/B tuple、下载并校验 envelope 大小和摘要、验 bundle 签名与 release/profile、登记 artifact 资格、最后激活 current。断言首个 active release 为 `release-2`、资格为 `fresh`，且重新创建 `DistributionSecurityStore` 后仍能恢复该资格。另传入不匹配的 A tuple，确认以 `distribution_unsupported` 拒绝并保持 current 为空。定向用例和完整 88 项 B suite 通过；`compileall`、`git diff --check` 通过。只改测试和交接文档，现有候选/source-lock 不变。全部证据为临时合成密钥和数据，不访问公网或真实账号。
