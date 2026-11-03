@@ -462,6 +462,79 @@ class DistributionMetadataSynchronizer:
             None if analyzable else "local_payload_too_large",
         )
 
+    def rollback(self, cache: PublicBundleCache, target_release_id: str, *,
+                 signature_verifier: SignatureVerifier,
+                 supported_capabilities: frozenset[str],
+                 allowed_a_producers: tuple[Mapping[str, Any], ...],
+                 allowed_c_components: tuple[Mapping[str, Any], ...],
+                 allowed_b_snapshots: tuple[Mapping[str, Any], ...],
+                 validator: BundleValidator | None = None,
+                 now: datetime | None = None) -> DistributionActivationResult:
+        """Restore a cached release only when the latest verified catalog permits rollback."""
+        if not isinstance(target_release_id, str) or not target_release_id:
+            raise ValueError("rollback target release ID is required")
+        observed_at = now or datetime.now(UTC)
+        pair = self.sync(now=observed_at)
+        catalog = self._verifier.verify_catalog(pair.catalog_raw, now=observed_at)
+        payload = catalog.payload
+        descriptor = next(
+            (item for item in payload["distributions"]
+             if item["release_id"] == target_release_id),
+            None,
+        )
+        if descriptor is None or not descriptor["rollback_allowed"]:
+            raise BundleRejected("rollback_target_not_allowed_by_verified_catalog")
+        if target_release_id == payload["active_release_id"]:
+            raise BundleRejected("rollback_target_is_active_release")
+        identity = ReleaseIdentity(
+            payload["origin_id"], payload["channel"], payload["consumer_profile"],
+            target_release_id, descriptor["envelope_sha256"],
+        )
+        try:
+            self._security.assert_release_not_revoked(identity)
+        except ValueError as exc:
+            raise BundleRejected(f"rollback target is unusable: {exc}") from None
+        a_tuple = descriptor["a_producer"]
+        matching_native = next((entry for entry in allowed_a_producers
+                                if all(entry.get(key) == a_tuple[key]
+                                       for key in ("package", "version", "commit"))), None)
+        if matching_native is None or descriptor["planner"] not in allowed_c_components \
+                or descriptor["b_snapshot"] not in allowed_b_snapshots:
+            raise BundleRejected("distribution_unsupported")
+        if target_release_id not in cache.available_release_ids():
+            raise BundleRejected("rollback_target_not_cached")
+        raw = cache.read_release(target_release_id)
+        if len(raw) != descriptor["size_bytes"] or sha256_hex(raw) != descriptor[
+            "envelope_sha256"
+        ]:
+            raise BundleRejected("rollback_cached_artifact_digest_mismatch")
+        parsed_bundle = (validator or BundleValidator()).validate(
+            raw,
+            supported_capabilities=supported_capabilities,
+            expected_release_id=target_release_id,
+            signature_verifier=signature_verifier,
+        )
+        manifest = parsed_bundle.payload().get("manifest")
+        if (not isinstance(manifest, dict)
+                or manifest.get("distribution_profile") != descriptor["envelope_profile"]
+                or manifest.get("index_release_id") != target_release_id
+                or manifest.get("required_capabilities") != descriptor["required_capabilities"]
+                or manifest.get("native_profile") != matching_native["native_profile"]
+                or manifest.get("planner_profile") != matching_native["planner_profile"]):
+            raise BundleRejected("distribution_tuple_mismatch")
+        previous = cache.current_release_id()
+        self._security.qualify_artifact(
+            identity, pair=pair, allowed=True, observed_at=observed_at,
+            artifact_expires_at=min(pair.catalog_expires_at, pair.revocations_expires_at),
+        )
+        cache.activate(parsed_bundle)
+        analyzable = len(raw) <= 2 * 1024 * 1024
+        return DistributionActivationResult(
+            previous, target_release_id, previous != target_release_id,
+            "ready" if analyzable else "stored_not_analyzable",
+            None if analyzable else "local_payload_too_large",
+        )
+
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}

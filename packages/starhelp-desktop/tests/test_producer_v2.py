@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from starhelp_desktop.analysis_v2 import ProducerAnalysisRunnerV2
+from starhelp_desktop.bundles import BundleRejected, BundleValidator, PublicBundleCache
 from starhelp_desktop.distribution_metadata import (
     CATALOG_PROFILE,
     REVOCATIONS_PROFILE,
@@ -399,6 +400,189 @@ class ProducerV2Tests(unittest.TestCase):
             DistributionMetadataRejected, "distribution_catalog_revocation_invalid",
         ):
             verifier.verify_pair(wrong_route, revocations_raw, now=now)
+
+    def test_rollback_requires_current_signed_admission_and_keeps_current_on_failure(self) -> None:
+        now = datetime.now(UTC).replace(microsecond=0)
+        key_id = "synthetic-key"
+        private = Ed25519PrivateKey.generate()
+        public = private.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw,
+        ).hex()
+        bundle_key_id = "bundle-key"
+        bundle_private = Ed25519PrivateKey.generate()
+        bundle_public_key = bundle_private.public_key()
+        issued = now.isoformat().replace("+00:00", "Z")
+        expiry = (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+        a_tuple = {"package": "starhelp-knowledge", "version": "0.4.0", "commit": "1" * 40}
+        c_tuple = {
+            "profile": "starhelp.planner.v0.5", "producer_profile": "starhelp.producers.v0.2",
+            "component_version": "0.5.1", "wheel_sha256": "d" * 64,
+        }
+        b_tuple = {"profile": "starhelp.local.v0.2", "producer_commit": "2" * 40}
+
+        def make_bundle(release_id: str) -> bytes:
+            objects = {"fixture:object": {"kind": "fixture", "refs": []}}
+            manifest = {
+                "index_release_id": release_id,
+                "distribution_profile": "starhelp.b-publicbundle-envelope.v1",
+                "required_capabilities": [],
+                "native_profile": "fixture.native.v1",
+                "planner_profile": "starhelp.local.v0.2",
+                "signing_key_id": bundle_key_id,
+                "members": {"fixture:object": hashlib.sha256(
+                    canonical_json_bytes(objects["fixture:object"])
+                ).hexdigest()},
+                "coverage": {"synthetic": True},
+            }
+            signed = canonical_json_bytes(manifest)
+            signature = bundle_private.sign(signed).hex()
+            return canonical_json_bytes({
+                "contract_version": "0.1-draft", "schema_id": "PublicBundle",
+                "schema_version": "0.1-draft", "manifest": manifest,
+                "signature": signature, "objects": objects,
+            })
+
+        class BundleVerifier:
+            def verify(self, candidate_key_id: str, signed_bytes: bytes,
+                       signature: bytes) -> bool:
+                if candidate_key_id != bundle_key_id:
+                    return False
+                try:
+                    bundle_public_key.verify(signature, signed_bytes)
+                    return True
+                except Exception:
+                    return False
+
+        bundles = {release_id: make_bundle(release_id) for release_id in ("release-1", "release-2")}
+        def make_revocations(*, revoke_target: bool) -> bytes:
+            revoked_releases = ([{
+                "release_id": "release-1",
+                "envelope_sha256": hashlib.sha256(bundles["release-1"]).hexdigest(),
+                "reason_code": "integrity_issue", "effective_at": issued,
+            }] if revoke_target else [])
+            return self._signed(REVOCATIONS_PROFILE, {
+                "schema_version": REVOCATIONS_PROFILE, "origin_id": "synthetic-origin",
+                "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 1,
+                "issued_at": issued, "valid_until": expiry,
+                "revoked_releases": revoked_releases, "revoked_public_refs": [],
+            }, key_id, private)
+
+        def make_catalog(*, rollback_allowed: bool, revocations_raw: bytes) -> bytes:
+            distributions = []
+            for release_id in ("release-1", "release-2"):
+                distributions.append({
+                    "release_id": release_id,
+                    "download_path": f"/v1/distributions/{release_id}",
+                    "envelope_sha256": hashlib.sha256(bundles[release_id]).hexdigest(),
+                    "size_bytes": len(bundles[release_id]),
+                    "envelope_profile": "starhelp.b-publicbundle-envelope.v1",
+                    "a_producer": a_tuple, "required_capabilities": [],
+                    "planner": c_tuple, "b_snapshot": b_tuple,
+                    "rollback_allowed": release_id == "release-1" and rollback_allowed,
+                })
+            return self._signed(CATALOG_PROFILE, {
+                "schema_version": CATALOG_PROFILE, "origin_id": "synthetic-origin",
+                "channel": "test", "consumer_profile": "starhelp.local.v0.2", "sequence": 2,
+                "issued_at": issued, "valid_until": expiry, "active_release_id": "release-2",
+                "distributions": distributions,
+                "revocation_snapshot": {
+                    "path": "/v1/distribution-revocations?profile=starhelp.local.v0.2&channel=test",
+                    "sha256": hashlib.sha256(revocations_raw).hexdigest(),
+                    "size_bytes": len(revocations_raw), "sequence": 1,
+                },
+            }, key_id, private)
+
+        metadata_key = {
+            "key_id": key_id, "public_key_hex": public,
+            "purposes": ["synthetic-catalog", "synthetic-revocations"],
+            "not_before": (now - timedelta(hours=1)).isoformat().replace("+00:00", "Z"),
+            "not_after": expiry, "revoked": False,
+        }
+        verifier = DistributionMetadataVerifier(DistributionMetadataTrust(
+            "synthetic-origin", "test", "starhelp.local.v0.2", (metadata_key,),
+        ))
+        bundle_verifier = BundleVerifier()
+        native_tuple = {**a_tuple, "native_profile": "fixture.native.v1",
+                        "planner_profile": "starhelp.local.v0.2"}
+
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as directory:
+            root = Path(directory)
+
+            def make_case(name: str, rollback_allowed: bool, *, revoke_target: bool = False) -> tuple[
+                    DistributionMetadataSynchronizer, PublicBundleCache]:
+                revoked_raw = make_revocations(revoke_target=revoke_target)
+                catalog_raw = make_catalog(
+                    rollback_allowed=rollback_allowed, revocations_raw=revoked_raw,
+                )
+
+                class Source:
+                    def fetch_catalog(self) -> bytes:
+                        return catalog_raw
+
+                    def fetch_revocations(self) -> bytes:
+                        return revoked_raw
+
+                    def fetch_envelope(self, _release_id: str) -> bytes:
+                        raise AssertionError("rollback must use the exact cached release bytes")
+
+                case_root = root / name
+                case_root.mkdir()
+                cache = PublicBundleCache(case_root / "cache")
+                bundle_validator = BundleValidator()
+                for release_id in ("release-1", "release-2"):
+                    cache.activate(bundle_validator.validate(
+                        bundles[release_id], supported_capabilities=frozenset(),
+                        expected_release_id=release_id, signature_verifier=bundle_verifier,
+                    ))
+                store = DistributionSecurityStore(
+                    case_root / "state.bin", protector=_IdentityProtector(),
+                )
+                return DistributionMetadataSynchronizer(Source(), verifier, store), cache
+
+            denied, denied_cache = make_case("denied", False)
+            with self.assertRaisesRegex(BundleRejected, "not_allowed_by_verified_catalog"):
+                denied.rollback(
+                    denied_cache, "release-1", signature_verifier=bundle_verifier,
+                    supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                    allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+                )
+            self.assertEqual(denied_cache.current_release_id(), "release-2")
+
+            allowed, allowed_cache = make_case("allowed", True)
+            original_write = allowed_cache._atomic_write
+
+            def fail_current_write(destination: Path, data: bytes) -> None:
+                if destination == allowed_cache.current_file:
+                    raise OSError("synthetic current-pointer failure")
+                original_write(destination, data)
+
+            allowed_cache._atomic_write = fail_current_write
+            with self.assertRaisesRegex(OSError, "current-pointer failure"):
+                allowed.rollback(
+                    allowed_cache, "release-1", signature_verifier=bundle_verifier,
+                    supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                    allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+                )
+            self.assertEqual(allowed_cache.current_release_id(), "release-2")
+            del allowed_cache._atomic_write
+            result = allowed.rollback(
+                allowed_cache, "release-1", signature_verifier=bundle_verifier,
+                supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+            )
+            self.assertEqual(result.previous_release_id, "release-2")
+            self.assertEqual(result.current_release_id, "release-1")
+            self.assertTrue(result.updated)
+            self.assertEqual(allowed_cache.current_release_id(), "release-1")
+
+            revoked, revoked_cache = make_case("revoked", True, revoke_target=True)
+            with self.assertRaisesRegex(BundleRejected, "target is unusable: revoked"):
+                revoked.rollback(
+                    revoked_cache, "release-1", signature_verifier=bundle_verifier,
+                    supported_capabilities=frozenset(), allowed_a_producers=(native_tuple,),
+                    allowed_c_components=(c_tuple,), allowed_b_snapshots=(b_tuple,), now=now,
+                )
+            self.assertEqual(revoked_cache.current_release_id(), "release-2")
 
     def test_typed_tombstones_merge_monotonically_and_match_full_identity(self) -> None:
         release = ReleaseIdentity("origin", "stable", "native", "r1", "a" * 64)
